@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Træning">
+<meta name="theme-color" content="#1a1917">
+<title>Træningslog</title>
+<style>
+:root {
+  --bg:#f5f4f1;--card:#fff;--border:#e5e2dc;--text:#1a1917;--muted:#7a7771;--hint:#b5b1aa;
+  --input-bg:#f0ede8;
+  --green-bg:#eaf3de;--green-text:#3b6d11;--green-bd:#97c459;
+  --blue-bg:#e6f1fb;--blue-text:#0c447c;--blue-mid:#378add;
+  --amber-bg:#faeeda;--amber-text:#633806;
+  --purple-bg:#eeedfe;--purple-text:#3c3489;
+  --accent:#1a1917;--r:14px;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#141412;--card:#1f1e1b;--border:#2e2c28;--text:#edeae4;--muted:#7a7771;--hint:#4a4844;
+    --input-bg:#2a2825;
+    --green-bg:#162509;--green-text:#97c459;--green-bd:#3b6d11;
+    --blue-bg:#091a30;--blue-text:#85b7eb;--blue-mid:#378add;
+    --amber-bg:#271805;--amber-text:#fac775;
+    --purple-bg:#18163a;--purple-text:#afa9ec;
+    --accent:#edeae4;
+  }
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:-apple-system,'SF Pro Text',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overscroll-behavior:none;}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;}
+
+.nav{background:var(--card);border-bottom:1px solid var(--border);padding:env(safe-area-inset-top,14px) 16px 0;position:sticky;top:0;z-index:20;}
+.nav-top{display:flex;align-items:center;justify-content:space-between;padding-top:14px;margin-bottom:10px;}
+.nav-title{font-size:17px;font-weight:700;letter-spacing:-0.3px;}
+.nav-btns{display:flex;gap:6px;}
+.icon-btn{background:var(--input-bg);border:none;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;}
+.week-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;overflow-x:auto;scrollbar-width:none;}
+.week-row::-webkit-scrollbar{display:none;}
+.week-label{font-size:12px;color:var(--muted);white-space:nowrap;}
+.week-btn{flex-shrink:0;font-size:12px;padding:4px 10px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;}
+.week-btn.active{background:var(--accent);color:var(--bg);border-color:var(--accent);}
+.day-tabs{display:flex;gap:4px;overflow-x:auto;padding-bottom:12px;scrollbar-width:none;}
+.day-tabs::-webkit-scrollbar{display:none;}
+.day-tab{flex-shrink:0;font-size:13px;font-weight:500;padding:6px 14px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;}
+.day-tab.active{background:var(--accent);color:var(--bg);border-color:var(--accent);}
+.day-tab.completed{border-color:var(--green-bd);color:var(--green-text);}
+
+.content{padding:16px;padding-bottom:40px;}
+.stats-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;}
+.stat-label{font-size:11px;color:var(--muted);margin-bottom:3px;}
+.stat-val{font-size:22px;font-weight:700;}
+.day-intro{margin-bottom:14px;}
+.badge{display:inline-block;font-size:11px;font-weight:600;padding:3px 10px;border-radius:999px;margin-bottom:6px;}
+.day-name{font-size:21px;font-weight:700;letter-spacing:-0.4px;}
+.day-sub{font-size:13px;color:var(--muted);margin-top:2px;}
+
+.ex-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin-bottom:10px;overflow:hidden;}
+.ex-head{padding:12px 14px 8px;border-bottom:1px solid var(--border);}
+.ex-name{font-size:15px;font-weight:600;}
+.ex-target{font-size:12px;color:var(--muted);margin-top:1px;}
+.ex-prev{font-size:11px;color:var(--blue-text);margin-top:3px;}
+.sets-body{padding:10px 14px;}
+.sets-labels{display:grid;grid-template-columns:24px 1fr 1fr 32px;gap:8px;font-size:11px;color:var(--hint);margin-bottom:6px;text-align:center;}
+.sets-labels span:first-child{text-align:left;}
+.set-row{display:grid;grid-template-columns:24px 1fr 1fr 32px;gap:8px;align-items:center;margin-bottom:7px;}
+.set-num{font-size:12px;color:var(--muted);font-weight:600;}
+.set-row input{background:var(--input-bg);border:1px solid var(--border);border-radius:8px;padding:8px 4px;font-size:15px;font-weight:600;text-align:center;color:var(--text);width:100%;font-family:inherit;-webkit-appearance:none;}
+.set-row input:focus{outline:2px solid var(--accent);border-color:transparent;}
+.set-row input:disabled{opacity:0.3;}
+.chk{width:32px;height:32px;border-radius:50%;border:1.5px solid var(--border);background:var(--input-bg);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all .12s;}
+.chk.on{background:var(--green-bg);border-color:var(--green-bd);}
+.chk.on::after{content:'';display:block;width:9px;height:5px;border-left:2px solid var(--green-text);border-bottom:2px solid var(--green-text);transform:rotate(-45deg) translateY(-1px);}
+.note{display:block;width:100%;margin-top:8px;background:var(--input-bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;color:var(--text);font-family:inherit;resize:none;}
+.note:focus{outline:2px solid var(--accent);border-color:transparent;}
+.note::placeholder{color:var(--hint);}
+
+.prog-section{padding:8px 14px 12px;border-top:1px solid var(--border);}
+.prog-title{font-size:10px;color:var(--hint);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;}
+.prog-bars{display:flex;align-items:flex-end;gap:3px;height:44px;}
+.prog-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;}
+.prog-bar-inner{width:100%;border-radius:2px 2px 0 0;min-height:3px;}
+.prog-bar-label{font-size:9px;color:var(--hint);}
+
+.hiit-box{background:var(--amber-bg);border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:13px;color:var(--amber-text);font-weight:500;}
+.finish-btn{width:100%;padding:15px;border-radius:var(--r);border:1.5px solid var(--border);background:var(--card);color:var(--text);font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .15s;margin-top:4px;}
+.finish-btn:active{transform:scale(0.98);}
+.finish-btn.done{background:var(--green-bg);border-color:var(--green-bd);color:var(--green-text);}
+
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:50;align-items:flex-end;justify-content:center;}
+.modal-bg.open{display:flex;}
+.modal{background:var(--card);border-radius:20px 20px 0 0;padding:20px 20px calc(20px + env(safe-area-inset-bottom));width:100%;max-height:80vh;overflow-y:auto;}
+.modal-title{font-size:17px;font-weight:700;margin-bottom:4px;}
+.modal-sub{font-size:13px;color:var(--muted);margin-bottom:14px;}
+.modal-close{float:right;background:var(--input-bg);border:none;border-radius:8px;padding:5px 10px;font-size:13px;color:var(--muted);cursor:pointer;}
+.hist-entry{background:var(--input-bg);border-radius:10px;padding:10px 12px;margin-bottom:8px;}
+.hist-date{font-size:12px;color:var(--muted);font-weight:600;margin-bottom:5px;}
+.hist-row{font-size:13px;display:flex;justify-content:space-between;gap:8px;margin-bottom:2px;}
+.hist-ex{font-weight:500;flex-shrink:0;}
+.hist-sets{color:var(--muted);text-align:right;font-size:12px;}
+.empty{font-size:14px;color:var(--muted);text-align:center;padding:24px 0;}
+.export-btn{width:100%;padding:13px;border-radius:12px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;margin-top:8px;}
+.export-btn:active{transform:scale(0.98);}
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <div class="nav-top">
+    <span class="nav-title">Træningslog</span>
+    <div class="nav-btns">
+      <button class="icon-btn" onclick="openHistory()">Historik</button>
+      <button class="icon-btn" onclick="openExport()">Eksport</button>
+    </div>
+  </div>
+  <div class="week-row">
+    <span class="week-label">Uge:</span>
+    <div id="weekBtns" style="display:flex;gap:4px;"></div>
+  </div>
+  <div class="day-tabs" id="dayTabs"></div>
+</div>
+
+<div class="content" id="content"></div>
+
+<div class="modal-bg" id="histModal" onclick="if(event.target===this)closeModal('histModal')">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('histModal')">Luk</button>
+    <div class="modal-title">Historik</div>
+    <div class="modal-sub" id="histSub"></div>
+    <div id="histContent"></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="exportModal" onclick="if(event.target===this)closeModal('exportModal')">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('exportModal')">Luk</button>
+    <div class="modal-title">Eksport</div>
+    <div class="modal-sub">Kopiér eller download dine data</div>
+    <div id="exportContent"></div>
+  </div>
+</div>
+
+<script>
+const DAYS=[
+  {id:'d1',short:'Man',label:'Dag 1',title:'Upper styrke',bs:'background:var(--blue-bg);color:var(--blue-text);',bt:'Styrke',
+   exercises:[
+    {name:'Bænkpres',target:'4×5',sets:4,kg:77,reps:5},
+    {name:'Pull-ups',target:'4×5-6',sets:4,kg:0,reps:5,bw:true},
+    {name:'Shoulder press',target:'3×5',sets:3,kg:40,reps:5},
+    {name:'Barbell row',target:'3×6',sets:3,kg:57,reps:6},
+    {name:'Dips',target:'3×6-8',sets:3,kg:0,reps:7,bw:true},
+    {name:'Hammer curls',target:'2×10',sets:2,kg:18,reps:10},
+    {name:'Triceps pushdown',target:'2×10',sets:2,kg:25,reps:10},
+  ]},
+  {id:'d2',short:'Tir',label:'Dag 2',title:'Lower styrke',bs:'background:var(--blue-bg);color:var(--blue-text);',bt:'Styrke',
+   exercises:[
+    {name:'Squat',target:'4×5',sets:4,kg:72,reps:5},
+    {name:'Romanian deadlift',target:'3×6',sets:3,kg:72,reps:6},
+    {name:'Lunges',target:'3×8/ben',sets:3,kg:20,reps:8},
+    {name:'Calf raises',target:'4×12',sets:4,kg:60,reps:12},
+    {name:'Plank',target:'3×40 sek',sets:3,kg:0,reps:40,bw:true,rl:'sek'},
+  ]},
+  {id:'d3',short:'Tor',label:'Dag 3',title:'Upper hypertrofi',bs:'background:var(--green-bg);color:var(--green-text);',bt:'Hypertrofi',
+   exercises:[
+    {name:'Incline DB press',target:'3×10',sets:3,kg:24,reps:10},
+    {name:'Chin-ups',target:'3×6-8',sets:3,kg:0,reps:7,bw:true},
+    {name:'Lateral raises',target:'4×15',sets:4,kg:10,reps:15},
+    {name:'Face pulls',target:'4×12',sets:4,kg:20,reps:12},
+    {name:'Hanging leg raises',target:'3×10',sets:3,kg:0,reps:10,bw:true},
+    {name:'Supineret curl',target:'2×12',sets:2,kg:16,reps:12},
+    {name:'Triceps overhead',target:'2×12',sets:2,kg:20,reps:12},
+  ]},
+  {id:'d4',short:'Fre',label:'Dag 4',title:'Lower power',bs:'background:var(--amber-bg);color:var(--amber-text);',bt:'Power',
+   exercises:[
+    {name:'Deadlift',target:'4×4',sets:4,kg:95,reps:4},
+    {name:'Front squat',target:'3×6',sets:3,kg:52,reps:6},
+    {name:'Bulgarian split squat',target:'3×8/ben',sets:3,kg:20,reps:8},
+    {name:'Leg curl',target:'3×12',sets:3,kg:40,reps:12},
+    {name:'Calf raises',target:'4×12',sets:4,kg:60,reps:12},
+  ]},
+  {id:'d5',short:'Lør',label:'Dag 5',title:'Full body pump',bs:'background:var(--purple-bg);color:var(--purple-text);',bt:'Pump',hiit:true,
+   exercises:[
+    {name:'Pull-ups (langsomt)',target:'3×max',sets:3,kg:0,reps:8,bw:true},
+    {name:'DB shoulder press',target:'3×12',sets:3,kg:22,reps:12},
+    {name:'Goblet squat',target:'3×15',sets:3,kg:32,reps:15},
+    {name:'Kabel rows',target:'3×15',sets:3,kg:50,reps:15},
+    {name:'Ab wheel/crunch',target:'3×12',sets:3,kg:0,reps:12,bw:true},
+  ]},
+];
+
+let curWeek=parseInt(localStorage.getItem('curWeek')||'1');
+let curDay=parseInt(localStorage.getItem('curDay')||'0');
+
+const sk=(w,id)=>`log_w${w}_${id}`;
+const ck=(w,id)=>`chk_w${w}_${id}`;
+const nk=(w,id)=>`notes_w${w}_${id}`;
+const fk=(w,id)=>`fin_w${w}_${id}`;
+
+function defaultLog(w,exercises){
+  const add=w<=2?0:w<=4?2.5:w<=6?5:0;
+  return exercises.map(ex=>Array.from({length:ex.sets},()=>({
+    kg:ex.bw?'':(w===7?Math.round((ex.kg+add)*0.85*2)/2:w===8?ex.kg+5:ex.kg+add),
+    reps:ex.reps
+  })));
+}
+function getLog(w,d){const r=localStorage.getItem(sk(w,d.id));return r?JSON.parse(r):defaultLog(w,d.exercises);}
+function saveLog(w,d,data){localStorage.setItem(sk(w,d.id),JSON.stringify(data));}
+function getChk(w,d){return JSON.parse(localStorage.getItem(ck(w,d.id))||'{}');}
+function saveChk(w,d,c){localStorage.setItem(ck(w,d.id),JSON.stringify(c));}
+function getNotes(w,d){return JSON.parse(localStorage.getItem(nk(w,d.id))||'{}');}
+function saveNotes(w,d,n){localStorage.setItem(nk(w,d.id),JSON.stringify(n));}
+function isFin(w,d){return localStorage.getItem(fk(w,d.id))==='1';}
+function setFin(w,d,v){localStorage.setItem(fk(w,d.id),v?'1':'0');}
+
+function vol(logData){
+  let v=0;
+  logData.forEach(ex=>ex.forEach(s=>{v+=(parseFloat(s.kg)||0)*(parseFloat(s.reps)||0);}));
+  return Math.round(v);
+}
+function doneCount(chk){return Object.values(chk).filter(Boolean).length;}
+function totalSets(d){return d.exercises.reduce((a,e)=>a+e.sets,0);}
+
+function prevLog(d){
+  for(let w=curWeek-1;w>=1;w--){
+    const r=localStorage.getItem(sk(w,d.id));
+    if(r) return {week:w,data:JSON.parse(r)};
+  }
+  return null;
+}
+
+function renderNav(){
+  document.getElementById('weekBtns').innerHTML=Array.from({length:8},(_,i)=>i+1).map(w=>
+    `<button class="week-btn${w===curWeek?' active':''}" onclick="switchWeek(${w})">${w}</button>`
+  ).join('');
+  document.getElementById('dayTabs').innerHTML=DAYS.map((d,i)=>{
+    let cls='day-tab'+(i===curDay?' active':'')+(isFin(curWeek,d)?' completed':'');
+    return `<button class="${cls}" onclick="switchDay(${i})">${d.short}</button>`;
+  }).join('');
+}
+
+function renderContent(){
+  const d=DAYS[curDay];
+  const logData=getLog(curWeek,d);
+  const chk=getChk(curWeek,d);
+  const notes=getNotes(curWeek,d);
+  const fin=isFin(curWeek,d);
+  const v=vol(logData);
+  const done=doneCount(chk);
+  const total=totalSets(d);
+
+  let h=`<div class="stats-row">
+    <div class="stat"><div class="stat-label">Sæt klaret</div><div class="stat-val">${done}/${total}</div></div>
+    <div class="stat"><div class="stat-label">Volumen</div><div class="stat-val">${v.toLocaleString()} kg</div></div>
+  </div>
+  <div class="day-intro">
+    <span class="badge" style="${d.bs}">${d.bt}</span>
+    <div class="day-name">${d.title}</div>
+    <div class="day-sub">${d.label} · Uge ${curWeek}${curWeek===7?' — Deload':curWeek===8?' — PR-uge':''}</div>
+  </div>`;
+
+  d.exercises.forEach((ex,ei)=>{
+    const exData=logData[ei];
+    const rl=ex.rl||'reps';
+    const prev=prevLog(d);
+    let prevText='';
+    if(prev&&prev.data[ei]&&prev.data[ei].length){
+      const ps=prev.data[ei][0];
+      prevText=`<div class="ex-prev">Sidst (uge ${prev.week}): ${ex.bw?'BW':ps.kg+'kg'} × ${ps.reps} ${rl}</div>`;
+    }
+
+    const bars=Array.from({length:curWeek},(_,wi)=>{
+      const r=localStorage.getItem(sk(wi+1,d.id));
+      if(!r) return 0;
+      const wd=JSON.parse(r);
+      if(!wd[ei]||!wd[ei][0]) return 0;
+      return(parseFloat(wd[ei][0].kg)||0)*(parseFloat(wd[ei][0].reps)||0);
+    });
+    const maxB=Math.max(...bars,1);
+    const barsHtml=bars.map((b,wi)=>{
+      const bh=Math.round((b/maxB)*40);
+      return `<div class="prog-bar-wrap"><div class="prog-bar-inner" style="height:${bh}px;background:${wi+1===curWeek?'var(--blue-mid)':'var(--blue-bg)'};"></div><div class="prog-bar-label">${wi+1}</div></div>`;
+    }).join('');
+    const showBars=curWeek>1&&bars.some(b=>b>0);
+
+    h+=`<div class="ex-card">
+      <div class="ex-head">
+        <div class="ex-name">${ex.name}</div>
+        <div class="ex-target">${ex.target}</div>${prevText}
+      </div>
+      <div class="sets-body">
+        <div class="sets-labels"><span>#</span><span>${ex.bw?'BW':'kg'}</span><span>${rl}</span><span></span></div>`;
+
+    for(let s=0;s<ex.sets;s++){
+      const key=`${ei}-${s}`;
+      const sd=exData[s];
+      h+=`<div class="set-row">
+        <span class="set-num">${s+1}</span>
+        <input type="number" inputmode="decimal" value="${sd.kg}" placeholder="${ex.bw?'BW':'0'}" ${ex.bw?'disabled':''} onchange="updateVal(${ei},${s},'kg',this.value)">
+        <input type="number" inputmode="numeric" value="${sd.reps}" placeholder="0" onchange="updateVal(${ei},${s},'reps',this.value)">
+        <div class="chk${chk[key]?' on':''}" onclick="toggleChk('${ei}-${s}')"></div>
+      </div>`;
+    }
+
+    h+=`<textarea class="note" rows="2" placeholder="Note..." onchange="updateNote(${ei},this.value)">${notes[ei]||''}</textarea>`;
+    h+=`</div>`;
+    if(showBars){
+      h+=`<div class="prog-section"><div class="prog-title">Volumen sæt 1 pr. uge</div><div class="prog-bars">${barsHtml}</div></div>`;
+    }
+    h+=`</div>`;
+  });
+
+  if(d.hiit) h+=`<div class="hiit-box">+ HIIT 10-15 min efter træning (valgfrit)</div>`;
+  h+=`<button class="finish-btn${fin?' done':''}" onclick="toggleFinish()">${fin?'Træning fuldført ✓':'Marker som færdig'}</button>`;
+
+  document.getElementById('content').innerHTML=h;
+}
+
+function updateVal(ei,si,field,val){
+  const d=DAYS[curDay];
+  const logData=getLog(curWeek,d);
+  logData[ei][si][field]=val;
+  saveLog(curWeek,d,logData);
+  refreshStats();
+}
+function updateNote(ei,val){
+  const d=DAYS[curDay];
+  const n=getNotes(curWeek,d);
+  n[ei]=val;
+  saveNotes(curWeek,d,n);
+}
+function toggleChk(key){
+  const d=DAYS[curDay];
+  const c=getChk(curWeek,d);
+  c[key]=!c[key];
+  saveChk(curWeek,d,c);
+  renderNav();renderContent();
+}
+function toggleFinish(){
+  const d=DAYS[curDay];
+  setFin(curWeek,d,!isFin(curWeek,d));
+  renderNav();renderContent();
+}
+function switchDay(i){curDay=i;localStorage.setItem('curDay',i);renderNav();renderContent();}
+function switchWeek(w){curWeek=w;localStorage.setItem('curWeek',w);renderNav();renderContent();}
+
+function refreshStats(){
+  const d=DAYS[curDay];
+  const logData=getLog(curWeek,d);
+  const chk=getChk(curWeek,d);
+  const v=vol(logData);const done=doneCount(chk);const total=totalSets(d);
+  const s=document.querySelector('.stats-row');
+  if(s) s.innerHTML=`<div class="stat"><div class="stat-label">Sæt klaret</div><div class="stat-val">${done}/${total}</div></div><div class="stat"><div class="stat-label">Volumen</div><div class="stat-val">${v.toLocaleString()} kg</div></div>`;
+}
+
+function openHistory(){
+  const d=DAYS[curDay];
+  document.getElementById('histSub').textContent=d.title+' — alle uger';
+  let h='';let found=false;
+  for(let w=1;w<=8;w++){
+    const r=localStorage.getItem(sk(w,d.id));
+    if(!r) continue;
+    found=true;
+    const data=JSON.parse(r);
+    h+=`<div class="hist-entry"><div class="hist-date">Uge ${w}${isFin(w,d)?' ✓':''}</div>`;
+    d.exercises.forEach((ex,ei)=>{
+      const sets=data[ei];if(!sets) return;
+      const st=sets.map(s=>`${ex.bw?'BW':s.kg+'kg'}×${s.reps}`).join(' · ');
+      h+=`<div class="hist-row"><span class="hist-ex">${ex.name}</span><span class="hist-sets">${st}</span></div>`;
+    });
+    h+=`</div>`;
+  }
+  document.getElementById('histContent').innerHTML=found?h:`<div class="empty">Ingen data logget endnu</div>`;
+  document.getElementById('histModal').classList.add('open');
+}
+
+function openExport(){
+  let csv='Uge,Dag,Øvelse,Sæt,Kg,Reps\n';
+  let txt='';
+  DAYS.forEach(d=>{
+    for(let w=1;w<=8;w++){
+      const r=localStorage.getItem(sk(w,d.id));if(!r) continue;
+      const data=JSON.parse(r);
+      txt+=`\nUge ${w} — ${d.title}\n`;
+      d.exercises.forEach((ex,ei)=>{
+        const sets=data[ei];if(!sets) return;
+        sets.forEach((s,si)=>{csv+=`${w},${d.title},${ex.name},${si+1},${s.kg||0},${s.reps}\n`;});
+        txt+=`  ${ex.name}: `+sets.map(s=>`${ex.bw?'BW':s.kg+'kg'}×${s.reps}`).join(' · ')+'\n';
+      });
+    }
+  });
+  const hasData=csv.split('\n').length>2;
+  window._eTxt=txt.trim();window._eCSV=csv;
+  document.getElementById('exportContent').innerHTML=hasData
+    ?`<textarea class="note" rows="10" readonly style="font-size:12px;font-family:monospace;">${txt.trim()}</textarea>
+      <button class="export-btn" onclick="copyExport()">Kopiér til udklipsholder</button>
+      <button class="export-btn" onclick="dlCSV()" style="margin-top:6px;">Download som CSV</button>`
+    :`<div class="empty">Ingen data at eksportere endnu</div>`;
+  document.getElementById('exportModal').classList.add('open');
+}
+function copyExport(){navigator.clipboard.writeText(window._eTxt||'').then(()=>alert('Kopieret!'));}
+function dlCSV(){
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(window._eCSV||'');
+  a.download='traningslog.csv';a.click();
+}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+renderNav();
+renderContent();
+</script>
+</body>
+</html>
