@@ -14,7 +14,6 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 body{font-family:-apple-system,'SF Pro Text',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overscroll-behavior:none;}
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;}
-
 .nav{background:var(--card);border-bottom:1px solid var(--border);padding:12px 16px 0;position:sticky;top:0;z-index:20;}
 .nav-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
 .nav-title{font-size:17px;font-weight:700;}
@@ -28,7 +27,6 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .tab.fin{border-color:var(--green-b);color:var(--green-t);}
 .screen{display:none;padding:16px 16px 32px;}
 .screen.visible{display:block;}
-
 .stats-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
 .stat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:11px 13px;}
 .stat-l{font-size:11px;color:var(--muted);margin-bottom:3px;}
@@ -56,11 +54,19 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .note:focus{outline:2px solid var(--text);border-color:transparent;}
 .note::placeholder{color:var(--hint);}
 .hiit-box{background:var(--amber-bg);border-radius:10px;padding:10px 14px;margin-bottom:11px;font-size:13px;color:var(--amber-t);font-weight:500;}
-.fin-btn{width:100%;padding:14px;border-radius:13px;border:1.5px solid var(--border);background:var(--card);color:var(--text);font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;margin-top:4px;}
+
+/* DATE PICKER FINISH */
+.fin-area{margin-top:4px;}
+.fin-date-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;background:var(--card);border:1px solid var(--border);border-radius:13px;padding:12px 14px;}
+.fin-date-label{font-size:13px;color:var(--muted);flex-shrink:0;}
+.fin-date-input{flex:1;background:var(--input-bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:14px;font-weight:500;color:var(--text);font-family:inherit;}
+.fin-date-input:focus{outline:2px solid var(--text);border-color:transparent;}
+.fin-btn{width:100%;padding:14px;border-radius:13px;border:1.5px solid var(--border);background:var(--card);color:var(--text);font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;}
 .fin-btn:active{transform:scale(.98);}
 .fin-btn.on{background:var(--green-bg);border-color:var(--green-b);color:var(--green-t);}
+.fin-done-info{font-size:12px;color:var(--green-t);text-align:center;margin-top:6px;}
 
-/* BODY SCREEN */
+/* BODY */
 .section-title{font-size:19px;font-weight:700;margin-bottom:4px;}
 .section-sub{font-size:13px;color:var(--muted);margin-bottom:14px;}
 .body-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;}
@@ -71,16 +77,14 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .delta-neg{color:var(--green-t);}
 .delta-pos{color:var(--red-t);}
 .delta-neut{color:var(--hint);}
-
 .chart-card{background:var(--card);border:1px solid var(--border);border-radius:14px;margin-bottom:11px;overflow:hidden;}
-.chart-head{padding:11px 14px 4px;display:flex;align-items:center;justify-content:space-between;}
+.chart-head{padding:11px 14px 4px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;}
 .chart-title{font-size:14px;font-weight:600;}
 .chart-legend{display:flex;gap:10px;}
 .legend-item{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);}
 .legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
-.chart-wrap{padding:8px 14px 14px;overflow-x:auto;}
+.chart-wrap{padding:8px 14px 14px;}
 canvas{display:block;}
-
 .input-card{background:var(--card);border:1px solid var(--border);border-radius:14px;margin-bottom:11px;overflow:hidden;}
 .input-card-head{padding:11px 14px 9px;border-bottom:1px solid var(--border);font-size:14px;font-weight:600;}
 .input-card-body{padding:12px 14px;}
@@ -92,7 +96,6 @@ canvas{display:block;}
 .input-unit{font-size:13px;color:var(--muted);width:28px;text-align:right;flex-shrink:0;}
 .save-btn{width:100%;padding:13px;border-radius:12px;border:1.5px solid var(--border);background:var(--teal-bg);color:var(--teal-t);font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;margin-bottom:14px;}
 .save-btn:active{transform:scale(.98);}
-
 .hist-card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
 .hist-head{padding:11px 14px 9px;border-bottom:1px solid var(--border);font-size:14px;font-weight:600;}
 .hist-row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);font-size:13px;}
@@ -103,8 +106,7 @@ canvas{display:block;}
 .hv-num{font-size:14px;font-weight:600;}
 .hv-label{font-size:10px;color:var(--hint);}
 
-/* PROG SCREEN */
-.prog-section-title{font-size:16px;font-weight:700;margin:16px 0 10px;}
+/* PROG */
 .lift-card{background:var(--card);border:1px solid var(--border);border-radius:13px;margin-bottom:11px;overflow:hidden;}
 .lift-title{padding:10px 14px 8px;font-size:14px;font-weight:600;border-bottom:1px solid var(--border);}
 .lift-rows{padding:6px 14px 10px;}
@@ -172,11 +174,8 @@ const DAYS=[
 ];
 
 const KEY_LIFTS=[
-  {name:'Bænkpres',dayId:'d1',ei:0},
-  {name:'Squat',dayId:'d2',ei:0},
-  {name:'Deadlift',dayId:'d4',ei:0},
-  {name:'Shoulder press',dayId:'d1',ei:2},
-  {name:'Barbell row',dayId:'d1',ei:3}
+  {name:'Bænkpres',dayId:'d1',ei:0},{name:'Squat',dayId:'d2',ei:0},
+  {name:'Deadlift',dayId:'d4',ei:0},{name:'Shoulder press',dayId:'d1',ei:2},{name:'Barbell row',dayId:'d1',ei:3}
 ];
 
 let curDay=0,curWeek=1,curScreen='log';
@@ -188,6 +187,9 @@ function loadData(w,id){const r=localStorage.getItem(lsKey(w,id));return r?JSON.
 function saveData(w,id,data){localStorage.setItem(lsKey(w,id),JSON.stringify(data));}
 function loadBody(w){const r=localStorage.getItem(bodyKey(w));return r?JSON.parse(r):null;}
 function saveBody(w,data){localStorage.setItem(bodyKey(w),JSON.stringify(data));}
+
+function todayISO(){const d=new Date();return d.toISOString().split('T')[0];}
+function isoToDa(iso){if(!iso)return'';const[y,m,d]=iso.split('-');return`${d}/${m}/${y}`;}
 
 function defaultKg(ex,week){
   if(ex.bw)return'';
@@ -228,6 +230,7 @@ function renderLog(){
     <div class="day-name">${d.title}</div>
     <div class="day-sub">${d.label} · Uge ${curWeek}${curWeek===7?' — Deload':curWeek===8?' — PR-uge':''}</div>
   </div>`;
+
   d.ex.forEach((ex,ei)=>{
     const rl=ex.rl||'reps';
     h+=`<div class="ex-card"><div class="ex-head"><div class="ex-name">${ex.n}</div><div class="ex-target">${ex.t}</div></div>
@@ -242,8 +245,23 @@ function renderLog(){
     }
     h+=`<textarea class="note" rows="2" placeholder="Note..." onchange="setNote(${ei},this.value)">${data.notes[ei]||''}</textarea></div></div>`;
   });
+
   if(d.hiit)h+=`<div class="hiit-box">+ 12-3-30 / HIIT efter træning</div>`;
-  h+=`<button class="fin-btn${fin?' on':''}" onclick="toggleFin()">${fin?'Træning fuldført ✓':'Marker som færdig'}</button>`;
+
+  // Finish section with date picker
+  h+=`<div class="fin-area">`;
+  if(!fin){
+    h+=`<div class="fin-date-row">
+      <span class="fin-date-label">Træningsdato</span>
+      <input type="date" id="finDate" class="fin-date-input" value="${todayISO()}">
+    </div>
+    <button class="fin-btn" onclick="toggleFin()">Marker som færdig</button>`;
+  } else {
+    h+=`<button class="fin-btn on" onclick="toggleFin()">Træning fuldført ✓</button>
+    <div class="fin-done-info">Logget: ${isoToDa(data.date)}</div>`;
+  }
+  h+=`</div>`;
+
   document.getElementById('log-screen').innerHTML=h;
 }
 
@@ -257,7 +275,21 @@ function setVal(ei,si,field,val){
 }
 function setNote(ei,val){const d=DAYS[curDay];const data=initData(curWeek,curDay);data.notes[ei]=val;saveData(curWeek,d.id,data);}
 function toggleChk(key){const d=DAYS[curDay];const data=initData(curWeek,curDay);data.checks[key]=!data.checks[key];saveData(curWeek,d.id,data);renderLog();renderTabs();}
-function toggleFin(){const d=DAYS[curDay];const data=initData(curWeek,curDay);data.finished=!data.finished;if(data.finished)data.date=new Date().toLocaleDateString('da-DK');saveData(curWeek,d.id,data);renderLog();renderTabs();}
+
+function toggleFin(){
+  const d=DAYS[curDay];const data=initData(curWeek,curDay);
+  if(!data.finished){
+    const dateInput=document.getElementById('finDate');
+    const chosenDate=dateInput?dateInput.value:todayISO();
+    data.finished=true;
+    data.date=chosenDate;
+  } else {
+    data.finished=false;
+    data.date=null;
+  }
+  saveData(curWeek,d.id,data);renderLog();renderTabs();
+}
+
 function switchDay(i){curDay=i;renderLog();renderTabs();}
 function changeWeek(dir){const n=curWeek+dir;if(n<1||n>8)return;curWeek=n;renderTabs();renderLog();}
 
@@ -279,34 +311,18 @@ function drawBodyChart(entries){
   const isDark=window.matchMedia('(prefers-color-scheme:dark)').matches;
   const gridColor=isDark?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.06)';
   const textColor=isDark?'#7a7670':'#888580';
-  const labels=entries.map(e=>`U${e.week}`);
+  if(charts.body){charts.body.destroy();delete charts.body;}
+  const ctx=document.getElementById('bodyChart');if(!ctx)return;
   const weights=entries.map(e=>parseFloat(e.weight)||null);
   const fats=entries.map(e=>parseFloat(e.fat)||null);
   const muscles=entries.map(e=>parseFloat(e.muscle)||null);
   const hasMuscle=muscles.some(m=>m!==null);
-
-  if(charts.body){charts.body.destroy();delete charts.body;}
-  const ctx=document.getElementById('bodyChart');if(!ctx)return;
-
   const datasets=[
     {label:'Vægt (kg)',data:weights,borderColor:'#378add',backgroundColor:'rgba(55,138,221,0.08)',tension:.4,pointRadius:4,pointBackgroundColor:'#378add',yAxisID:'y'},
     {label:'Fedt %',data:fats,borderColor:'#d85a30',backgroundColor:'rgba(216,90,48,0.08)',tension:.4,pointRadius:4,pointBackgroundColor:'#d85a30',yAxisID:'y2'},
   ];
   if(hasMuscle)datasets.push({label:'Muskler (kg)',data:muscles,borderColor:'#1d9e75',backgroundColor:'rgba(29,158,117,0.08)',tension:.4,pointRadius:4,pointBackgroundColor:'#1d9e75',yAxisID:'y'});
-
-  charts.body=new Chart(ctx,{
-    type:'line',
-    data:{labels,datasets},
-    options:{
-      responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y}`}}},
-      scales:{
-        x:{grid:{color:gridColor},ticks:{color:textColor,font:{size:11}}},
-        y:{position:'left',grid:{color:gridColor},ticks:{color:textColor,font:{size:11}},title:{display:true,text:'kg',color:textColor,font:{size:10}}},
-        y2:{position:'right',grid:{drawOnChartArea:false},ticks:{color:textColor,font:{size:11}},title:{display:true,text:'%',color:textColor,font:{size:10}}}
-      }
-    }
-  });
+  charts.body=new Chart(ctx,{type:'line',data:{labels:entries.map(e=>`U${e.week}`),datasets},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false}},scales:{x:{grid:{color:gridColor},ticks:{color:textColor,font:{size:11}}},y:{position:'left',grid:{color:gridColor},ticks:{color:textColor,font:{size:11}},title:{display:true,text:'kg',color:textColor,font:{size:10}}},y2:{position:'right',grid:{drawOnChartArea:false},ticks:{color:textColor,font:{size:11}},title:{display:true,text:'%',color:textColor,font:{size:10}}}}}});
 }
 
 function renderBody(){
@@ -314,16 +330,11 @@ function renderBody(){
   const existing=loadBody(curWeek)||{weight:'',fat:'',muscle:''};
   const latest=entries.length?entries[entries.length-1]:null;
   const first=entries.length?entries[0]:null;
-
   const wDelta=latest&&first&&latest.week!==first.week?(parseFloat(latest.weight)-parseFloat(first.weight)).toFixed(1):null;
   const fDelta=latest&&first&&latest.week!==first.week?(parseFloat(latest.fat)-parseFloat(first.fat)).toFixed(1):null;
   const mDelta=latest&&first&&latest.week!==first.week&&latest.muscle&&first.muscle?(parseFloat(latest.muscle)-parseFloat(first.muscle)).toFixed(1):null;
-
   const showChart=entries.length>=2;
-
-  let h=`<div class="section-title">Kropsmåling</div>
-  <div class="section-sub">Log data fra PureGym bodytracker</div>`;
-
+  let h=`<div class="section-title">Kropsmåling</div><div class="section-sub">Log data fra PureGym bodytracker</div>`;
   if(entries.length>0){
     h+=`<div class="body-stats">
       <div class="bstat"><div class="bstat-l">Vægt</div><div class="bstat-v">${latest.weight||'—'} kg</div><div class="bstat-d">${deltaHtml(wDelta,true)}</div></div>
@@ -331,32 +342,19 @@ function renderBody(){
       <div class="bstat"><div class="bstat-l">Muskler</div><div class="bstat-v">${latest.muscle||'—'} kg</div><div class="bstat-d">${deltaHtml(mDelta,false)}</div></div>
     </div>`;
   }
-
   if(showChart){
-    const legendItems=[
-      {color:'#378add',label:'Vægt'},
-      {color:'#d85a30',label:'Fedt %'},
-      {color:'#1d9e75',label:'Muskler'},
-    ];
-    h+=`<div class="chart-card">
-      <div class="chart-head">
-        <span class="chart-title">Kropskomposition over tid</span>
-        <div class="chart-legend">${legendItems.map(l=>`<div class="legend-item"><div class="legend-dot" style="background:${l.color}"></div>${l.label}</div>`).join('')}</div>
-      </div>
-      <div class="chart-wrap"><canvas id="bodyChart" style="height:180px;width:100%;"></canvas></div>
-    </div>`;
+    h+=`<div class="chart-card"><div class="chart-head"><span class="chart-title">Kropskomposition</span><div class="chart-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#378add"></div>Vægt</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#d85a30"></div>Fedt %</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#1d9e75"></div>Muskler</div>
+    </div></div><div class="chart-wrap"><canvas id="bodyChart" style="height:180px;width:100%;"></canvas></div></div>`;
   }
-
-  h+=`<div class="input-card">
-    <div class="input-card-head">Uge ${curWeek} — indtast målinger</div>
-    <div class="input-card-body">
-      <div class="input-row"><span class="input-label">Vægt</span><input type="number" inputmode="decimal" id="bWeight" value="${existing.weight}" placeholder="93.0"><span class="input-unit">kg</span></div>
-      <div class="input-row"><span class="input-label">Fedtprocent</span><input type="number" inputmode="decimal" id="bFat" value="${existing.fat}" placeholder="23.0"><span class="input-unit">%</span></div>
-      <div class="input-row"><span class="input-label">Muskelmasse</span><input type="number" inputmode="decimal" id="bMuscle" value="${existing.muscle}" placeholder="0.0"><span class="input-unit">kg</span></div>
-    </div>
-  </div>
+  h+=`<div class="input-card"><div class="input-card-head">Uge ${curWeek} — indtast målinger</div><div class="input-card-body">
+    <div class="input-row"><span class="input-label">Vægt</span><input type="number" inputmode="decimal" id="bWeight" value="${existing.weight}" placeholder="93.0"><span class="input-unit">kg</span></div>
+    <div class="input-row"><span class="input-label">Fedtprocent</span><input type="number" inputmode="decimal" id="bFat" value="${existing.fat}" placeholder="23.0"><span class="input-unit">%</span></div>
+    <div class="input-row"><span class="input-label">Muskelmasse</span><input type="number" inputmode="decimal" id="bMuscle" value="${existing.muscle}" placeholder="0.0"><span class="input-unit">kg</span></div>
+  </div></div>
   <button class="save-btn" onclick="saveBodyEntry()">Gem måling for uge ${curWeek}</button>`;
-
   if(entries.length>0){
     h+=`<div class="hist-card"><div class="hist-head">Historik</div>`;
     [...entries].reverse().forEach((e,i,arr)=>{
@@ -364,18 +362,15 @@ function renderBody(){
       const wD=prev&&e.weight&&prev.weight?(parseFloat(e.weight)-parseFloat(prev.weight)).toFixed(1):null;
       const fD=prev&&e.fat&&prev.fat?(parseFloat(e.fat)-parseFloat(prev.fat)).toFixed(1):null;
       const mD=prev&&e.muscle&&prev.muscle?(parseFloat(e.muscle)-parseFloat(prev.muscle)).toFixed(1):null;
-      h+=`<div class="hist-row">
-        <span class="hist-week">Uge ${e.week}${e.date?' · '+e.date:''}</span>
+      h+=`<div class="hist-row"><span class="hist-week">Uge ${e.week}${e.date?' · '+e.date:''}</span>
         <div class="hist-vals">
           <div class="hist-val"><span class="hv-num">${e.weight||'—'} kg ${wD!==null?deltaHtml(wD,true):''}</span><span class="hv-label">Vægt</span></div>
           <div class="hist-val"><span class="hv-num">${e.fat||'—'}% ${fD!==null?deltaHtml(fD,true):''}</span><span class="hv-label">Fedt</span></div>
           <div class="hist-val"><span class="hv-num">${e.muscle||'—'} kg ${mD!==null?deltaHtml(mD,false):''}</span><span class="hv-label">Muskler</span></div>
-        </div>
-      </div>`;
+        </div></div>`;
     });
     h+=`</div>`;
   }
-
   document.getElementById('body-screen').innerHTML=h;
   if(showChart)setTimeout(()=>drawBodyChart(entries),50);
 }
@@ -391,41 +386,25 @@ function saveBodyEntry(){
 function getLiftEntries(lift){
   const entries=[];
   for(let w=1;w<=8;w++){
-    const data=loadData(w,lift.dayId);
-    if(!data||!data.finished)continue;
+    const data=loadData(w,lift.dayId);if(!data||!data.finished)continue;
     const sets=(data.sets[lift.ei]||[]);
     const maxKg=Math.max(...sets.map(s=>parseFloat(s.kg)||0));
     const vol=Math.round(sets.reduce((a,s)=>(parseFloat(s.kg)||0)*(parseFloat(s.r)||0)+a,0));
-    if(maxKg>0)entries.push({week:w,kg:maxKg,vol,date:data.date});
+    if(maxKg>0)entries.push({week:w,kg:maxKg,vol,date:data.date?isoToDa(data.date):''});
   }
   return entries;
 }
 
-function drawLiftChart(liftName,entries,canvasId){
+function drawLiftChart(entries,canvasId){
   const isDark=window.matchMedia('(prefers-color-scheme:dark)').matches;
   const gridColor=isDark?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.06)';
   const textColor=isDark?'#7a7670':'#888580';
   if(charts[canvasId]){charts[canvasId].destroy();delete charts[canvasId];}
   const ctx=document.getElementById(canvasId);if(!ctx)return;
-  charts[canvasId]=new Chart(ctx,{
-    type:'line',
-    data:{
-      labels:entries.map(e=>`U${e.week}`),
-      datasets:[
-        {label:'Kg',data:entries.map(e=>e.kg),borderColor:'#378add',backgroundColor:'rgba(55,138,221,0.1)',tension:.4,pointRadius:4,pointBackgroundColor:'#378add',fill:true,yAxisID:'y'},
-        {label:'Volumen',data:entries.map(e=>e.vol),borderColor:'#1d9e75',backgroundColor:'rgba(29,158,117,0.06)',tension:.4,pointRadius:3,pointBackgroundColor:'#1d9e75',borderDash:[4,3],yAxisID:'y2'},
-      ]
-    },
-    options:{
-      responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y}${ctx.datasetIndex===0?' kg':' vol'}`}}},
-      scales:{
-        x:{grid:{color:gridColor},ticks:{color:textColor,font:{size:11}}},
-        y:{position:'left',grid:{color:gridColor},ticks:{color:textColor,font:{size:11}},title:{display:true,text:'kg',color:textColor,font:{size:10}}},
-        y2:{position:'right',grid:{drawOnChartArea:false},ticks:{color:textColor,font:{size:11}},title:{display:true,text:'vol',color:textColor,font:{size:10}}}
-      }
-    }
-  });
+  charts[canvasId]=new Chart(ctx,{type:'line',data:{labels:entries.map(e=>`U${e.week}`),datasets:[
+    {label:'Kg',data:entries.map(e=>e.kg),borderColor:'#378add',backgroundColor:'rgba(55,138,221,0.1)',tension:.4,pointRadius:4,pointBackgroundColor:'#378add',fill:true,yAxisID:'y'},
+    {label:'Volumen',data:entries.map(e=>e.vol),borderColor:'#1d9e75',backgroundColor:'rgba(29,158,117,0.06)',tension:.4,pointRadius:3,pointBackgroundColor:'#1d9e75',borderDash:[4,3],yAxisID:'y2'},
+  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false}},scales:{x:{grid:{color:gridColor},ticks:{color:textColor,font:{size:11}}},y:{position:'left',grid:{color:gridColor},ticks:{color:textColor,font:{size:11}},title:{display:true,text:'kg',color:textColor,font:{size:10}}},y2:{position:'right',grid:{drawOnChartArea:false},ticks:{color:textColor,font:{size:11}},title:{display:true,text:'vol',color:textColor,font:{size:10}}}}}});
 }
 
 function renderProg(){
@@ -434,44 +413,34 @@ function renderProg(){
   KEY_LIFTS.forEach((lift,li)=>{
     const entries=getLiftEntries(lift);
     const maxKg=entries.length?Math.max(...entries.map(e=>e.kg)):0;
-    const canvasId=`liftChart_${li}`;
-    const showChart=entries.length>=2;
-    h+=`<div class="lift-card">
-      <div class="lift-title">${lift.name}${maxKg?` — max ${maxKg} kg`:''}</div>`;
-    if(showChart){
-      h+=`<div class="chart-wrap" style="padding:10px 14px;"><canvas id="${canvasId}" style="height:130px;width:100%;"></canvas></div>`;
-      chartIds.push({id:canvasId,lift,entries});
-    }
+    const canvasId=`liftChart_${li}`;const showChart=entries.length>=2;
+    h+=`<div class="lift-card"><div class="lift-title">${lift.name}${maxKg?` — max ${maxKg} kg`:''}</div>`;
+    if(showChart){h+=`<div class="chart-wrap" style="padding:10px 14px;"><canvas id="${canvasId}" style="height:130px;width:100%;"></canvas></div>`;chartIds.push({id:canvasId,entries});}
     h+=`<div class="lift-rows">`;
-    if(!entries.length){h+=`<div class="no-data">Ingen data endnu — fuldfør en træning med ${lift.name}</div>`;}
-    else{
-      entries.forEach((e,i)=>{
-        const isPR=e.kg===maxKg&&i===entries.map(x=>x.kg).lastIndexOf(maxKg);
-        h+=`<div class="lift-row"><span class="lift-date">Uge ${e.week}${e.date?' · '+e.date:''}</span>
-          <span><span class="lift-val">${e.kg} kg</span><span class="lift-vol">${e.vol} vol</span>${isPR&&entries.length>1?'<span class="pr-badge">PR</span>':''}</span></div>`;
-      });
-    }
+    if(!entries.length){h+=`<div class="no-data">Ingen data endnu</div>`;}
+    else{entries.forEach((e,i)=>{
+      const isPR=e.kg===maxKg&&i===entries.map(x=>x.kg).lastIndexOf(maxKg);
+      h+=`<div class="lift-row"><span class="lift-date">Uge ${e.week}${e.date?' · '+e.date:''}</span><span><span class="lift-val">${e.kg} kg</span><span class="lift-vol">${e.vol} vol</span>${isPR&&entries.length>1?'<span class="pr-badge">PR</span>':''}</span></div>`;
+    });}
     h+=`</div></div>`;
   });
   document.getElementById('prog-screen').innerHTML=h;
-  setTimeout(()=>chartIds.forEach(c=>drawLiftChart(c.lift.name,c.entries,c.id)),50);
+  setTimeout(()=>chartIds.forEach(c=>drawLiftChart(c.entries,c.id)),50);
 }
 
 function renderExport(){
-  let csv='Uge,Kategori,Øvelse,Sæt,Kg,Reps\n';
-  let hasData=false;
+  let csv='Uge,Dato,Kategori,Øvelse,Sæt,Kg,Reps\n';let hasData=false;
   for(let w=1;w<=8;w++){
     DAYS.forEach(d=>{
       const data=loadData(w,d.id);if(!data||!data.finished)return;
-      hasData=true;
-      d.ex.forEach((ex,ei)=>{(data.sets[ei]||[]).forEach((s,si)=>{csv+=`${w},${d.title},${ex.n},${si+1},${s.kg||'BW'},${s.r}\n`;});});
+      hasData=true;const dato=data.date?isoToDa(data.date):'';
+      d.ex.forEach((ex,ei)=>{(data.sets[ei]||[]).forEach((s,si)=>{csv+=`${w},${dato},${d.title},${ex.n},${si+1},${s.kg||'BW'},${s.r}\n`;});});
     });
     const b=loadBody(w);
-    if(b&&(b.weight||b.fat||b.muscle)){
-      hasData=true;
-      if(b.weight)csv+=`${w},Krop,Vægt,—,${b.weight},kg\n`;
-      if(b.fat)csv+=`${w},Krop,Fedtprocent,—,${b.fat},%\n`;
-      if(b.muscle)csv+=`${w},Krop,Muskelmasse,—,${b.muscle},kg\n`;
+    if(b&&(b.weight||b.fat||b.muscle)){hasData=true;
+      if(b.weight)csv+=`${w},,Krop,Vægt,—,${b.weight},kg\n`;
+      if(b.fat)csv+=`${w},,Krop,Fedtprocent,—,${b.fat},%\n`;
+      if(b.muscle)csv+=`${w},,Krop,Muskelmasse,—,${b.muscle},kg\n`;
     }
   }
   window._csv=csv;
