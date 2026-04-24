@@ -9,8 +9,8 @@
 <meta name="theme-color" content="#f7f6f3">
 <title>Træningslog</title>
 <style>
-:root{--bg:#f7f6f3;--card:#fff;--border:#e8e6e1;--text:#1a1917;--muted:#888580;--hint:#c0bcb6;--input-bg:#f2f0ec;--green-bg:#eaf3de;--green-t:#3b6d11;--green-b:#97c459;--blue-bg:#e6f1fb;--blue-t:#0c447c;--blue-mid:#378add;--amber-bg:#faeeda;--amber-t:#633806;--purple-bg:#eeedfe;--purple-t:#3c3489;--red-bg:#fcebeb;--red-t:#a32d2d;--teal-bg:#e1f5ee;--teal-t:#085041;--teal-mid:#1d9e75;}
-@media(prefers-color-scheme:dark){:root{--bg:#181715;--card:#222018;--border:#2e2c28;--text:#f0ede8;--muted:#7a7670;--hint:#4a4844;--input-bg:#2a2825;--green-bg:#162808;--green-t:#97c459;--green-b:#3b6d11;--blue-bg:#08182e;--blue-t:#85b7eb;--blue-mid:#378add;--amber-bg:#221505;--amber-t:#fac775;--purple-bg:#141230;--purple-t:#afa9ec;--red-bg:#200a0a;--red-t:#f09595;--teal-bg:#042e1e;--teal-t:#5dcaa5;--teal-mid:#1d9e75;}}
+:root{--bg:#f7f6f3;--card:#fff;--border:#e8e6e1;--text:#1a1917;--muted:#888580;--hint:#c0bcb6;--input-bg:#f2f0ec;--green-bg:#eaf3de;--green-t:#3b6d11;--green-b:#97c459;--blue-bg:#e6f1fb;--blue-t:#0c447c;--amber-bg:#faeeda;--amber-t:#633806;--purple-bg:#eeedfe;--purple-t:#3c3489;--red-bg:#fcebeb;--red-t:#a32d2d;--teal-bg:#e1f5ee;--teal-t:#085041;--teal-mid:#1d9e75;}
+@media(prefers-color-scheme:dark){:root{--bg:#181715;--card:#222018;--border:#2e2c28;--text:#f0ede8;--muted:#7a7670;--hint:#4a4844;--input-bg:#2a2825;--green-bg:#162808;--green-t:#97c459;--green-b:#3b6d11;--blue-bg:#08182e;--blue-t:#85b7eb;--amber-bg:#221505;--amber-t:#fac775;--purple-bg:#141230;--purple-t:#afa9ec;--red-bg:#200a0a;--red-t:#f09595;--teal-bg:#042e1e;--teal-t:#5dcaa5;--teal-mid:#1d9e75;}}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 body{font-family:-apple-system,'SF Pro Text',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overscroll-behavior:none;}
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;}
@@ -26,9 +26,10 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .sync-dot.error{background:var(--red-t);}
 .tabs{display:flex;gap:4px;overflow-x:auto;padding-bottom:11px;scrollbar-width:none;}
 .tabs::-webkit-scrollbar{display:none;}
-.tab{flex-shrink:0;font-size:13px;font-weight:500;padding:5px 13px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;}
+.tab{flex-shrink:0;font-size:13px;font-weight:500;padding:5px 13px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .15s;}
 .tab.active{background:var(--text);color:var(--bg);border-color:var(--text);}
 .tab.fin{border-color:var(--green-b);color:var(--green-t);}
+.tab.active.fin{background:var(--green-t);color:#fff;border-color:var(--green-t);}
 .screen{display:none;padding:16px 16px 32px;}
 .screen.visible{display:block;}
 .stats-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
@@ -67,6 +68,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .fin-btn:active{transform:scale(.98);}
 .fin-btn.on{background:var(--green-bg);border-color:var(--green-b);color:var(--green-t);}
 .fin-done-info{font-size:12px;color:var(--green-t);text-align:center;margin-top:6px;}
+.loading-screen{display:flex;align-items:center;justify-content:center;min-height:200px;color:var(--muted);font-size:14px;}
 .section-title{font-size:19px;font-weight:700;margin-bottom:4px;}
 .section-sub{font-size:13px;color:var(--muted);margin-bottom:14px;}
 .body-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;}
@@ -132,16 +134,16 @@ canvas{display:block;}
   <div class="nav-top">
     <span class="nav-title" id="navTitle">Træningslog</span>
     <div class="nav-right" id="navRight">
-      <div class="sync-dot" id="syncDot" title="Sync status"></div>
+      <div class="sync-dot syncing" id="syncDot" title="Sync status"></div>
       <button class="icon-btn" onclick="changeWeek(-1)">◀</button>
       <span class="icon-btn wk" id="weekLabel">Uge 1</span>
       <button class="icon-btn" onclick="changeWeek(1)">▶</button>
     </div>
   </div>
-  <div class="tabs" id="tabs"></div>
+  <div class="tabs" id="tabs"><div class="loading-screen" style="min-height:36px;padding-bottom:11px;">Henter data...</div></div>
 </div>
 
-<div class="screen visible" id="log-screen"></div>
+<div class="screen visible" id="log-screen"><div class="loading-screen">Henter træningsdata...</div></div>
 <div class="screen" id="body-screen"></div>
 <div class="screen" id="prog-screen"></div>
 <div class="screen" id="export-screen"></div>
@@ -180,63 +182,85 @@ let curDay=0,curWeek=1,curScreen='log';
 const charts={};
 const cache={workout:{},body:{}};
 
-function setSyncDot(state){
-  const dot=document.getElementById('syncDot');
-  if(dot){dot.className='sync-dot '+(state||'');}
+// --- Preload: fetch all workout data for current week on startup ---
+async function preloadWeek(week){
+  try{
+    setSyncDot('syncing');
+    const rows=await sbFetch('workout_log','GET',null,`week=eq.${week}&order=updated_at.desc`);
+    if(rows&&rows.length){
+      // Keep only latest per day_id
+      const seen={};
+      rows.forEach(r=>{
+        const ck=`${week}_${r.day_id}`;
+        if(!seen[ck]){seen[ck]=true;cache.workout[ck]=r.data;localStorage.setItem(`wlog_w${week}_${r.day_id}`,JSON.stringify(r.data));}
+      });
+    }
+    setSyncDot('synced');
+  }catch(e){setSyncDot('error');}
 }
 
+function setSyncDot(state){const dot=document.getElementById('syncDot');if(dot)dot.className='sync-dot '+(state||'');}
+
 async function sbFetch(table,method,body,match){
-  setSyncDot('syncing');
   const url=`${SUPABASE_URL}/rest/v1/${table}${match?'?'+match:''}`;
-  try{
-    const res=await fetch(url,{
-      method,
-      headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Prefer':method==='POST'?'resolution=merge-duplicates,return=minimal':'return=minimal'},
-      body:body?JSON.stringify(body):undefined
-    });
-    setSyncDot(res.ok?'synced':'error');
-    if(method==='GET'){const d=await res.json();return d;}
-    return res.ok;
-  }catch(e){setSyncDot('error');return null;}
+  const res=await fetch(url,{
+    method,
+    headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY,'Prefer':method==='POST'?'resolution=merge-duplicates,return=minimal':'return=minimal'},
+    body:body?JSON.stringify(body):undefined
+  });
+  if(method==='GET'){return await res.json();}
+  return res.ok;
 }
 
 async function saveWorkout(week,dayId,data){
   cache.workout[`${week}_${dayId}`]=data;
   localStorage.setItem(`wlog_w${week}_${dayId}`,JSON.stringify(data));
-  await sbFetch('workout_log','POST',{week,day_id:dayId,data});
+  setSyncDot('syncing');
+  try{await sbFetch('workout_log','POST',{week,day_id:dayId,data});setSyncDot('synced');}
+  catch(e){setSyncDot('error');}
 }
 
-async function loadWorkout(week,dayId){
+function getWorkoutFromCache(week,dayId){
   const ck=`${week}_${dayId}`;
   if(cache.workout[ck])return cache.workout[ck];
   const ls=localStorage.getItem(`wlog_w${week}_${dayId}`);
   if(ls){cache.workout[ck]=JSON.parse(ls);return cache.workout[ck];}
-  const rows=await sbFetch('workout_log','GET',null,`week=eq.${week}&day_id=eq.${dayId}&order=updated_at.desc&limit=1`);
-  if(rows&&rows.length){cache.workout[ck]=rows[0].data;localStorage.setItem(`wlog_w${week}_${dayId}`,JSON.stringify(rows[0].data));return rows[0].data;}
+  return null;
+}
+
+async function loadWorkout(week,dayId){
+  const cached=getWorkoutFromCache(week,dayId);
+  if(cached)return cached;
+  try{
+    const rows=await sbFetch('workout_log','GET',null,`week=eq.${week}&day_id=eq.${dayId}&order=updated_at.desc&limit=1`);
+    if(rows&&rows.length){cache.workout[`${week}_${dayId}`]=rows[0].data;localStorage.setItem(`wlog_w${week}_${dayId}`,JSON.stringify(rows[0].data));return rows[0].data;}
+  }catch(e){}
   return null;
 }
 
 async function saveBodyData(week,data){
-  cache.body[week]=data;
-  localStorage.setItem(`wlog_body_w${week}`,JSON.stringify(data));
-  await sbFetch('body_log','POST',{week,weight:data.weight?parseFloat(data.weight):null,fat:data.fat?parseFloat(data.fat):null,muscle:data.muscle?parseFloat(data.muscle):null,date:data.date});
+  cache.body[week]=data;localStorage.setItem(`wlog_body_w${week}`,JSON.stringify(data));
+  setSyncDot('syncing');
+  try{await sbFetch('body_log','POST',{week,weight:data.weight?parseFloat(data.weight):null,fat:data.fat?parseFloat(data.fat):null,muscle:data.muscle?parseFloat(data.muscle):null,date:data.date});setSyncDot('synced');}
+  catch(e){setSyncDot('error');}
 }
 
 async function loadBodyData(week){
   if(cache.body[week])return cache.body[week];
   const ls=localStorage.getItem(`wlog_body_w${week}`);
   if(ls){cache.body[week]=JSON.parse(ls);return cache.body[week];}
-  const rows=await sbFetch('body_log','GET',null,`week=eq.${week}&limit=1`);
-  if(rows&&rows.length){const d={weight:rows[0].weight,fat:rows[0].fat,muscle:rows[0].muscle,date:rows[0].date};cache.body[week]=d;localStorage.setItem(`wlog_body_w${week}`,JSON.stringify(d));return d;}
+  try{
+    const rows=await sbFetch('body_log','GET',null,`week=eq.${week}&limit=1`);
+    if(rows&&rows.length){const d={weight:rows[0].weight,fat:rows[0].fat,muscle:rows[0].muscle,date:rows[0].date};cache.body[week]=d;localStorage.setItem(`wlog_body_w${week}`,JSON.stringify(d));return d;}
+  }catch(e){}
   return null;
 }
 
 async function loadAllBodyData(){
-  const rows=await sbFetch('body_log','GET',null,'order=week.asc');
-  if(rows&&rows.length){
-    rows.forEach(r=>{const d={weight:r.weight,fat:r.fat,muscle:r.muscle,date:r.date};cache.body[r.week]=d;localStorage.setItem(`wlog_body_w${r.week}`,JSON.stringify(d));});
-    return rows.map(r=>({week:r.week,weight:r.weight,fat:r.fat,muscle:r.muscle,date:r.date}));
-  }
+  try{
+    const rows=await sbFetch('body_log','GET',null,'order=week.asc');
+    if(rows&&rows.length){rows.forEach(r=>{const d={weight:r.weight,fat:r.fat,muscle:r.muscle,date:r.date};cache.body[r.week]=d;localStorage.setItem(`wlog_body_w${r.week}`,JSON.stringify(d));});return rows.map(r=>({week:r.week,weight:r.weight,fat:r.fat,muscle:r.muscle,date:r.date}));}
+  }catch(e){}
   const entries=[];
   for(let w=1;w<=8;w++){const ls=localStorage.getItem(`wlog_body_w${w}`);if(ls){const d=JSON.parse(ls);if(d.weight||d.fat||d.muscle)entries.push({week:w,...d});}}
   return entries;
@@ -248,28 +272,24 @@ function isoToDa(iso){if(!iso)return'';const[y,m,d]=iso.split('-');return`${d}/$
 function defaultKg(ex,week){
   if(ex.bw)return'';
   if(week===7)return parseFloat((ex.kg*0.85).toFixed(1));
-  if(week<=2)return ex.kg;
-  if(week<=4)return ex.kg+2.5;
-  if(week<=6)return ex.kg+5;
+  if(week<=2)return ex.kg;if(week<=4)return ex.kg+2.5;if(week<=6)return ex.kg+5;
   return ex.kg+5;
 }
-
 function makeInitData(di,week){
-  const d=DAYS[di];
-  const data={sets:{},checks:{},notes:{},finished:false,date:null};
+  const d=DAYS[di];const data={sets:{},checks:{},notes:{},finished:false,date:null};
   d.ex.forEach((e,ei)=>{data.sets[ei]=Array.from({length:e.s},()=>({kg:defaultKg(e,week),r:e.r}));data.notes[ei]='';});
   return data;
 }
-
 function calcVol(data,d){let v=0;d.ex.forEach((e,ei)=>{(data.sets[ei]||[]).forEach(s=>{v+=(parseFloat(s.kg)||0)*(parseFloat(s.r)||0);});});return Math.round(v);}
 function doneCount(data){return Object.values(data.checks).filter(Boolean).length;}
 function totalSets(d){return d.ex.reduce((a,e)=>a+e.s,0);}
 
 function renderTabs(){
   document.getElementById('tabs').innerHTML=DAYS.map((day,i)=>{
-    const cacheKey=`${curWeek}_${day.id}`;
-    const data=cache.workout[cacheKey];const fin=data&&data.finished;
-    let cls='tab'+(i===curDay?' active':'')+(fin&&i!==curDay?' fin':'');
+    const data=getWorkoutFromCache(curWeek,day.id);
+    const fin=data&&data.finished;
+    const isActive=i===curDay;
+    let cls='tab'+(isActive?' active':'')+(fin?' fin':'');
     return`<button class="${cls}" onclick="switchDay(${i})">${day.short}</button>`;
   }).join('');
   document.getElementById('weekLabel').textContent=`Uge ${curWeek}`;
@@ -308,39 +328,44 @@ async function renderLog(){
   if(!fin){
     h+=`<div class="fin-date-row"><span class="fin-date-label">Træningsdato</span><input type="date" id="finDate" class="fin-date-input" value="${todayISO()}"></div>
     <button class="fin-btn" onclick="toggleFin()">Marker som færdig</button>`;
-  } else {
+  }else{
     h+=`<button class="fin-btn on" onclick="toggleFin()">Træning fuldført ✓</button>
     <div class="fin-done-info">Logget: ${isoToDa(data.date)}</div>`;
   }
   h+=`</div>`;
   document.getElementById('log-screen').innerHTML=h;
+  // Update tabs after data is loaded to reflect correct fin state
+  renderTabs();
 }
 
-async function getOrInitData(){
-  const d=DAYS[curDay];
-  let data=await loadWorkout(curWeek,d.id);
-  if(!data)data=makeInitData(curDay,curWeek);
-  return data;
-}
+async function getOrInit(){const d=DAYS[curDay];let data=await loadWorkout(curWeek,d.id);if(!data)data=makeInitData(curDay,curWeek);return data;}
 
 async function setVal(ei,si,field,val){
-  const d=DAYS[curDay];const data=await getOrInitData();
+  const d=DAYS[curDay];const data=await getOrInit();
   if(data.sets[ei]&&data.sets[ei][si])data.sets[ei][si][field]=val;
   await saveWorkout(curWeek,d.id,data);
   const v=calcVol(data,d);const done=doneCount(data);const total=totalSets(d);
   const sr=document.querySelector('.stats-row');
   if(sr)sr.innerHTML=`<div class="stat"><div class="stat-l">Sæt klaret</div><div class="stat-v">${done}/${total}</div></div><div class="stat"><div class="stat-l">Volumen</div><div class="stat-v">${v.toLocaleString()} kg</div></div>`;
 }
-async function setNote(ei,val){const d=DAYS[curDay];const data=await getOrInitData();data.notes[ei]=val;await saveWorkout(curWeek,d.id,data);}
-async function toggleChk(key){const d=DAYS[curDay];const data=await getOrInitData();data.checks[key]=!data.checks[key];await saveWorkout(curWeek,d.id,data);renderLog();renderTabs();}
+async function setNote(ei,val){const d=DAYS[curDay];const data=await getOrInit();data.notes[ei]=val;await saveWorkout(curWeek,d.id,data);}
+async function toggleChk(key){const d=DAYS[curDay];const data=await getOrInit();data.checks[key]=!data.checks[key];await saveWorkout(curWeek,d.id,data);await renderLog();}
 async function toggleFin(){
-  const d=DAYS[curDay];const data=await getOrInitData();
+  const d=DAYS[curDay];const data=await getOrInit();
   if(!data.finished){const di=document.getElementById('finDate');data.finished=true;data.date=di?di.value:todayISO();}
   else{data.finished=false;data.date=null;}
-  await saveWorkout(curWeek,d.id,data);renderLog();renderTabs();
+  await saveWorkout(curWeek,d.id,data);await renderLog();
 }
-async function switchDay(i){curDay=i;await renderLog();renderTabs();}
-async function changeWeek(dir){const n=curWeek+dir;if(n<1||n>8)return;curWeek=n;renderTabs();await renderLog();}
+async function switchDay(i){curDay=i;await renderLog();}
+async function changeWeek(dir){
+  const n=curWeek+dir;if(n<1||n>8)return;
+  curWeek=n;
+  renderTabs();
+  document.getElementById('log-screen').innerHTML='<div class="loading-screen">Henter data...</div>';
+  await preloadWeek(curWeek);
+  renderTabs();
+  await renderLog();
+}
 
 function deltaHtml(val,invertGood){
   if(val===null||val===undefined)return'';
@@ -371,8 +396,7 @@ function drawBodyChart(entries){
 async function renderBody(){
   const entries=await loadAllBodyData();
   const existing=await loadBodyData(curWeek)||{weight:'',fat:'',muscle:''};
-  const latest=entries.length?entries[entries.length-1]:null;
-  const first=entries.length?entries[0]:null;
+  const latest=entries.length?entries[entries.length-1]:null;const first=entries.length?entries[0]:null;
   const wDelta=latest&&first&&latest.week!==first.week?(parseFloat(latest.weight)-parseFloat(first.weight)).toFixed(1):null;
   const fDelta=latest&&first&&latest.week!==first.week?(parseFloat(latest.fat)-parseFloat(first.fat)).toFixed(1):null;
   const mDelta=latest&&first&&latest.week!==first.week&&latest.muscle&&first.muscle?(parseFloat(latest.muscle)-parseFloat(first.muscle)).toFixed(1):null;
@@ -411,17 +435,14 @@ async function renderBody(){
           <div class="hist-val"><span class="hv-num">${e.fat||'—'}% ${fD!==null?deltaHtml(fD,true):''}</span><span class="hv-label">Fedt</span></div>
           <div class="hist-val"><span class="hv-num">${e.muscle||'—'} kg ${mD!==null?deltaHtml(mD,false):''}</span><span class="hv-label">Muskler</span></div>
         </div></div>`;
-    });
-    h+=`</div>`;
+    });h+=`</div>`;
   }
   document.getElementById('body-screen').innerHTML=h;
   if(showChart)setTimeout(()=>drawBodyChart(entries),50);
 }
 
 async function saveBodyEntry(){
-  const w=document.getElementById('bWeight').value;
-  const f=document.getElementById('bFat').value;
-  const m=document.getElementById('bMuscle').value;
+  const w=document.getElementById('bWeight').value;const f=document.getElementById('bFat').value;const m=document.getElementById('bMuscle').value;
   await saveBodyData(curWeek,{weight:w,fat:f,muscle:m,date:new Date().toLocaleDateString('da-DK')});
   renderBody();
 }
@@ -432,8 +453,7 @@ async function renderProg(){
   for(const[li,lift] of KEY_LIFTS.entries()){
     const entries=[];
     for(let w=1;w<=8;w++){
-      const data=await loadWorkout(w,lift.dayId);
-      if(!data||!data.finished)continue;
+      const data=await loadWorkout(w,lift.dayId);if(!data||!data.finished)continue;
       const sets=(data.sets[lift.ei]||[]);
       const maxKg=Math.max(...sets.map(s=>parseFloat(s.kg)||0));
       const vol=Math.round(sets.reduce((a,s)=>(parseFloat(s.kg)||0)*(parseFloat(s.r)||0)+a,0));
@@ -454,8 +474,7 @@ async function renderProg(){
   document.getElementById('prog-screen').innerHTML=h;
   function drawLiftChart(entries,canvasId){
     const isDark=window.matchMedia('(prefers-color-scheme:dark)').matches;
-    const gridColor=isDark?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.06)';
-    const textColor=isDark?'#7a7670':'#888580';
+    const gridColor=isDark?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.06)';const textColor=isDark?'#7a7670':'#888580';
     if(charts[canvasId]){charts[canvasId].destroy();delete charts[canvasId];}
     const ctx=document.getElementById(canvasId);if(!ctx)return;
     charts[canvasId]=new Chart(ctx,{type:'line',data:{labels:entries.map(e=>`U${e.week}`),datasets:[
@@ -487,7 +506,7 @@ async function renderExport(){
     <div class="section-sub" style="margin-bottom:14px;">Data gemmes i Supabase cloud. Kopiér og send til Claude for analyse.</div>
     <div class="export-box">${hasData?csv:'Ingen data endnu.'}</div>
     ${hasData?`<button class="copy-btn" onclick="copyCSV()">Kopiér til udklipsholder</button>`:''}
-    <button class="clear-btn" onclick="clearAll()">Slet al lokal data</button>`;
+    <button class="clear-btn" onclick="clearAll()">Slet lokal cache</button>`;
 }
 
 function copyCSV(){
@@ -501,7 +520,7 @@ function clearAll(){
   for(let w=1;w<=8;w++){DAYS.forEach(d=>localStorage.removeItem(`wlog_w${w}_${d.id}`));localStorage.removeItem(`wlog_body_w${w}`);}
   Object.keys(cache.workout).forEach(k=>delete cache.workout[k]);
   Object.keys(cache.body).forEach(k=>delete cache.body[k]);
-  renderLog();renderTabs();
+  init();
 }
 
 async function showScreen(name){
@@ -518,7 +537,14 @@ async function showScreen(name){
   if(name==='export')await renderExport();
 }
 
-renderTabs();renderLog();
+async function init(){
+  // Preload all data for current week from Supabase before rendering anything
+  await preloadWeek(curWeek);
+  renderTabs();
+  await renderLog();
+}
+
+init();
 </script>
 </body>
 </html>
