@@ -595,15 +595,21 @@ async function loadKostRemoteRange(days){
     const dates=[];
     for(let i=0;i<days;i++){const d=new Date();d.setDate(d.getDate()-i);dates.push(d.toISOString().split('T')[0]);}
     const rows=await sb('kost_log','GET',null,'date=in.('+dates.join(',')+')'+'&order=date.desc');
-    if(rows&&rows.length){
-      rows.forEach(r=>{
-        // Only cache if there's actual data
-        if(r.kcal||r.prot||r.kh||r.fat||r.burned){
-          const d={kcal:r.kcal,prot:r.prot,kh:r.kh,fat:r.fat,burned:r.burned};
-          localStorage.setItem(kostKey(r.date),JSON.stringify(d));
-        }
-      });
-    }
+    // Build set of dates that exist in Supabase with real data
+    const remoteSet=new Set();
+    (rows||[]).forEach(r=>{
+      if(r.kcal||r.prot||r.kh||r.fat||r.burned){
+        remoteSet.add(r.date);
+        const d={kcal:r.kcal,prot:r.prot,kh:r.kh,fat:r.fat,burned:r.burned};
+        localStorage.setItem(kostKey(r.date),JSON.stringify(d));
+      }
+    });
+    // Clear any local dates NOT in Supabase (e.g. deleted on another device)
+    dates.forEach(date=>{
+      if(!remoteSet.has(date)){
+        localStorage.removeItem(kostKey(date));
+      }
+    });
   }catch(e){}
 }
 
