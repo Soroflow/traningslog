@@ -553,7 +553,7 @@ async function showScreen(name){
   if(name==='body')await renderBody();
   if(name==='prog')await renderProg();
   if(name==='export')await renderExport();
-  if(name==='kost')renderKost();
+  if(name==='kost'){await loadKostRemoteRange(7);renderKost();}
 }
 
 // ── AUTO SELECT DAY BASED ON WEEKDAY ─────────────────────────
@@ -572,6 +572,149 @@ function autoSelectDay(){
 }
 
 // ── STARTUP ───────────────────────────────────────────────────
+
+// ── KOST ──────────────────────────────────────────────────────
+const TARGET_KCAL=2520,TARGET_PROT=180,TARGET_KH=260,TARGET_FAT=84;
+const BODY_WEIGHT=93;
+let curKostDate=todayISO();
+
+function kostKey(date){return'kost_'+date;}
+function loadKost(date){const r=localStorage.getItem(kostKey(date));return r?JSON.parse(r):{kcal:'',prot:'',kh:'',fat:'',burned:''};} 
+function saveKostLocal(date,data){localStorage.setItem(kostKey(date),JSON.stringify(data));}
+
+async function saveKostRemote(date,data){
+  setSync('');
+  try{
+    await sb('kost_log','POST',{date,kcal:data.kcal?+data.kcal:null,prot:data.prot?+data.prot:null,kh:data.kh?+data.kh:null,fat:data.fat?+data.fat:null,burned:data.burned?+data.burned:null});
+    setSync('ok');
+  }catch(e){setSync('err');}
+}
+
+async function loadKostRemoteRange(days){
+  try{
+    const dates=[];
+    for(let i=0;i<days;i++){const d=new Date();d.setDate(d.getDate()-i);dates.push(d.toISOString().split('T')[0]);}
+    const rows=await sb('kost_log','GET',null,'date=in.('+dates.join(',')+')'+'&order=date.desc');
+    if(rows&&rows.length){
+      rows.forEach(r=>{
+        const d={kcal:r.kcal,prot:r.prot,kh:r.kh,fat:r.fat,burned:r.burned};
+        localStorage.setItem(kostKey(r.date),JSON.stringify(d));
+      });
+    }
+  }catch(e){}
+}
+
+function kostDayLabel(iso){
+  const days=['Son','Man','Tir','Ons','Tor','Fre','Lor'];
+  const d=new Date(iso);return days[d.getDay()]+' '+iso.split('-').slice(1).join('/');}
+
+function ring(pct,color,val,unit,label,sub){
+  const r=34,circ=2*Math.PI*r,dash=Math.min(pct,1)*circ;
+  return '<div class="kost-ring-card">'+
+    '<div class="ring-wrap">'+
+    '<svg width="80" height="80" viewBox="0 0 80 80">'+
+    '<circle cx="40" cy="40" r="'+r+'" fill="none" stroke="var(--border)" stroke-width="7"/>'+
+    '<circle cx="40" cy="40" r="'+r+'" fill="none" stroke="'+color+'" stroke-width="7"'+
+    ' stroke-dasharray="'+dash+' '+circ+'" stroke-linecap="round"/>'+
+    '</svg>'+
+    '<div class="ring-center"><span class="ring-val">'+val+'</span><span class="ring-unit">'+unit+'</span></div>'+
+    '</div>'+
+    '<span class="ring-label">'+label+'</span>'+
+    '<span class="ring-sub">'+sub+'</span>'+
+    '</div>';}
+
+function renderKost(){
+  const data=loadKost(curKostDate);
+  const kcal=+data.kcal||0,prot=+data.prot||0,kh=+data.kh||0,fat=+data.fat||0,burned=+data.burned||0;
+  const net=kcal-burned;
+  const balance=net-TARGET_KCAL;
+  const protTarget=Math.round(BODY_WEIGHT*2);
+  const isDeficit=balance<0,isSurplus=balance>0;
+  const balClass=isDeficit?'deficit':isSurplus?'surplus':'neutral';
+  const balSign=balance>0?'+':'';
+  const balText=isDeficit?'Kalorieunderskud ✓':isSurplus?'Kalorieoverskud':'Balanceret';
+
+  const weekRows=[];
+  for(let i=6;i>=0;i--){
+    const d=new Date();d.setDate(d.getDate()-i);
+    const iso=d.toISOString().split('T')[0];
+    const wd=loadKost(iso);
+    if(!wd.kcal)continue;
+    const wnet=(+wd.kcal||0)-(+wd.burned||0);
+    const wbal=wnet-TARGET_KCAL;
+    const wbalClass=wbal<0?'def':'sur';
+    const wbalSign=wbal>0?'+':'';
+    weekRows.push('<div class="week-kost-row">'+
+      '<span class="wkr-day">'+kostDayLabel(iso).split(' ')[0]+'</span>'+
+      '<div class="wkr-vals">'+
+      '<span class="wkr-kcal">'+( +wd.kcal||0)+' kcal</span>'+
+      '<span class="wkr-bal '+wbalClass+'">'+wbalSign+wbal+' kcal</span>'+
+      '<span class="wkr-prot">'+( +wd.prot||0)+'g prot</span>'+
+      '</div></div>');
+  }
+
+  let h='<div class="section-title">Kostlog</div>'+
+    '<div class="section-sub">Mal: '+TARGET_KCAL+' kcal · '+TARGET_PROT+'g protein</div>'+
+    '<div class="kost-date-nav">'+
+    '<button class="icon-btn" onclick="kostChangeDay(-1)">◄</button>'+
+    '<span class="kost-date-label">'+kostDayLabel(curKostDate)+'</span>'+
+    '<button class="icon-btn" onclick="kostChangeDay(1)">►</button>'+
+    '</div>';
+
+  if(kcal>0){
+    h+='<div class="balance-card '+balClass+'">'+
+      '<div><div class="balance-label '+balClass+'">'+balText+'</div>'+
+      '<div style="font-size:12px;color:var(--muted);margin-top:2px;">Indtag: '+kcal+' · Forbraendt: '+burned+' · Netto: '+net+'</div></div>'+
+      '<div class="balance-val '+balClass+'">'+balSign+balance+'</div>'+
+      '</div>';
+    h+='<div class="kost-rings">'+
+      ring(kcal/TARGET_KCAL,'#378add',kcal,'kcal','Kalorier','mal '+TARGET_KCAL)+
+      ring(prot/protTarget,'#1d9e75',prot,'g','Protein','mal '+protTarget+'g')+
+      ring(kh/TARGET_KH,'#f0a830',kh,'g','Kulhydrat','mal '+TARGET_KH+'g')+
+      ring(fat/TARGET_FAT,'#d85a30',fat,'g','Fedt','mal '+TARGET_FAT+'g')+
+      '</div>';
+  }
+
+  h+='<div class="kost-input-card">'+
+    '<div class="kost-input-head">Indtast for '+kostDayLabel(curKostDate)+'</div>'+
+    '<div class="kost-grid">'+
+    '<div class="kost-field"><div class="kost-field-label">Kalorier (kcal)</div><input type="number" inputmode="numeric" id="kKcal" value="'+(data.kcal||'')+'" placeholder="0"></div>'+
+    '<div class="kost-field"><div class="kost-field-label">Protein (g)</div><input type="number" inputmode="numeric" id="kProt" value="'+(data.prot||'')+'" placeholder="0"></div>'+
+    '<div class="kost-field"><div class="kost-field-label">Kulhydrat (g)</div><input type="number" inputmode="numeric" id="kKh" value="'+(data.kh||'')+'" placeholder="0"></div>'+
+    '<div class="kost-field"><div class="kost-field-label">Fedt (g)</div><input type="number" inputmode="numeric" id="kFat" value="'+(data.fat||'')+'" placeholder="0"></div>'+
+    '<div class="kost-field" style="grid-column:1/-1;border-bottom:none;">'+
+    '<div class="kost-field-label">Forbrændt (kcal fra traening/cardio)</div>'+
+    '<input type="number" inputmode="numeric" id="kBurned" value="'+(data.burned||'')+'" placeholder="0"></div>'+
+    '</div></div>'+
+    '<button class="kost-save-btn" onclick="saveKostEntry()">Gem</button>';
+
+  if(weekRows.length>0){
+    h+='<div class="week-kost-card"><div class="week-kost-head">Sidste 7 dage</div>'+weekRows.join('')+'</div>';
+  }
+
+  document.getElementById('kost-screen').innerHTML=h;
+}
+
+function kostChangeDay(dir){
+  const d=new Date(curKostDate);d.setDate(d.getDate()+dir);
+  const newDate=d.toISOString().split('T')[0];
+  if(newDate>todayISO())return;
+  curKostDate=newDate;renderKost();
+}
+
+async function saveKostEntry(){
+  const data={
+    kcal:document.getElementById('kKcal').value,
+    prot:document.getElementById('kProt').value,
+    kh:document.getElementById('kKh').value,
+    fat:document.getElementById('kFat').value,
+    burned:document.getElementById('kBurned').value
+  };
+  saveKostLocal(curKostDate,data);
+  await saveKostRemote(curKostDate,data);
+  renderKost();
+}
+
 async function autoSelectWeek(){
   for(let w=1;w<=8;w++){
     await preloadWeek(w);
