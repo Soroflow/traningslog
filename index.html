@@ -808,7 +808,11 @@ async function autoSelectWeek(){
 async function init(){
   autoSelectDay();
   document.getElementById('log-screen').innerHTML='<div class="loading"><div class="spinner"></div>Henter data...</div>';
-  await autoSelectWeek();
+  // Load all data in parallel - workout week + last 7 days kost
+  await Promise.all([
+    autoSelectWeek(),
+    loadKostRemoteRange(7)
+  ]);
   renderTabs();
   renderLog();
 }
