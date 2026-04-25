@@ -605,7 +605,7 @@ async function loadKostRemoteRange(days){
 }
 
 function kostDayLabel(iso){
-  const days=['Son','Man','Tir','Ons','Tor','Fre','Lor'];
+  const days=['S\u00f8n','Man','Tir','Ons','Tor','Fre','L\u00f8r'];
   const d=new Date(iso);return days[d.getDay()]+' '+iso.split('-').slice(1).join('/');}
 
 function ring(pct,color,val,unit,label,sub){
@@ -720,7 +720,10 @@ function renderKost(){
 function kostChangeDay(dir){
   const d=new Date(curKostDate);d.setDate(d.getDate()+dir);
   const newDate=d.toISOString().split('T')[0];
-  if(newDate>todayISO())return;
+  // Allow up to tomorrow (so Sunday is accessible on Saturday)
+  const tomorrow=new Date();tomorrow.setDate(tomorrow.getDate()+1);
+  const tomorrowISO=tomorrow.toISOString().split('T')[0];
+  if(newDate>tomorrowISO)return;
   curKostDate=newDate;renderKost();
 }
 
