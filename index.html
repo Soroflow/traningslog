@@ -121,6 +121,54 @@ canvas{display:block;}
 .copy-btn{width:100%;padding:13px;border-radius:12px;border:1.5px solid var(--border);background:var(--blue-bg);color:var(--blue-t);font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;margin-bottom:8px;}
 .copy-btn:active{transform:scale(.98);}
 .clear-btn{width:100%;padding:13px;border-radius:12px;border:1.5px solid var(--border);background:var(--red-bg);color:var(--red-t);font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;}
+
+/* ── KOST ─────────────────────────────────────────────────── */
+.kost-date-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.kost-date-label{font-size:16px;font-weight:700;}
+.kost-rings{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.kost-ring-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:6px;}
+.ring-wrap{position:relative;width:80px;height:80px;}
+.ring-wrap svg{transform:rotate(-90deg);}
+.ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.ring-val{font-size:15px;font-weight:700;line-height:1;}
+.ring-unit{font-size:9px;color:var(--muted);}
+.ring-label{font-size:12px;font-weight:600;color:var(--text);}
+.ring-sub{font-size:11px;color:var(--muted);}
+.balance-card{border-radius:14px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;}
+.balance-card.deficit{background:var(--green-bg);border:1px solid var(--green-b);}
+.balance-card.surplus{background:var(--red-bg);border:1px solid var(--red-t);}
+.balance-card.neutral{background:var(--input-bg);border:1px solid var(--border);}
+.balance-label{font-size:13px;font-weight:500;}
+.balance-label.deficit{color:var(--green-t);}
+.balance-label.surplus{color:var(--red-t);}
+.balance-label.neutral{color:var(--muted);}
+.balance-val{font-size:22px;font-weight:700;}
+.balance-val.deficit{color:var(--green-t);}
+.balance-val.surplus{color:var(--red-t);}
+.balance-val.neutral{color:var(--muted);}
+.kost-input-card{background:var(--card);border:1px solid var(--border);border-radius:14px;margin-bottom:11px;overflow:hidden;}
+.kost-input-head{padding:11px 14px 9px;border-bottom:1px solid var(--border);font-size:14px;font-weight:600;}
+.kost-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;}
+.kost-field{padding:10px 14px;border-bottom:1px solid var(--border);}
+.kost-field:nth-child(odd){border-right:1px solid var(--border);}
+.kost-field:nth-last-child(-n+2){border-bottom:none;}
+.kost-field-label{font-size:11px;color:var(--muted);margin-bottom:4px;}
+.kost-field input{width:100%;background:var(--input-bg);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:15px;font-weight:500;color:var(--text);font-family:inherit;-webkit-appearance:none;}
+.kost-field input:focus{outline:2px solid var(--text);border-color:transparent;}
+.kost-save-btn{width:100%;padding:13px;border-radius:12px;border:1.5px solid var(--border);background:var(--teal-bg);color:var(--teal-t);font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;margin-bottom:14px;}
+.kost-save-btn:active{transform:scale(.98);}
+.week-kost-card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:11px;}
+.week-kost-head{padding:11px 14px 9px;border-bottom:1px solid var(--border);font-size:14px;font-weight:600;}
+.week-kost-row{display:flex;justify-content:space-between;align-items:center;padding:9px 14px;border-bottom:1px solid var(--border);font-size:13px;}
+.week-kost-row:last-child{border-bottom:none;}
+.wkr-day{color:var(--muted);font-weight:500;width:40px;}
+.wkr-vals{display:flex;gap:10px;align-items:center;}
+.wkr-kcal{font-weight:600;}
+.wkr-bal{font-size:11px;padding:2px 7px;border-radius:999px;}
+.wkr-bal.def{background:var(--green-bg);color:var(--green-t);}
+.wkr-bal.sur{background:var(--red-bg);color:var(--red-t);}
+.wkr-prot{font-size:11px;color:var(--muted);}
+
 .bottom-nav{position:sticky;bottom:0;background:var(--card);border-top:1px solid var(--border);display:flex;padding:8px 0 env(safe-area-inset-bottom,16px);}
 .bnav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;padding:4px 0;font-family:inherit;}
 .bnav-icon{font-size:19px;}
@@ -147,11 +195,13 @@ canvas{display:block;}
 <div class="screen" id="body-screen"></div>
 <div class="screen" id="prog-screen"></div>
 <div class="screen" id="export-screen"></div>
+<div class="screen" id="kost-screen"></div>
 
 <div class="bottom-nav">
   <button class="bnav-btn active" onclick="showScreen('log')" id="bnav-log"><span class="bnav-icon">📋</span><span class="bnav-label">Log</span></button>
   <button class="bnav-btn" onclick="showScreen('body')" id="bnav-body"><span class="bnav-icon">⚖️</span><span class="bnav-label">Krop</span></button>
   <button class="bnav-btn" onclick="showScreen('prog')" id="bnav-prog"><span class="bnav-icon">📈</span><span class="bnav-label">Styrke</span></button>
+  <button class="bnav-btn" onclick="showScreen('kost')" id="bnav-kost"><span class="bnav-icon">🍽️</span><span class="bnav-label">Kost</span></button>
   <button class="bnav-btn" onclick="showScreen('export')" id="bnav-export"><span class="bnav-icon">📤</span><span class="bnav-label">Eksport</span></button>
 </div>
 
@@ -496,13 +546,14 @@ function clearAll(){
 
 async function showScreen(name){
   curScreen=name;
-  ['log','body','prog','export'].forEach(s=>{document.getElementById(s+'-screen').classList.toggle('visible',s===name);document.getElementById('bnav-'+s).classList.toggle('active',s===name);});
+  ['log','body','prog','export','kost'].forEach(s=>{document.getElementById(s+'-screen').classList.toggle('visible',s===name);document.getElementById('bnav-'+s).classList.toggle('active',s===name);});
   document.getElementById('tabs').style.display=name==='log'?'flex':'none';
   document.getElementById('navRight').style.display=name==='log'?'flex':'none';
-  document.getElementById('navTitle').textContent={log:'Træningslog',body:'Krop',prog:'Styrke',export:'Eksport'}[name];
+  document.getElementById('navTitle').textContent={log:'Træningslog',body:'Krop',prog:'Styrke',export:'Eksport',kost:'Kostlog'}[name];
   if(name==='body')await renderBody();
   if(name==='prog')await renderProg();
   if(name==='export')await renderExport();
+  if(name==='kost')renderKost();
 }
 
 // ── AUTO SELECT DAY BASED ON WEEKDAY ─────────────────────────
