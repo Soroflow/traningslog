@@ -766,9 +766,16 @@ function kostChangeDay(dir){
   curKostDate=newDate;renderKost();
 }
 
-function resetKostEntry(){
+async function resetKostEntry(){
   if(!confirm('Nulstil kostdata for ' + kostDayLabel(curKostDate) + '?'))return;
+  // Clear localStorage
   localStorage.removeItem(kostKey(curKostDate));
+  // Clear in Supabase by setting all values to null
+  setSync('');
+  try{
+    await sb('kost_log','POST',{date:curKostDate,kcal:null,prot:null,kh:null,fat:null,burned:null});
+    setSync('ok');
+  }catch(e){setSync('err');}
   renderKost();
 }
 
