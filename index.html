@@ -708,7 +708,8 @@ function renderKost(){
     '<div class="kost-field-label">Forbr\u00e6ndt (kcal fra tr\u00e6ning/cardio)</div>'+
     '<input type="number" inputmode="numeric" id="kBurned" value="'+(data.burned||'')+'" placeholder="0"></div>'+
     '</div></div>'+
-    '<button class="kost-save-btn" onclick="saveKostEntry()">Gem</button>';
+    '<button class="kost-save-btn" onclick="saveKostEntry()">Gem</button>'+
+    '<button onclick="resetKostEntry()" style="width:100%;padding:11px;border-radius:12px;border:1.5px solid var(--border);background:transparent;color:var(--muted);font-size:14px;font-weight:500;font-family:inherit;cursor:pointer;margin-bottom:14px;">Nulstil dag</button>';
 
   if(weekRows.length>0){
     h+='<div class="week-kost-card"><div class="week-kost-head">Sidste 7 dage</div>'+weekRows.join('')+'</div>';
@@ -725,6 +726,12 @@ function kostChangeDay(dir){
   const tomorrowISO=tomorrow.toISOString().split('T')[0];
   if(newDate>tomorrowISO)return;
   curKostDate=newDate;renderKost();
+}
+
+function resetKostEntry(){
+  if(!confirm('Nulstil kostdata for ' + kostDayLabel(curKostDate) + '?'))return;
+  localStorage.removeItem(kostKey(curKostDate));
+  renderKost();
 }
 
 async function saveKostEntry(){
