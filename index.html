@@ -632,7 +632,16 @@ function renderKost(){
   const isDeficit=balance<0,isSurplus=balance>0;
   const balClass=isDeficit?'deficit':isSurplus?'surplus':'neutral';
   const balSign=balance>0?'+':'';
-  const balText=isDeficit?'Kalorieunderskud ✓':isSurplus?'Kalorieoverskud':'Balanceret';
+
+  // Protein status
+  const protPct=protTarget>0?Math.round(prot/protTarget*100):0;
+  const protOk=prot>=protTarget;
+  const protClass=protOk?'deficit':'surplus'; // green if ok, red if not
+  const protText=protOk?'Proteinm\u00e5l n\u00e5et \u2713':'Proteinm\u00e5l ikke n\u00e5et';
+
+  // Kalorie status text
+  const balText=isDeficit?'Kalorieunderskud \u2713 — fedttab p\u00e5 rette spor':
+    isSurplus?'Kalorieoverskud — overstiger m\u00e5l':'Balanceret — p\u00e5 vedligeholdelse';
 
   const weekRows=[];
   for(let i=6;i>=0;i--){
@@ -648,30 +657,43 @@ function renderKost(){
       '<span class="wkr-day">'+kostDayLabel(iso).split(' ')[0]+'</span>'+
       '<div class="wkr-vals">'+
       '<span class="wkr-kcal">'+( +wd.kcal||0)+' kcal</span>'+
-      '<span class="wkr-bal '+wbalClass+'">'+wbalSign+wbal+' kcal</span>'+
+      '<span class="wkr-bal '+wbalClass+'">'+wbalSign+wbal+'</span>'+
       '<span class="wkr-prot">'+( +wd.prot||0)+'g prot</span>'+
       '</div></div>');
   }
 
   let h='<div class="section-title">Kostlog</div>'+
-    '<div class="section-sub">Mal: '+TARGET_KCAL+' kcal · '+TARGET_PROT+'g protein</div>'+
+    '<div class="section-sub">M\u00e5l: '+TARGET_KCAL+' kcal \u00b7 '+protTarget+'g protein \u00b7 '+TARGET_KH+'g kh \u00b7 '+TARGET_FAT+'g fedt</div>'+
     '<div class="kost-date-nav">'+
-    '<button class="icon-btn" onclick="kostChangeDay(-1)">◄</button>'+
+    '<button class="icon-btn" onclick="kostChangeDay(-1)">\u25c4</button>'+
     '<span class="kost-date-label">'+kostDayLabel(curKostDate)+'</span>'+
-    '<button class="icon-btn" onclick="kostChangeDay(1)">►</button>'+
+    '<button class="icon-btn" onclick="kostChangeDay(1)">\u25ba</button>'+
     '</div>';
 
-  if(kcal>0){
-    h+='<div class="balance-card '+balClass+'">'+
-      '<div><div class="balance-label '+balClass+'">'+balText+'</div>'+
-      '<div style="font-size:12px;color:var(--muted);margin-top:2px;">Indtag: '+kcal+' · Forbraendt: '+burned+' · Netto: '+net+'</div></div>'+
-      '<div class="balance-val '+balClass+'">'+balSign+balance+'</div>'+
-      '</div>';
+  // Always show status cards
+  h+='<div class="balance-card '+balClass+'">'+
+    '<div>'+
+    '<div class="balance-label '+balClass+'">'+balText+'</div>'+
+    '<div style="font-size:12px;color:var(--muted);margin-top:2px;">Indtag: '+kcal+' kcal \u00b7 Forbr\u00e6ndt: '+burned+' \u00b7 Netto: '+net+'</div>'+
+    '</div>'+
+    '<div class="balance-val '+balClass+'">'+balSign+balance+'</div>'+
+    '</div>';
+
+  h+='<div class="balance-card '+protClass+'" style="margin-bottom:14px;">'+
+    '<div>'+
+    '<div class="balance-label '+protClass+'">'+protText+'</div>'+
+    '<div style="font-size:12px;color:var(--muted);margin-top:2px;">'+prot+'g af '+protTarget+'g ('+protPct+'%)</div>'+
+    '</div>'+
+    '<div class="balance-val '+protClass+'">'+prot+'g</div>'+
+    '</div>';
+
+  // Rings only when data entered
+  if(kcal>0||prot>0){
     h+='<div class="kost-rings">'+
-      ring(kcal/TARGET_KCAL,'#378add',kcal,'kcal','Kalorier','mal '+TARGET_KCAL)+
-      ring(prot/protTarget,'#1d9e75',prot,'g','Protein','mal '+protTarget+'g')+
-      ring(kh/TARGET_KH,'#f0a830',kh,'g','Kulhydrat','mal '+TARGET_KH+'g')+
-      ring(fat/TARGET_FAT,'#d85a30',fat,'g','Fedt','mal '+TARGET_FAT+'g')+
+      ring(kcal/TARGET_KCAL,'#378add',kcal,'kcal','Kalorier','m\u00e5l '+TARGET_KCAL)+
+      ring(prot/protTarget,'#1d9e75',prot,'g','Protein','m\u00e5l '+protTarget+'g')+
+      ring(kh/TARGET_KH,'#f0a830',kh,'g','Kulhydrat','m\u00e5l '+TARGET_KH+'g')+
+      ring(fat/TARGET_FAT,'#d85a30',fat,'g','Fedt','m\u00e5l '+TARGET_FAT+'g')+
       '</div>';
   }
 
@@ -683,7 +705,7 @@ function renderKost(){
     '<div class="kost-field"><div class="kost-field-label">Kulhydrat (g)</div><input type="number" inputmode="numeric" id="kKh" value="'+(data.kh||'')+'" placeholder="0"></div>'+
     '<div class="kost-field"><div class="kost-field-label">Fedt (g)</div><input type="number" inputmode="numeric" id="kFat" value="'+(data.fat||'')+'" placeholder="0"></div>'+
     '<div class="kost-field" style="grid-column:1/-1;border-bottom:none;">'+
-    '<div class="kost-field-label">Forbrændt (kcal fra traening/cardio)</div>'+
+    '<div class="kost-field-label">Forbr\u00e6ndt (kcal fra tr\u00e6ning/cardio)</div>'+
     '<input type="number" inputmode="numeric" id="kBurned" value="'+(data.burned||'')+'" placeholder="0"></div>'+
     '</div></div>'+
     '<button class="kost-save-btn" onclick="saveKostEntry()">Gem</button>';
