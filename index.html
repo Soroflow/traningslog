@@ -27,6 +27,9 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .tabs::-webkit-scrollbar{display:none;}
 .tab{flex-shrink:0;font-size:13px;font-weight:500;padding:5px 13px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;}
 .tab.active{background:var(--text);color:var(--bg);border-color:var(--text);}
+.tab.today{border-color:var(--blue-mid);color:var(--blue-t);font-weight:700;}
+.tab-rest{flex-shrink:0;font-size:13px;font-weight:400;padding:5px 10px;border-radius:999px;color:var(--hint);border:1px dashed var(--border);background:transparent;cursor:default;opacity:.7;}
+.tab-rest.tab-rest-today{border-color:var(--blue-mid);color:var(--blue-t);opacity:1;font-weight:700;}
 .tab.fin{border-color:var(--green-b);color:var(--green-t);}
 .screen{display:none;padding:16px 16px 32px;}
 .screen.visible{display:block;}
@@ -327,12 +330,42 @@ function dH(val,inv){if(val==null)return'';const n=+val,s=n>0?'+':'',g=inv?n<0:n
 
 // ── TABS ───────────────────────────────────────────────────────
 function renderTabs(){
+  // Map JS weekday to DAYS index (same as autoSelectDay)
+  const jsDay=new Date().getDay();
+  const dayMap={1:0,2:1,4:2,5:3,6:4}; // Mon=0,Tue=1,Thu=2,Fri=3,Sat=4
+  const todayDayIdx=dayMap[jsDay]; // undefined if rest day
+
   document.getElementById('tabs').innerHTML=DAYS.map((day,i)=>{
     const data=wcGet(curWeek,day.id);
     const fin=!!(data&&data.finished);
-    let cls='tab'+(i===curDay?' active':'')+(fin?' fin':'');
+    const isActive=i===curDay;
+    const isToday=todayDayIdx===i;
+    let cls='tab'+(isActive?' active':'')+(fin?' fin':'')+(isToday&&!isActive?' today':'');
     return`<button class="${cls}" onclick="switchDay(${i})">${day.short}</button>`;
   }).join('');
+
+  // Add rest day indicators between training days
+  // Days order: Man(0) Tir(1) [Ons=hvile] Tor(2) Fre(3) [Søn=hvile] Lør(4)
+  // We inject them as non-clickable spans in the tabs row
+  const tabs=document.getElementById('tabs');
+  const tabBtns=tabs.querySelectorAll('.tab');
+
+  // Insert Ons after Tir (index 1) and Søn after Lør (index 4)
+  const restDays=[
+    {afterIdx:1,label:'Ons',isToday:jsDay===3},
+    {afterIdx:4,label:'Søn',isToday:jsDay===0},
+  ];
+
+  restDays.forEach(({afterIdx,label,isToday})=>{
+    const ref=tabBtns[afterIdx];
+    if(ref){
+      const span=document.createElement('span');
+      span.className='tab-rest'+(isToday?' tab-rest-today':'');
+      span.textContent=label;
+      ref.insertAdjacentElement('afterend',span);
+    }
+  });
+
   document.getElementById('weekLabel').textContent=`Uge ${curWeek}`;
 }
 
