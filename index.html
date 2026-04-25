@@ -521,14 +521,19 @@ function autoSelectDay(){
 }
 
 // ── STARTUP ───────────────────────────────────────────────────
+async function autoSelectWeek(){
+  for(let w=1;w<=8;w++){
+    await preloadWeek(w);
+    const allDone=DAYS.every(d=>{const data=wcGet(w,d.id);return data&&data.finished;});
+    if(!allDone){curWeek=w;return;}
+  }
+  curWeek=8;
+}
+
 async function init(){
-  // 1. Auto select correct day based on today's weekday
   autoSelectDay();
-  // 2. Show loading
   document.getElementById('log-screen').innerHTML='<div class="loading"><div class="spinner"></div>Henter data...</div>';
-  // 3. Fetch ALL days for current week from Supabase BEFORE rendering anything
-  await preloadWeek(curWeek);
-  // 4. NOW render tabs and log — cache is populated so fin states are correct
+  await autoSelectWeek();
   renderTabs();
   renderLog();
 }
