@@ -878,9 +878,9 @@ async function saveKostEntry(){
 }
 
 async function autoSelectWeek(){
-  // Program start: Monday 21 April 2025 = uge 1
+  // Program start: Monday 20 April 2026 = uge 1
   // 8-ugers cyklus — efter uge 8 starter forfra på uge 1
-  const programStart=new Date('2025-04-21');
+  const programStart=new Date('2026-04-20');
   const today=new Date();
   today.setHours(0,0,0,0);
   const daysSinceStart=Math.floor((today-programStart)/(1000*60*60*24));
