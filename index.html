@@ -28,8 +28,9 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .tab{flex-shrink:0;font-size:13px;font-weight:500;padding:5px 13px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;}
 .tab.active{background:var(--text);color:var(--bg);border-color:var(--text);}
 .tab.today{border-color:var(--blue-mid);color:var(--blue-t);font-weight:700;}
-.tab-rest{flex-shrink:0;font-size:13px;font-weight:400;padding:5px 10px;border-radius:999px;color:var(--hint);border:1px dashed var(--border);background:transparent;cursor:default;opacity:.7;}
-.tab-rest.tab-rest-today{border-color:var(--blue-mid);color:var(--blue-t);opacity:1;font-weight:700;}
+.tab-rest{flex-shrink:0;font-size:13px;font-weight:400;padding:5px 10px;border-radius:999px;color:var(--hint);border:1px dashed var(--border);background:transparent;cursor:pointer;opacity:.75;font-family:inherit;}
+.tab-rest.tab-rest-today{border-color:var(--teal-t);color:var(--teal-t);opacity:1;font-weight:700;}
+.tab-rest.active{background:var(--teal-bg);color:var(--teal-t);border-color:var(--teal-t);border-style:solid;opacity:1;font-weight:600;}
 .tab.fin{border-color:var(--green-b);color:var(--green-t);}
 .screen{display:none;padding:16px 16px 32px;}
 .screen.visible{display:block;}
@@ -232,7 +233,12 @@ const KEY_LIFTS=[
   {name:'Deadlift',dayId:'d4',ei:0},{name:'Shoulder press',dayId:'d1',ei:2},{name:'Barbell row',dayId:'d1',ei:3}
 ];
 
-let curDay=0,curWeek=1,curScreen='log';
+let curDay=0,curWeek=1,curScreen='log',curRest=null;
+
+const REST_DAYS=[
+  {id:'r1',short:'Ons',afterIdx:1,jsDay:3},
+  {id:'r2',short:'Søn',afterIdx:4,jsDay:0},
+];
 const charts={};
 // In-memory cache: cache[week][dayId] = data object
 const WC={};
@@ -334,35 +340,32 @@ function renderTabs(){
   const jsDay=new Date().getDay();
   const dayMap={1:0,2:1,4:2,5:3,6:4}; // Mon=0,Tue=1,Thu=2,Fri=3,Sat=4
   const todayDayIdx=dayMap[jsDay]; // undefined if rest day
+  const todayRestId=jsDay===3?'r1':jsDay===0?'r2':null;
 
   document.getElementById('tabs').innerHTML=DAYS.map((day,i)=>{
     const data=wcGet(curWeek,day.id);
     const fin=!!(data&&data.finished);
-    const isActive=i===curDay;
+    const isActive=i===curDay && !curRest;
     const isToday=todayDayIdx===i;
     let cls='tab'+(isActive?' active':'')+(fin?' fin':'')+(isToday&&!isActive?' today':'');
     return`<button class="${cls}" onclick="switchDay(${i})">${day.short}</button>`;
   }).join('');
 
-  // Add rest day indicators between training days
+  // Add rest day buttons between training days
   // Days order: Man(0) Tir(1) [Ons=hvile] Tor(2) Fre(3) [Søn=hvile] Lør(4)
-  // We inject them as non-clickable spans in the tabs row
   const tabs=document.getElementById('tabs');
   const tabBtns=tabs.querySelectorAll('.tab');
 
-  // Insert Ons after Tir (index 1) and Søn after Lør (index 4)
-  const restDays=[
-    {afterIdx:1,label:'Ons',isToday:jsDay===3},
-    {afterIdx:4,label:'Søn',isToday:jsDay===0},
-  ];
-
-  restDays.forEach(({afterIdx,label,isToday})=>{
-    const ref=tabBtns[afterIdx];
+  REST_DAYS.forEach(rd=>{
+    const ref=tabBtns[rd.afterIdx];
     if(ref){
-      const span=document.createElement('span');
-      span.className='tab-rest'+(isToday?' tab-rest-today':'');
-      span.textContent=label;
-      ref.insertAdjacentElement('afterend',span);
+      const isActive=curRest===rd.id;
+      const isToday=todayRestId===rd.id;
+      const btn=document.createElement('button');
+      btn.className='tab-rest'+(isActive?' active':'')+(isToday&&!isActive?' tab-rest-today':'');
+      btn.textContent=rd.short;
+      btn.onclick=()=>switchRest(rd.id);
+      ref.insertAdjacentElement('afterend',btn);
     }
   });
 
@@ -370,7 +373,46 @@ function renderTabs(){
 }
 
 // ── LOG ────────────────────────────────────────────────────────
+function renderRestDay(){
+  const rd=REST_DAYS.find(r=>r.id===curRest);
+  if(!rd){curRest=null;return renderLog();}
+  const h=`<div class="day-intro">
+    <span class="badge" style="background:var(--teal-bg);color:var(--teal-t);">Restitution</span>
+    <div class="day-name">Restitutionsdag</div>
+    <div class="day-sub">${rd.short} · Uge ${curWeek}</div>
+  </div>
+  <div class="ex-card"><div class="ex-head"><div class="ex-name">Hvile & opbygning</div></div>
+    <div class="sets-body" style="padding:14px;">
+      <p style="font-size:14px;line-height:1.5;color:var(--text);margin-bottom:8px;">
+        Ingen styrketræning i dag. Kroppen reparerer og bygger sig stærkere på hviledage — det er her gevinsten fra de hårde sessioner låses ind.
+      </p>
+      <p style="font-size:13px;line-height:1.5;color:var(--muted);">
+        Lav intensitet cardio er valgfrit, men anbefales for blodgennemstrømning og restitution.
+      </p>
+    </div>
+  </div>
+  <div class="ex-card"><div class="ex-head"><div class="ex-name">Forslag: Lav intensitet cardio (Zone 2)</div><div class="ex-target">Skal kunne snakke under aktiviteten · ~60-70% af makspuls</div></div>
+    <div class="sets-body" style="padding:12px 14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;"><span>Gåtur</span><span style="color:var(--muted);">30-45 min</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;"><span>12-3-30 (let)</span><span style="color:var(--muted);">30 min</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;"><span>Let cykling</span><span style="color:var(--muted);">20-30 min</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;font-size:13px;"><span>Svømning</span><span style="color:var(--muted);">20-30 min</span></div>
+    </div>
+  </div>
+  <div class="ex-card"><div class="ex-head"><div class="ex-name">Andet til restitution</div></div>
+    <div class="sets-body" style="padding:12px 14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;"><span>Mobility / stretch</span><span style="color:var(--muted);">10-15 min</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;"><span>Foam rolling</span><span style="color:var(--muted);">5-10 min</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;"><span>Søvn</span><span style="color:var(--muted);">7-9 timer</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;font-size:13px;"><span>Protein-mål</span><span style="color:var(--muted);">~180 g</span></div>
+    </div>
+  </div>`;
+  document.getElementById('log-screen').innerHTML=h;
+  renderTabs();
+}
+
 function renderLog(){
+  if(curRest)return renderRestDay();
   const d=DAYS[curDay];
   let data=wcGet(curWeek,d.id);
   if(!data){data=makeInit(curDay,curWeek);wcSet(curWeek,d.id,data);}
@@ -425,7 +467,8 @@ async function toggleFin(){
   else{data.finished=false;data.date=null;}
   await saveWorkout(curWeek,d.id,data);renderLog();
 }
-function switchDay(i){curDay=i;renderLog();}
+function switchDay(i){curDay=i;curRest=null;renderLog();}
+function switchRest(id){curRest=id;renderLog();}
 async function changeWeek(dir){
   const n=curWeek+dir;if(n<1||n>8)return;
   curWeek=n;
@@ -595,16 +638,12 @@ async function showScreen(name){
 // Ons+Søn = hviledag → vis næste træningsdag
 function autoSelectDay(){
   const jsDay=new Date().getDay();
-  // Map today to nearest/current training day
+  // Wed(3)→r1 (Ons hviledag), Sun(0)→r2 (Søn hviledag)
+  if(jsDay===3){curRest='r1';return;}
+  if(jsDay===0){curRest='r2';return;}
   // Mon=0, Tue=1, Thu=2, Fri=3, Sat=4
-  const map={1:0,2:1,3:2,4:2,5:3,6:4,0:0}; 
-  // Wed(3)→show Thu(2), Sun(0)→show Mon(0), all training days show themselves
-  const restMap={3:2,0:0}; // Wed→Tor index, Sun→Man index
-  if([1,2,4,5,6].includes(jsDay)){
-    curDay={1:0,2:1,4:2,5:3,6:4}[jsDay];
-  } else {
-    curDay=restMap[jsDay];
-  }
+  curDay={1:0,2:1,4:2,5:3,6:4}[jsDay];
+  curRest=null;
 }
 
 // ── STARTUP ───────────────────────────────────────────────────
@@ -840,11 +879,13 @@ async function saveKostEntry(){
 
 async function autoSelectWeek(){
   // Program start: Monday 21 April 2025 = uge 1
+  // 8-ugers cyklus — efter uge 8 starter forfra på uge 1
   const programStart=new Date('2025-04-21');
   const today=new Date();
   today.setHours(0,0,0,0);
   const daysSinceStart=Math.floor((today-programStart)/(1000*60*60*24));
-  const calculatedWeek=Math.min(Math.max(Math.floor(daysSinceStart/7)+1,1),8);
+  const weeksSinceStart=Math.max(Math.floor(daysSinceStart/7),0);
+  const calculatedWeek=(weeksSinceStart%8)+1;
   curWeek=calculatedWeek;
   await preloadWeek(curWeek);
 }
