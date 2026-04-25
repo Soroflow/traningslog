@@ -595,12 +595,15 @@ async function showScreen(name){
 // Ons+Søn = hviledag → vis næste træningsdag
 function autoSelectDay(){
   const jsDay=new Date().getDay();
-  const map={1:0,2:1,4:2,5:3,6:4}; // JS weekday → DAYS index
-  if(map[jsDay]!==undefined){
-    curDay=map[jsDay];
+  // Map today to nearest/current training day
+  // Mon=0, Tue=1, Thu=2, Fri=3, Sat=4
+  const map={1:0,2:1,3:2,4:2,5:3,6:4,0:0}; 
+  // Wed(3)→show Thu(2), Sun(0)→show Mon(0), all training days show themselves
+  const restMap={3:2,0:0}; // Wed→Tor index, Sun→Man index
+  if([1,2,4,5,6].includes(jsDay)){
+    curDay={1:0,2:1,4:2,5:3,6:4}[jsDay];
   } else {
-    // Hviledag: onsdag(3)→ næste er torsdag(2), søndag(0)→ næste er mandag(0)
-    curDay=jsDay===3?2:0;
+    curDay=restMap[jsDay];
   }
 }
 
@@ -836,12 +839,14 @@ async function saveKostEntry(){
 }
 
 async function autoSelectWeek(){
-  for(let w=1;w<=8;w++){
-    await preloadWeek(w);
-    const allDone=DAYS.every(d=>{const data=wcGet(w,d.id);return data&&data.finished;});
-    if(!allDone){curWeek=w;return;}
-  }
-  curWeek=8;
+  // Program start: Monday 21 April 2025 = uge 1
+  const programStart=new Date('2025-04-21');
+  const today=new Date();
+  today.setHours(0,0,0,0);
+  const daysSinceStart=Math.floor((today-programStart)/(1000*60*60*24));
+  const calculatedWeek=Math.min(Math.max(Math.floor(daysSinceStart/7)+1,1),8);
+  curWeek=calculatedWeek;
+  await preloadWeek(curWeek);
 }
 
 async function init(){
