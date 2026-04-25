@@ -239,6 +239,17 @@ const REST_DAYS=[
   {id:'r1',short:'Ons',afterIdx:1,jsDay:3},
   {id:'r2',short:'Søn',afterIdx:4,jsDay:0},
 ];
+
+// Per-cyklus program. Cyklus 1 = hardcoded DAYS, cyklus 2+ genereres fra cyklus N-1.
+function programKey(cycle){return'program_c'+cycle;}
+function getDays(cycle){
+  if(cycle<=1)return DAYS;
+  const stored=localStorage.getItem(programKey(cycle));
+  if(stored)return JSON.parse(stored);
+  return DAYS; // fallback hvis program ikke er genereret endnu
+}
+function saveProgram(cycle,days){localStorage.setItem(programKey(cycle),JSON.stringify(days));}
+function hasProgram(cycle){return cycle<=1||!!localStorage.getItem(programKey(cycle));}
 const charts={};
 // In-memory cache: cache[week][dayId] = data object
 const WC={};
@@ -327,8 +338,8 @@ async function loadAllBody(){
 // ── HELPERS ────────────────────────────────────────────────────
 function todayISO(){return new Date().toISOString().split('T')[0];}
 function isoToDa(s){if(!s)return'';const[y,m,d]=s.split('-');return`${d}/${m}/${y}`;}
-function defaultKg(ex,w){if(ex.bw)return'';if(w===7)return+(ex.kg*.85).toFixed(1);if(w<=2)return ex.kg;if(w<=4)return ex.kg+2.5;if(w<=6)return ex.kg+5;return ex.kg+5;}
-function makeInit(di,w){const d=DAYS[di];const r={sets:{},checks:{},notes:{},finished:false,date:null};d.ex.forEach((e,ei)=>{r.sets[ei]=Array.from({length:e.s},()=>({kg:defaultKg(e,w),r:e.r}));r.notes[ei]='';});return r;}
+function defaultKg(ex,gw){if(ex.bw)return'';const w=weekInCycle(gw);if(w===7)return+(ex.kg*.85).toFixed(1);if(w<=2)return ex.kg;if(w<=4)return ex.kg+2.5;if(w<=6)return ex.kg+5;return ex.kg+5;}
+function makeInit(di,w){const days=getDays(cycleOf(w));const d=days[di];const r={sets:{},checks:{},notes:{},finished:false,date:null};d.ex.forEach((e,ei)=>{r.sets[ei]=Array.from({length:e.s},()=>({kg:defaultKg(e,w),r:e.r}));r.notes[ei]='';});return r;}
 function vol(data,d){let v=0;d.ex.forEach((e,ei)=>{(data.sets[ei]||[]).forEach(s=>{v+=(+s.kg||0)*(+s.r||0);});});return Math.round(v);}
 function done(data){return Object.values(data.checks).filter(Boolean).length;}
 function total(d){return d.ex.reduce((a,e)=>a+e.s,0);}
@@ -342,7 +353,8 @@ function renderTabs(){
   const todayDayIdx=dayMap[jsDay]; // undefined if rest day
   const todayRestId=jsDay===3?'r1':jsDay===0?'r2':null;
 
-  document.getElementById('tabs').innerHTML=DAYS.map((day,i)=>{
+  const days=getDays(cycleOf(curWeek));
+  document.getElementById('tabs').innerHTML=days.map((day,i)=>{
     const data=wcGet(curWeek,day.id);
     const fin=!!(data&&data.finished);
     const isActive=i===curDay && !curRest;
@@ -369,7 +381,8 @@ function renderTabs(){
     }
   });
 
-  document.getElementById('weekLabel').textContent=`Uge ${curWeek}`;
+  const cyc=cycleOf(curWeek),wic=weekInCycle(curWeek);
+  document.getElementById('weekLabel').textContent=cyc>1?`C${cyc}·U${wic}`:`Uge ${wic}`;
 }
 
 // ── LOG ────────────────────────────────────────────────────────
@@ -379,7 +392,7 @@ function renderRestDay(){
   const h=`<div class="day-intro">
     <span class="badge" style="background:var(--teal-bg);color:var(--teal-t);">Restitution</span>
     <div class="day-name">Restitutionsdag</div>
-    <div class="day-sub">${rd.short} · Uge ${curWeek}</div>
+    <div class="day-sub">${rd.short} · Cyklus ${cycleOf(curWeek)} · Uge ${weekInCycle(curWeek)}</div>
   </div>
   <div class="ex-card"><div class="ex-head"><div class="ex-name">Hvile & opbygning</div></div>
     <div class="sets-body" style="padding:14px;">
@@ -412,8 +425,15 @@ function renderRestDay(){
 }
 
 function renderLog(){
+  // Hvis vi er i en ny cyklus uden gemt program: vis review-skærm
+  const cyc=cycleOf(curWeek);
+  if(cyc>1&&!hasProgram(cyc)){
+    renderCycleReview();
+    return;
+  }
   if(curRest)return renderRestDay();
-  const d=DAYS[curDay];
+  const days=getDays(cyc);
+  const d=days[curDay];
   let data=wcGet(curWeek,d.id);
   if(!data){data=makeInit(curDay,curWeek);wcSet(curWeek,d.id,data);}
   const v=vol(data,d),dn=done(data),tot=total(d),fin=data.finished;
@@ -424,7 +444,7 @@ function renderLog(){
   <div class="day-intro">
     <span class="badge" style="${d.bs}">${d.bt}</span>
     <div class="day-name">${d.title}</div>
-    <div class="day-sub">${d.label} · Uge ${curWeek}${curWeek===7?' — Deload':curWeek===8?' — PR-uge':''}</div>
+    <div class="day-sub">${d.label} · Cyklus ${cycleOf(curWeek)} · Uge ${weekInCycle(curWeek)}${weekInCycle(curWeek)===7?' — Deload':weekInCycle(curWeek)===8?' — PR-uge':''}</div>
   </div>`;
   d.ex.forEach((ex,ei)=>{
     const rl=ex.rl||'reps';
@@ -449,7 +469,7 @@ function renderLog(){
   renderTabs();
 }
 
-function getData(){const d=DAYS[curDay];let data=wcGet(curWeek,d.id);if(!data){data=makeInit(curDay,curWeek);wcSet(curWeek,d.id,data);}return{d,data};}
+function getData(){const days=getDays(cycleOf(curWeek));const d=days[curDay];let data=wcGet(curWeek,d.id);if(!data){data=makeInit(curDay,curWeek);wcSet(curWeek,d.id,data);}return{d,data};}
 
 async function setVal(ei,si,field,val){
   const{d,data}=getData();
@@ -470,9 +490,10 @@ async function toggleFin(){
 function switchDay(i){curDay=i;curRest=null;renderLog();}
 function switchRest(id){curRest=id;renderLog();}
 async function changeWeek(dir){
-  const n=curWeek+dir;if(n<1||n>8)return;
+  const n=curWeek+dir;if(n<1)return;
   curWeek=n;
-  document.getElementById('weekLabel').textContent=`Uge ${curWeek}`;
+  const cyc=cycleOf(curWeek),wic=weekInCycle(curWeek);
+  document.getElementById('weekLabel').textContent=cyc>1?`C${cyc}·U${wic}`:`Uge ${wic}`;
   document.getElementById('tabs').innerHTML='<div style="padding:8px 0 11px;color:var(--muted);font-size:13px;">Henter...</div>';
   document.getElementById('log-screen').innerHTML='<div class="loading"><div class="spinner"></div>Henter data...</div>';
   await preloadWeek(curWeek);
@@ -544,6 +565,193 @@ async function saveBodyEntry(){
   renderBody();
 }
 
+// ── CYKLUS ANALYSE & PROGRAM GENERERING ───────────────────────
+// Sikrer at alle uger i en cyklus er hentet fra Supabase
+async function preloadCycle(cycle){
+  const start=globalWeekOf(cycle,1),end=globalWeekOf(cycle,8);
+  const promises=[];
+  for(let w=start;w<=end;w++){if(!WC[w])promises.push(preloadWeek(w));}
+  await Promise.all(promises);
+}
+
+// Round to nearest 2.5
+function r25(n){return Math.round(n*2)/2;}
+
+// Analysér én cyklus → forslag til næste cyklus pr. øvelse
+function analyzeCycle(cycle){
+  const days=getDays(cycle);
+  const startW=globalWeekOf(cycle,1);
+  // Tunge uger før deload: 5 og 6
+  const peakWeeks=[5,6].map(wic=>startW+wic-1);
+  const allWeeks=[1,2,3,4,5,6,7,8].map(wic=>startW+wic-1);
+
+  const results=[];
+  let totalSetsLogged=0,totalSetsCompleted=0,daysFinished=0;
+  allWeeks.forEach(w=>{
+    days.forEach(day=>{
+      const dat=wcGet(w,day.id);
+      if(dat&&dat.finished)daysFinished++;
+    });
+  });
+
+  days.forEach(day=>{
+    day.ex.forEach((ex,ei)=>{
+      let setsCompleted=0,totalSets=0,kgSum=0,kgCount=0,repSum=0,repCount=0;
+      let peakSetsCompleted=0,peakTotalSets=0,peakKgSum=0,peakKgCount=0,peakRepSum=0,peakRepCount=0;
+
+      allWeeks.forEach(w=>{
+        const dat=wcGet(w,day.id);if(!dat)return;
+        const sets=dat.sets[ei]||[];
+        sets.forEach((s,si)=>{
+          totalSets++;
+          const key=`${ei}-${si}`;
+          if(dat.checks[key])setsCompleted++;
+          if(s.kg!==''&&s.kg!=null){kgSum+=+s.kg;kgCount++;}
+          if(s.r!==''&&s.r!=null){repSum+=+s.r;repCount++;}
+          if(peakWeeks.includes(w)){
+            peakTotalSets++;
+            if(dat.checks[key])peakSetsCompleted++;
+            if(s.kg!==''&&s.kg!=null){peakKgSum+=+s.kg;peakKgCount++;}
+            if(s.r!==''&&s.r!=null){peakRepSum+=+s.r;peakRepCount++;}
+          }
+        });
+      });
+      totalSetsLogged+=totalSets;
+      totalSetsCompleted+=setsCompleted;
+
+      const compRate=totalSets?setsCompleted/totalSets:0;
+      const peakComp=peakTotalSets?peakSetsCompleted/peakTotalSets:compRate;
+      const peakAvgKg=peakKgCount?peakKgSum/peakKgCount:(kgCount?kgSum/kgCount:ex.kg);
+      const peakAvgReps=peakRepCount?peakRepSum/peakRepCount:(repCount?repSum/repCount:ex.r);
+
+      let newKg=ex.kg,reason='Ingen data — beholder vægt';
+      if(ex.bw){newKg=0;reason='Bodyweight';}
+      else if(totalSets===0){newKg=ex.kg;reason='Ingen logget data — beholder vægt';}
+      else if(peakComp>=0.95&&peakAvgReps>=ex.r){
+        // Crushed: bump baseline +5 (peak går fra oldKg+5 til oldKg+10)
+        newKg=r25(ex.kg+5);
+        reason=`Crushed — ${Math.round(peakComp*100)}% sæt klaret, ${peakAvgReps.toFixed(1)} reps. Peak +5 kg.`;
+      } else if(peakComp>=0.8&&peakAvgReps>=ex.r-1){
+        // God progression: +2.5 til baseline
+        newKg=r25(ex.kg+2.5);
+        reason=`God progression — ${Math.round(peakComp*100)}% sæt klaret. Peak +2,5 kg.`;
+      } else if(peakComp>=0.5){
+        // Struggled: gentag samme baseline → samme peak target
+        newKg=ex.kg;
+        reason=`Hård cyklus (${Math.round(peakComp*100)}%) — gentag samme peak.`;
+      } else if(peakComp>0){
+        // Failed mostly: sænk -2,5
+        newKg=r25(Math.max(ex.kg-2.5,0));
+        reason=`Sænk vægt — kun ${Math.round(peakComp*100)}% sæt klaret.`;
+      }
+
+      results.push({dayId:day.id,exIdx:ei,name:ex.n,oldKg:ex.kg,newKg,reason,
+        completionRate:compRate,peakComp,peakAvgKg,peakAvgReps,bw:!!ex.bw});
+    });
+  });
+
+  return{
+    cycle,
+    daysFinished,
+    totalSetsLogged,
+    totalSetsCompleted,
+    overallCompletion:totalSetsLogged?totalSetsCompleted/totalSetsLogged:0,
+    perExercise:results
+  };
+}
+
+// Generér nyt program-array baseret på analyse + bruger-overrides
+function generateProgram(cycle,analysis,overrides){
+  const baseDays=getDays(cycle);
+  const newDays=JSON.parse(JSON.stringify(baseDays));
+  analysis.perExercise.forEach(({dayId,exIdx,newKg,bw})=>{
+    const day=newDays.find(d=>d.id===dayId);
+    if(day&&day.ex[exIdx]&&!bw){
+      const overrideKey=`${dayId}_${exIdx}`;
+      const overrideVal=overrides&&overrides[overrideKey];
+      day.ex[exIdx].kg=overrideVal!=null?+overrideVal:newKg;
+    }
+  });
+  return newDays;
+}
+
+// State for cyklus-overgang skærm
+let cycleReviewOverrides={};
+
+async function renderCycleReview(){
+  const newCycle=cycleOf(curWeek);
+  const prevCycle=newCycle-1;
+  if(prevCycle<1){return false;}
+  await preloadCycle(prevCycle);
+  const a=analyzeCycle(prevCycle);
+
+  // Group by day
+  const days=getDays(prevCycle);
+  let daysHtml='';
+  days.forEach(day=>{
+    const exItems=a.perExercise.filter(r=>r.dayId===day.id);
+    daysHtml+=`<div class="ex-card"><div class="ex-head"><div class="ex-name">${day.title}</div><div class="ex-target">${day.label}</div></div>
+      <div class="sets-body" style="padding:8px 14px;">`;
+    exItems.forEach(r=>{
+      const dxKg=r.bw?'BW':`<span style="font-weight:600;">${r.newKg} kg</span> <span style="font-size:11px;color:var(--muted);">(var ${r.oldKg})</span>`;
+      const overrideKey=`${r.dayId}_${r.exIdx}`;
+      const inputVal=cycleReviewOverrides[overrideKey]!=null?cycleReviewOverrides[overrideKey]:r.newKg;
+      daysHtml+=`<div style="padding:9px 0;border-bottom:1px solid var(--border);">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:600;">${r.name}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px;">${r.reason}</div>
+          </div>
+          ${r.bw?`<span style="font-size:12px;color:var(--muted);">BW</span>`:
+            `<input type="number" inputmode="decimal" value="${inputVal}" data-okey="${overrideKey}" onchange="setReviewOverride('${overrideKey}',this.value)" style="width:72px;background:var(--input-bg);border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:14px;font-weight:600;text-align:center;color:var(--text);font-family:inherit;">`}
+        </div>
+      </div>`;
+    });
+    daysHtml+=`</div></div>`;
+  });
+
+  const compPct=Math.round(a.overallCompletion*100);
+  const h=`<div class="day-intro">
+    <span class="badge" style="background:var(--teal-bg);color:var(--teal-t);">Ny cyklus</span>
+    <div class="day-name">Cyklus ${prevCycle} fuldført — start cyklus ${newCycle}</div>
+    <div class="day-sub">${a.daysFinished} dage logget · ${compPct}% sæt klaret</div>
+  </div>
+  <div class="hiit-box" style="background:var(--blue-bg);color:var(--blue-t);">
+    Baseret på dine resultater fra cyklus ${prevCycle} har jeg foreslået nye startvægte.<br>Justér hvis du vil — eller klik "Start cyklus ${newCycle}" for at acceptere alt.
+  </div>
+  ${daysHtml}
+  <button class="fin-btn on" style="margin-bottom:8px;" onclick="commitCycleReview()">Start cyklus ${newCycle} ▶</button>
+  <button class="fin-btn" onclick="skipCycleReview()" style="margin-bottom:8px;">Spring over (brug forrige cyklus' vægte)</button>
+  <div class="fin-done-info" style="color:var(--muted);">Du kan altid ændre vægte direkte i hver træning</div>`;
+
+  document.getElementById('log-screen').innerHTML=h;
+  document.getElementById('tabs').innerHTML='';
+  document.getElementById('weekLabel').textContent=`C${newCycle} start`;
+  return true;
+}
+
+function setReviewOverride(key,val){cycleReviewOverrides[key]=val;}
+async function commitCycleReview(){
+  const newCycle=cycleOf(curWeek);
+  const prevCycle=newCycle-1;
+  const a=analyzeCycle(prevCycle);
+  const newDays=generateProgram(prevCycle,a,cycleReviewOverrides);
+  saveProgram(newCycle,newDays);
+  cycleReviewOverrides={};
+  renderTabs();
+  renderLog();
+}
+async function skipCycleReview(){
+  const newCycle=cycleOf(curWeek);
+  const prevCycle=newCycle-1;
+  // Kopier forrige cyklus' program 1:1
+  const days=getDays(prevCycle);
+  saveProgram(newCycle,JSON.parse(JSON.stringify(days)));
+  cycleReviewOverrides={};
+  renderTabs();
+  renderLog();
+}
+
 // ── STYRKE ────────────────────────────────────────────────────
 async function renderProg(){
   let h=`<div class="section-title">Styrkeudvikling</div><div class="section-sub" style="margin-bottom:14px;">Baseret på færdige træninger</div>`;
@@ -570,6 +778,28 @@ async function renderProg(){
       h+=`<div class="lift-row"><span class="lift-date">Uge ${e.week}${e.date?' · '+e.date:''}</span><span><span class="lift-val">${e.kg} kg</span><span class="lift-vol">${e.vol} vol</span>${pr&&entries.length>1?'<span class="pr-badge">PR</span>':''}</span></div>`;
     });
     h+=`</div></div>`;
+  }
+  // Cyklus-analyse forhåndsvisning — viser foreslåede vægte for næste cyklus
+  const curCyc=cycleOf(curWeek);
+  await preloadCycle(curCyc);
+  const an=analyzeCycle(curCyc);
+  if(an.totalSetsLogged>0){
+    const compPct=Math.round(an.overallCompletion*100);
+    let aH=`<div class="section-title" style="margin-top:8px;">Forhåndsvisning: cyklus ${curCyc+1}</div>
+      <div class="section-sub" style="margin-bottom:10px;">Baseret på cyklus ${curCyc} indtil nu (${an.daysFinished} dage logget · ${compPct}% sæt klaret). Bekræftes ved start af næste cyklus.</div>`;
+    const days=getDays(curCyc);
+    days.forEach(day=>{
+      const items=an.perExercise.filter(r=>r.dayId===day.id);
+      aH+=`<div class="lift-card"><div class="lift-title">${day.title}</div><div class="lift-rows">`;
+      items.forEach(r=>{
+        const arrow=r.bw?'BW':(r.newKg>r.oldKg?'▲':r.newKg<r.oldKg?'▼':'=');
+        const col=r.bw?'var(--muted)':r.newKg>r.oldKg?'var(--green-t)':r.newKg<r.oldKg?'var(--red-t)':'var(--muted)';
+        aH+=`<div class="lift-row"><span class="lift-date" style="flex:1;min-width:0;">${r.name}<div style="font-size:10px;color:var(--hint);margin-top:1px;">${r.reason}</div></span>
+          <span><span class="lift-val">${r.bw?'BW':(r.oldKg+'→'+r.newKg+' kg')}</span> <span style="color:${col};font-weight:700;">${arrow}</span></span></div>`;
+      });
+      aH+=`</div></div>`;
+    });
+    h+=aH;
   }
   document.getElementById('prog-screen').innerHTML=h;
   function dlc(entries,cid){
@@ -877,16 +1107,19 @@ async function saveKostEntry(){
   renderKost();
 }
 
+// Cyklus helpers: 8 uger pr. cyklus, weeks tæller globalt (1..8 = cyk 1, 9..16 = cyk 2, osv.)
+function cycleOf(globalWeek){return Math.floor((globalWeek-1)/8)+1;}
+function weekInCycle(globalWeek){return ((globalWeek-1)%8)+1;}
+function globalWeekOf(cycle,wic){return (cycle-1)*8+wic;}
+
 async function autoSelectWeek(){
-  // Program start: Monday 20 April 2026 = uge 1
-  // 8-ugers cyklus — efter uge 8 starter forfra på uge 1
+  // Program start: Monday 20 April 2026 = uge 1 (cyklus 1)
   const programStart=new Date('2026-04-20');
   const today=new Date();
   today.setHours(0,0,0,0);
   const daysSinceStart=Math.floor((today-programStart)/(1000*60*60*24));
   const weeksSinceStart=Math.max(Math.floor(daysSinceStart/7),0);
-  const calculatedWeek=(weeksSinceStart%8)+1;
-  curWeek=calculatedWeek;
+  curWeek=weeksSinceStart+1;
   await preloadWeek(curWeek);
 }
 
