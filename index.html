@@ -644,21 +644,29 @@ function renderKost(){
     isSurplus?'Kalorieoverskud — overstiger m\u00e5l':'Balanceret — p\u00e5 vedligeholdelse';
 
   const weekRows=[];
+  let weekTotalKcal=0,weekTotalProt=0,weekTotalBalance=0,weekDays=0;
   for(let i=6;i>=0;i--){
     const d=new Date();d.setDate(d.getDate()-i);
     const iso=d.toISOString().split('T')[0];
     const wd=loadKost(iso);
     if(!wd.kcal)continue;
-    const wnet=(+wd.kcal||0)-(+wd.burned||0);
+    const wkcal=+wd.kcal||0;
+    const wburned=+wd.burned||0;
+    const wprot=+wd.prot||0;
+    const wnet=wkcal-wburned;
     const wbal=wnet-TARGET_KCAL;
     const wbalClass=wbal<0?'def':'sur';
     const wbalSign=wbal>0?'+':'';
+    weekTotalKcal+=wkcal;
+    weekTotalProt+=wprot;
+    weekTotalBalance+=wbal;
+    weekDays++;
     weekRows.push('<div class="week-kost-row">'+
       '<span class="wkr-day">'+kostDayLabel(iso).split(' ')[0]+'</span>'+
       '<div class="wkr-vals">'+
-      '<span class="wkr-kcal">'+( +wd.kcal||0)+' kcal</span>'+
+      '<span class="wkr-kcal">'+wkcal+' kcal</span>'+
       '<span class="wkr-bal '+wbalClass+'">'+wbalSign+wbal+'</span>'+
-      '<span class="wkr-prot">'+( +wd.prot||0)+'g prot</span>'+
+      '<span class="wkr-prot">'+wprot+'g</span>'+
       '</div></div>');
   }
 
@@ -712,7 +720,37 @@ function renderKost(){
     '<button onclick="resetKostEntry()" style="width:100%;padding:11px;border-radius:12px;border:1.5px solid var(--border);background:transparent;color:var(--muted);font-size:14px;font-weight:500;font-family:inherit;cursor:pointer;margin-bottom:14px;">Nulstil dag</button>';
 
   if(weekRows.length>0){
+    const avgKcal=Math.round(weekTotalKcal/weekDays);
+    const avgProt=Math.round(weekTotalProt/weekDays);
+    const totBalSign=weekTotalBalance>0?'+':'';
+    const totBalClass=weekTotalBalance<0?'def':'sur';
+    const protTarget2=Math.round(BODY_WEIGHT*2);
+    const avgProtOk=avgProt>=protTarget2;
+
     h+='<div class="week-kost-card"><div class="week-kost-head">Sidste 7 dage</div>'+weekRows.join('')+'</div>';
+
+    h+='<div class="week-kost-card" style="margin-top:0;">'+
+      '<div class="week-kost-head">Ugeoversigt ('+weekDays+' dage logget)</div>'+
+      '<div class="week-kost-row" style="background:var(--input-bg);">'+
+        '<span class="wkr-day" style="width:auto;color:var(--muted);font-size:12px;">Total kcal</span>'+
+        '<div class="wkr-vals"><span class="wkr-kcal">'+weekTotalKcal+' kcal</span>'+
+        '<span style="font-size:11px;color:var(--muted);">gns '+avgKcal+'/dag</span></div>'+
+      '</div>'+
+      '<div class="week-kost-row" style="background:var(--input-bg);">'+
+        '<span class="wkr-day" style="width:auto;color:var(--muted);font-size:12px;">Samlet balance</span>'+
+        '<div class="wkr-vals">'+
+        '<span class="wkr-bal '+totBalClass+'" style="font-size:14px;font-weight:700;">'+totBalSign+weekTotalBalance+' kcal</span>'+
+        '<span style="font-size:11px;color:var(--muted);">'+(weekTotalBalance<0?'underskud ✓':'overskud')+'</span>'+
+        '</div>'+
+      '</div>'+
+      '<div class="week-kost-row" style="background:var(--input-bg);border-bottom:none;">'+
+        '<span class="wkr-day" style="width:auto;color:var(--muted);font-size:12px;">Gns protein</span>'+
+        '<div class="wkr-vals">'+
+        '<span class="wkr-kcal">'+avgProt+'g/dag</span>'+
+        '<span class="wkr-bal '+(avgProtOk?'def':'sur')+'">'+(avgProtOk?'mål nået ✓':'under mål')+'</span>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
   }
 
   document.getElementById('kost-screen').innerHTML=h;
