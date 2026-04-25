@@ -597,8 +597,11 @@ async function loadKostRemoteRange(days){
     const rows=await sb('kost_log','GET',null,'date=in.('+dates.join(',')+')'+'&order=date.desc');
     if(rows&&rows.length){
       rows.forEach(r=>{
-        const d={kcal:r.kcal,prot:r.prot,kh:r.kh,fat:r.fat,burned:r.burned};
-        localStorage.setItem(kostKey(r.date),JSON.stringify(d));
+        // Only cache if there's actual data
+        if(r.kcal||r.prot||r.kh||r.fat||r.burned){
+          const d={kcal:r.kcal,prot:r.prot,kh:r.kh,fat:r.fat,burned:r.burned};
+          localStorage.setItem(kostKey(r.date),JSON.stringify(d));
+        }
       });
     }
   }catch(e){}
@@ -770,10 +773,11 @@ async function resetKostEntry(){
   if(!confirm('Nulstil kostdata for ' + kostDayLabel(curKostDate) + '?'))return;
   // Clear localStorage
   localStorage.removeItem(kostKey(curKostDate));
-  // Clear in Supabase by setting all values to null
+  // Delete row from Supabase
   setSync('');
   try{
-    await sb('kost_log','POST',{date:curKostDate,kcal:null,prot:null,kh:null,fat:null,burned:null});
+    const url=SB_URL+'/rest/v1/kost_log?date=eq.'+curKostDate;
+    await fetch(url,{method:'DELETE',headers:{...HDR}});
     setSync('ok');
   }catch(e){setSync('err');}
   renderKost();
