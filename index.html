@@ -454,7 +454,7 @@ function renderLog(){
       const key=`${ei}-${s}`;const chk=data.checks[key];
       const sd=(data.sets[ei]||[])[s]||{kg:defaultKg(ex,curWeek),r:ex.r};
       h+=`<div class="set-row"><span class="set-n">${s+1}</span>
-        <input type="number" inputmode="decimal" value="${sd.kg}" placeholder="${ex.bw?'BW':'0'}" ${ex.bw?'disabled':''} onchange="setVal(${ei},${s},'kg',this.value)">
+        <input type="text" inputmode="decimal" value="${sd.kg}" placeholder="${ex.bw?'BW':'0'}" ${ex.bw?'disabled':''} onchange="setVal(${ei},${s},'kg',this.value)">
         <input type="number" inputmode="numeric" value="${sd.r}" placeholder="0" onchange="setVal(${ei},${s},'r',this.value)">
         <div class="chk${chk?' on':''}" onclick="toggleChk('${key}')"></div></div>`;
     }
@@ -473,6 +473,7 @@ function getData(){const days=getDays(cycleOf(curWeek));const d=days[curDay];let
 
 async function setVal(ei,si,field,val){
   const{d,data}=getData();
+  if(typeof val==='string')val=val.replace(',','.');
   if(data.sets[ei]&&data.sets[ei][si])data.sets[ei][si][field]=val;
   await saveWorkout(curWeek,d.id,data);
   const v=vol(data,d),dn=done(data),tot=total(d);
@@ -536,9 +537,9 @@ async function renderBody(){
     <div class="legend-item"><div class="legend-dot" style="background:#1d9e75"></div>Muskler</div>
   </div></div><div class="chart-wrap"><canvas id="bodyChart" style="height:180px;width:100%;"></canvas></div></div>`;
   h+=`<div class="input-card"><div class="input-card-head">Uge ${curWeek} — indtast målinger</div><div class="input-card-body">
-    <div class="input-row"><span class="input-label">Vægt</span><input type="number" inputmode="decimal" id="bW" value="${existing.weight||''}" placeholder="93.0"><span class="input-unit">kg</span></div>
-    <div class="input-row"><span class="input-label">Fedtprocent</span><input type="number" inputmode="decimal" id="bF" value="${existing.fat||''}" placeholder="23.0"><span class="input-unit">%</span></div>
-    <div class="input-row"><span class="input-label">Muskelmasse</span><input type="number" inputmode="decimal" id="bM" value="${existing.muscle||''}" placeholder="0.0"><span class="input-unit">kg</span></div>
+    <div class="input-row"><span class="input-label">Vægt</span><input type="text" inputmode="decimal" id="bW" value="${existing.weight||''}" placeholder="93.0"><span class="input-unit">kg</span></div>
+    <div class="input-row"><span class="input-label">Fedtprocent</span><input type="text" inputmode="decimal" id="bF" value="${existing.fat||''}" placeholder="23.0"><span class="input-unit">%</span></div>
+    <div class="input-row"><span class="input-label">Muskelmasse</span><input type="text" inputmode="decimal" id="bM" value="${existing.muscle||''}" placeholder="0.0"><span class="input-unit">kg</span></div>
   </div></div>
   <button class="save-btn" onclick="saveBodyEntry()">Gem måling for uge ${curWeek}</button>`;
   if(entries.length>0){
@@ -561,7 +562,8 @@ async function renderBody(){
 }
 
 async function saveBodyEntry(){
-  await saveBody(curWeek,{weight:document.getElementById('bW').value,fat:document.getElementById('bF').value,muscle:document.getElementById('bM').value,date:new Date().toLocaleDateString('da-DK')});
+  const nrm=v=>(v||'').replace(',','.');
+  await saveBody(curWeek,{weight:nrm(document.getElementById('bW').value),fat:nrm(document.getElementById('bF').value),muscle:nrm(document.getElementById('bM').value),date:new Date().toLocaleDateString('da-DK')});
   renderBody();
 }
 
@@ -703,7 +705,7 @@ async function renderCycleReview(){
             <div style="font-size:11px;color:var(--muted);margin-top:2px;">${r.reason}</div>
           </div>
           ${r.bw?`<span style="font-size:12px;color:var(--muted);">BW</span>`:
-            `<input type="number" inputmode="decimal" value="${inputVal}" data-okey="${overrideKey}" onchange="setReviewOverride('${overrideKey}',this.value)" style="width:72px;background:var(--input-bg);border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:14px;font-weight:600;text-align:center;color:var(--text);font-family:inherit;">`}
+            `<input type="text" inputmode="decimal" value="${inputVal}" data-okey="${overrideKey}" onchange="setReviewOverride('${overrideKey}',this.value)" style="width:72px;background:var(--input-bg);border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:14px;font-weight:600;text-align:center;color:var(--text);font-family:inherit;">`}
         </div>
       </div>`;
     });
@@ -730,7 +732,7 @@ async function renderCycleReview(){
   return true;
 }
 
-function setReviewOverride(key,val){cycleReviewOverrides[key]=val;}
+function setReviewOverride(key,val){cycleReviewOverrides[key]=(val||'').replace(',','.');}
 async function commitCycleReview(){
   const newCycle=cycleOf(curWeek);
   const prevCycle=newCycle-1;
