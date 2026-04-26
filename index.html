@@ -319,8 +319,23 @@ function bcGet(w){
 async function saveBody(w,data){
   BC[w]=data;localStorage.setItem(bodyLsKey(w),JSON.stringify(data));
   setSync('');
-  try{await sb('body_log','POST',{week:w,weight:data.weight?parseFloat(data.weight):null,fat:data.fat?parseFloat(data.fat):null,muscle:data.muscle?parseFloat(data.muscle):null,date:data.date});setSync('ok');}
-  catch(e){setSync('err');}
+  try{
+    await sb('body_log','DELETE',null,`week=eq.${w}`);
+    await sb('body_log','POST',{week:w,weight:data.weight?parseFloat(data.weight):null,fat:data.fat?parseFloat(data.fat):null,muscle:data.muscle?parseFloat(data.muscle):null,date:data.date});
+    setSync('ok');
+  }catch(e){setSync('err');}
+}
+async function resetBodyEntry(w){
+  if(!confirm('Nulstil måling for uge '+w+'?'))return;
+  delete BC[w];
+  localStorage.removeItem(bodyLsKey(w));
+  setSync('');
+  try{
+    const url=SB_URL+'/rest/v1/body_log?week=eq.'+w;
+    await fetch(url,{method:'DELETE',headers:{...HDR}});
+    setSync('ok');
+  }catch(e){setSync('err');}
+  renderBody();
 }
 async function loadBodyRemote(w){
   if(BC[w])return BC[w];
@@ -541,7 +556,8 @@ async function renderBody(){
     <div class="input-row"><span class="input-label">Fedtprocent</span><input type="text" inputmode="decimal" id="bF" value="${existing.fat||''}" placeholder="23.0"><span class="input-unit">%</span></div>
     <div class="input-row"><span class="input-label">Muskelmasse</span><input type="text" inputmode="decimal" id="bM" value="${existing.muscle||''}" placeholder="0.0"><span class="input-unit">kg</span></div>
   </div></div>
-  <button class="save-btn" onclick="saveBodyEntry()">Gem måling for uge ${curWeek}</button>`;
+  <button class="save-btn" onclick="saveBodyEntry()">Gem måling for uge ${curWeek}</button>
+  <button onclick="resetBodyEntry(${curWeek})" style="width:100%;padding:11px;border-radius:12px;border:1.5px solid var(--border);background:transparent;color:var(--muted);font-size:14px;font-weight:500;font-family:inherit;cursor:pointer;margin-bottom:14px;">Nulstil måling</button>`;
   if(entries.length>0){
     h+=`<div class="hist-card"><div class="hist-head">Historik</div>`;
     [...entries].reverse().forEach((e,i,arr)=>{
