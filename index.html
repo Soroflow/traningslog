@@ -9,8 +9,8 @@
 <meta name="theme-color" content="#f7f6f3">
 <title>Træningslog</title>
 <style>
-:root{--bg:#f7f6f3;--card:#fff;--border:#e8e6e1;--text:#1a1917;--muted:#888580;--hint:#c0bcb6;--input-bg:#f2f0ec;--green-bg:#eaf3de;--green-t:#3b6d11;--green-b:#97c459;--blue-bg:#e6f1fb;--blue-t:#0c447c;--amber-bg:#faeeda;--amber-t:#633806;--purple-bg:#eeedfe;--purple-t:#3c3489;--red-bg:#fcebeb;--red-t:#a32d2d;--teal-bg:#e1f5ee;--teal-t:#085041;}
-@media(prefers-color-scheme:dark){:root{--bg:#181715;--card:#222018;--border:#2e2c28;--text:#f0ede8;--muted:#7a7670;--hint:#4a4844;--input-bg:#2a2825;--green-bg:#162808;--green-t:#97c459;--green-b:#3b6d11;--blue-bg:#08182e;--blue-t:#85b7eb;--amber-bg:#221505;--amber-t:#fac775;--purple-bg:#141230;--purple-t:#afa9ec;--red-bg:#200a0a;--red-t:#f09595;--teal-bg:#042e1e;--teal-t:#5dcaa5;}}
+:root{--bg:#f7f6f3;--card:#fff;--border:#e8e6e1;--text:#1a1917;--muted:#888580;--hint:#c0bcb6;--input-bg:#f2f0ec;--green-bg:#eaf3de;--green-t:#3b6d11;--green-b:#97c459;--blue-bg:#e6f1fb;--blue-t:#0c447c;--amber-bg:#faeeda;--amber-t:#633806;--purple-bg:#eeedfe;--purple-t:#3c3489;--red-bg:#fcebeb;--red-t:#a32d2d;--teal-bg:#e1f5ee;--teal-t:#085041;--shadow:0 6px 14px rgba(0,0,0,0.06);--shadow-act:0 1px 4px rgba(0,0,0,0.04);}
+@media(prefers-color-scheme:dark){:root{--bg:#181715;--card:#222018;--border:#2e2c28;--text:#f0ede8;--muted:#7a7670;--hint:#4a4844;--input-bg:#2a2825;--green-bg:#162808;--green-t:#97c459;--green-b:#3b6d11;--blue-bg:#08182e;--blue-t:#85b7eb;--amber-bg:#221505;--amber-t:#fac775;--purple-bg:#141230;--purple-t:#afa9ec;--red-bg:#200a0a;--red-t:#f09595;--teal-bg:#042e1e;--teal-t:#5dcaa5;--shadow:0 6px 14px rgba(0,0,0,0.25);--shadow-act:0 1px 4px rgba(0,0,0,0.4);}}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 body{font-family:-apple-system,'SF Pro Text',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overscroll-behavior:none;}
 input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;}
@@ -27,10 +27,10 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 .tabs::-webkit-scrollbar{display:none;}
 .tab{flex-shrink:0;font-size:13px;font-weight:500;padding:5px 13px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;}
 .tab.active{background:var(--text);color:var(--bg);border-color:var(--text);}
-.tab.today{border-color:var(--blue-mid);color:var(--blue-t);font-weight:700;}
-.tab-rest{flex-shrink:0;font-size:13px;font-weight:400;padding:5px 10px;border-radius:999px;color:var(--hint);border:1px dashed var(--border);background:transparent;cursor:pointer;opacity:.75;font-family:inherit;}
-.tab-rest.tab-rest-today{border-color:var(--teal-t);color:var(--teal-t);opacity:1;font-weight:700;}
-.tab-rest.active{background:var(--teal-bg);color:var(--teal-t);border-color:var(--teal-t);border-style:solid;opacity:1;font-weight:600;}
+.tab.today{border-color:var(--blue-t);color:var(--blue-t);font-weight:700;}
+.tab-rest{flex-shrink:0;font-size:13px;font-weight:500;padding:5px 10px;border-radius:999px;color:var(--teal-t);border:1px dashed var(--teal-t);background:transparent;cursor:pointer;opacity:.4;font-family:inherit;}
+.tab-rest.tab-rest-today{opacity:1;font-weight:700;}
+.tab-rest.active{background:var(--teal-bg);border-style:solid;opacity:1;font-weight:600;}
 .tab.fin{border-color:var(--green-b);color:var(--green-t);}
 .screen{display:none;padding:16px 16px 32px;}
 .screen.visible{display:block;}
@@ -173,42 +173,92 @@ canvas{display:block;}
 .wkr-bal.sur{background:var(--red-bg);color:var(--red-t);}
 .wkr-prot{font-size:11px;color:var(--muted);}
 
-.bottom-nav{position:sticky;bottom:0;background:var(--card);border-top:1px solid var(--border);display:flex;padding:8px 0 env(safe-area-inset-bottom,16px);}
+.bottom-nav{position:sticky;bottom:0;background:var(--card);border-top:1px solid var(--border);display:flex;padding:8px 0 env(safe-area-inset-bottom,16px); z-index:50;}
 .bnav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;padding:4px 0;font-family:inherit;}
-.bnav-icon{font-size:19px;}
+.bnav-icon{display:flex;align-items:center;justify-content:center;color:var(--muted);}
+.bnav-icon svg{width:24px;height:24px;stroke-width:2;transition:transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);}
 .bnav-label{font-size:10px;color:var(--muted);}
 .bnav-btn.active .bnav-label{color:var(--text);font-weight:600;}
+.bnav-btn.active .bnav-icon{color:var(--text);}
+.bnav-btn.active .bnav-icon svg{stroke-width:2.5;}
+
+/* --- PREMIUM FEEL (Taktilt feedback & animationer) --- */
+.icon-btn { transition: all 0.15s ease; }
+.icon-btn:active:not(.wk) { transform: scale(0.92); background: var(--border); }
+
+.tab, .tab-rest { transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+.tab:active, .tab-rest:active { transform: scale(0.92); }
+
+.chk { transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.chk:active { transform: scale(0.82); }
+
+.fin-btn, .save-btn, .kost-save-btn, .copy-btn, .clear-btn, button[onclick^="reset"] {
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  box-shadow: var(--shadow);
+}
+.fin-btn:active, .save-btn:active, .kost-save-btn:active, .copy-btn:active, .clear-btn:active, button[onclick^="reset"]:active {
+  transform: scale(0.96) translateY(2px) !important;
+  box-shadow: var(--shadow-act);
+  opacity: 0.9;
+}
+
+.bnav-btn:active .bnav-icon svg { transform: scale(0.85) translateY(2px); }
+
+/* --- DASHBOARD --- */
+.dash-card { transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94); cursor: pointer; box-shadow: var(--shadow); }
+.dash-card:active { transform: scale(0.96) translateY(2px); box-shadow: var(--shadow-act); opacity: 0.9; }
+
+/* --- REST TIMER --- */
+.timer-bar { position: fixed; top: 60px; left: 50%; transform: translateX(-50%) translateY(-150%); background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 999px; font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 12px; z-index: 100; transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
+.timer-bar.show { transform: translateX(-50%) translateY(0); }
+.timer-btn { background: rgba(255,255,255,0.2); border: none; color: var(--bg); border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight:700; font-size:12px; }
+.timer-btn:active { transform: scale(0.9); }
+
+/* --- STICKY GEM KNAP --- */
+.sticky-save-wrap { position: sticky; bottom: 20px; z-index: 10; padding-top: 10px; padding-bottom: 5px; }
+
 </style>
 </head>
-<body>
+<body ontouchstart="">
+
+<!-- REST TIMER UI -->
+<div class="timer-bar" id="restTimer">
+    <i data-lucide="timer" style="width:18px;height:18px;"></i>
+    <span id="timerText" style="min-width:44px; text-align:center;">01:30</span>
+    <button class="timer-btn" onclick="addTimerTime(30)">+30</button>
+    <button class="timer-btn" onclick="stopTimer()"><i data-lucide="x" style="width:16px;height:16px;"></i></button>
+</div>
 
 <div class="nav">
   <div class="nav-top">
     <span class="nav-title" id="navTitle">Træningslog</span>
     <div class="nav-right" id="navRight">
       <div class="sync-dot" id="syncDot"></div>
-      <button class="icon-btn" onclick="changeWeek(-1)">◀</button>
+      <button class="icon-btn" onclick="changeWeek(-1); vibe();">◀</button>
       <span class="icon-btn wk" id="weekLabel">Uge 1</span>
-      <button class="icon-btn" onclick="changeWeek(1)">▶</button>
+      <button class="icon-btn" onclick="changeWeek(1); vibe();">▶</button>
     </div>
   </div>
   <div class="tabs" id="tabs"><div style="padding:8px 0 11px;color:var(--muted);font-size:13px;">Henter...</div></div>
 </div>
 
-<div class="screen visible" id="log-screen"><div class="loading"><div class="spinner"></div>Henter træningsdata...</div></div>
+<div class="screen visible" id="dash-screen"><div class="loading"><div class="spinner"></div>Henter overblik...</div></div>
+<div class="screen" id="log-screen"><div class="loading"><div class="spinner"></div>Henter træningsdata...</div></div>
 <div class="screen" id="body-screen"></div>
 <div class="screen" id="prog-screen"></div>
-<div class="screen" id="export-screen"></div>
+<div class="screen" id="settings-screen"></div>
 <div class="screen" id="kost-screen"></div>
 
 <div class="bottom-nav">
-  <button class="bnav-btn active" onclick="showScreen('log')" id="bnav-log"><span class="bnav-icon">📋</span><span class="bnav-label">Log</span></button>
-  <button class="bnav-btn" onclick="showScreen('body')" id="bnav-body"><span class="bnav-icon">⚖️</span><span class="bnav-label">Krop</span></button>
-  <button class="bnav-btn" onclick="showScreen('prog')" id="bnav-prog"><span class="bnav-icon">📈</span><span class="bnav-label">Styrke</span></button>
-  <button class="bnav-btn" onclick="showScreen('kost')" id="bnav-kost"><span class="bnav-icon">🍽️</span><span class="bnav-label">Kost</span></button>
-  <button class="bnav-btn" onclick="showScreen('export')" id="bnav-export"><span class="bnav-icon">📤</span><span class="bnav-label">Eksport</span></button>
+  <button class="bnav-btn active" onclick="showScreen('dash')" id="bnav-dash"><span class="bnav-icon"><i data-lucide="layout-dashboard"></i></span><span class="bnav-label">Start</span></button>
+  <button class="bnav-btn" onclick="showScreen('log')" id="bnav-log"><span class="bnav-icon"><i data-lucide="dumbbell"></i></span><span class="bnav-label">Træning</span></button>
+  <button class="bnav-btn" onclick="showScreen('body')" id="bnav-body"><span class="bnav-icon"><i data-lucide="scale"></i></span><span class="bnav-label">Målinger</span></button>
+  <button class="bnav-btn" onclick="showScreen('prog')" id="bnav-prog"><span class="bnav-icon"><i data-lucide="trending-up"></i></span><span class="bnav-label">Fremgang</span></button>
+  <button class="bnav-btn" onclick="showScreen('kost')" id="bnav-kost"><span class="bnav-icon"><i data-lucide="utensils"></i></span><span class="bnav-label">Makro</span></button>
+  <button class="bnav-btn" onclick="showScreen('settings')" id="bnav-settings"><span class="bnav-icon"><i data-lucide="settings"></i></span><span class="bnav-label">Indstillinger</span></button>
 </div>
 
+<script src="https://unpkg.com/lucide@latest"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>
 const SB_URL='https://dktmdmleeaenntwknhxe.supabase.co';
@@ -240,22 +290,38 @@ const REST_DAYS=[
   {id:'r2',short:'Søn',afterIdx:4,jsDay:0},
 ];
 
-// Per-cyklus program. Cyklus 1 = hardcoded DAYS, cyklus 2+ genereres fra cyklus N-1.
+// --- INDSTILLINGER & DATA ---
+const DEFAULT_SETTINGS = { kcal: 2520, prot: 180, kh: 260, fat: 84, bw: 93, age: 30, rhr: 60 };
+
+function getSettings() {
+    const stored = localStorage.getItem('user_settings');
+    if (stored) return { ...DEFAULT_SETTINGS, ...JSON.parse(stored) };
+    return DEFAULT_SETTINGS;
+}
+function saveSettings(s) {
+    localStorage.setItem('user_settings', JSON.stringify(s));
+}
+
+// Per-cyklus program
 function programKey(cycle){return'program_c'+cycle;}
 function getDays(cycle){
   if(cycle<=1)return DAYS;
   const stored=localStorage.getItem(programKey(cycle));
   if(stored)return JSON.parse(stored);
-  return DAYS; // fallback hvis program ikke er genereret endnu
+  return DAYS; 
 }
 function saveProgram(cycle,days){localStorage.setItem(programKey(cycle),JSON.stringify(days));}
 function hasProgram(cycle){return cycle<=1||!!localStorage.getItem(programKey(cycle));}
 const charts={};
-// In-memory cache: cache[week][dayId] = data object
 const WC={};
 
 function lsKey(w,id){return`wlog_w${w}_${id}`;}
 function bodyLsKey(w){return`wlog_body_w${w}`;}
+
+// --- HAPTIC FEEDBACK ---
+function vibe(ms = 30) {
+    if (navigator.vibrate) { try { navigator.vibrate(ms); } catch(e){} }
+}
 
 function setSync(s){const d=document.getElementById('syncDot');if(d){d.className='sync-dot'+(s==='ok'?' ok':s==='err'?' err':'');}}
 
@@ -281,14 +347,11 @@ function wcSet(w,id,data){
   localStorage.setItem(lsKey(w,id),JSON.stringify(data));
 }
 
-// Preload ALL days for a given week from Supabase in ONE request
 async function preloadWeek(w){
   try{
     setSync('');
-    // Fetch all rows for this week, latest first per day
     const rows=await sb('workout_log','GET',null,`week=eq.${w}&order=day_id.asc,updated_at.desc`);
     if(!WC[w])WC[w]={};
-    // Group by day_id — keep only first (= latest) per day
     const seen=new Set();
     (rows||[]).forEach(r=>{
       if(!seen.has(r.day_id)){
@@ -362,11 +425,11 @@ function dH(val,inv){if(val==null)return'';const n=+val,s=n>0?'+':'',g=inv?n<0:n
 
 // ── TABS ───────────────────────────────────────────────────────
 function renderTabs(){
-  // Map JS weekday to DAYS index (same as autoSelectDay)
+  const isCurrentWeek = (curWeek === getActualCurrentWeek());
   const jsDay=new Date().getDay();
-  const dayMap={1:0,2:1,4:2,5:3,6:4}; // Mon=0,Tue=1,Thu=2,Fri=3,Sat=4
-  const todayDayIdx=dayMap[jsDay]; // undefined if rest day
-  const todayRestId=jsDay===3?'r1':jsDay===0?'r2':null;
+  const dayMap={1:0,2:1,4:2,5:3,6:4};
+  const todayDayIdx = isCurrentWeek ? dayMap[jsDay] : -1;
+  const todayRestId = isCurrentWeek ? (jsDay===3?'r1':jsDay===0?'r2':null) : null;
 
   const days=getDays(cycleOf(curWeek));
   document.getElementById('tabs').innerHTML=days.map((day,i)=>{
@@ -378,8 +441,6 @@ function renderTabs(){
     return`<button class="${cls}" onclick="switchDay(${i})">${day.short}</button>`;
   }).join('');
 
-  // Add rest day buttons between training days
-  // Days order: Man(0) Tir(1) [Ons=hvile] Tor(2) Fre(3) [Søn=hvile] Lør(4)
   const tabs=document.getElementById('tabs');
   const tabBtns=tabs.querySelectorAll('.tab');
 
@@ -391,7 +452,7 @@ function renderTabs(){
       const btn=document.createElement('button');
       btn.className='tab-rest'+(isActive?' active':'')+(isToday&&!isActive?' tab-rest-today':'');
       btn.textContent=rd.short;
-      btn.onclick=()=>switchRest(rd.id);
+      btn.onclick=()=>{ vibe(20); switchRest(rd.id); }
       ref.insertAdjacentElement('afterend',btn);
     }
   });
@@ -400,10 +461,52 @@ function renderTabs(){
   document.getElementById('weekLabel').textContent=cyc>1?`C${cyc}·U${wic}`:`Uge ${wic}`;
 }
 
+// ── HVILE TIMER ────────────────────────────────────────────────
+let restTimerInt;
+let restTimerEnd = 0;
+
+function startTimer(sec = 90) {
+    restTimerEnd = Date.now() + sec * 1000;
+    document.getElementById('restTimer').classList.add('show');
+    updateTimer();
+    if(restTimerInt) clearInterval(restTimerInt);
+    restTimerInt = setInterval(updateTimer, 1000);
+}
+
+function addTimerTime(sec) {
+    vibe(30);
+    restTimerEnd += sec * 1000;
+    updateTimer();
+}
+
+function stopTimer() {
+    vibe(30);
+    clearInterval(restTimerInt);
+    document.getElementById('restTimer').classList.remove('show');
+}
+
+function updateTimer() {
+    const left = Math.ceil((restTimerEnd - Date.now()) / 1000);
+    if(left <= 0) {
+        stopTimer();
+        if(navigator.vibrate) navigator.vibrate([200, 100, 200]);
+        return;
+    }
+    const m = Math.floor(left / 60);
+    const s = left % 60;
+    document.getElementById('timerText').textContent = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+}
+
 // ── LOG ────────────────────────────────────────────────────────
 function renderRestDay(){
   const rd=REST_DAYS.find(r=>r.id===curRest);
   if(!rd){curRest=null;return renderLog();}
+  
+  // Hent settings for at vise cardio puls forslag
+  const s = getSettings();
+  const maxHr = 220 - (s.age || 30);
+  const targetHr = Math.round(((maxHr - (s.rhr || 60)) * 0.80) + (s.rhr || 60));
+
   const h=`<div class="day-intro">
     <span class="badge" style="background:var(--teal-bg);color:var(--teal-t);">Restitution</span>
     <div class="day-name">Restitutionsdag</div>
@@ -419,7 +522,8 @@ function renderRestDay(){
       </p>
     </div>
   </div>
-  <div class="ex-card"><div class="ex-head"><div class="ex-name">Forslag: Lav intensitet cardio (Zone 2)</div><div class="ex-target">Skal kunne snakke under aktiviteten · ~60-70% af makspuls</div></div>
+  <div class="ex-card"><div class="ex-head"><div class="ex-name">Forslag: Zone 2 / Fedttabs Cardio</div>
+    <div class="ex-target">Hold pulsen omkring <b>${targetHr} bpm</b> (80% reserve)</div></div>
     <div class="sets-body" style="padding:12px 14px;">
       <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;"><span>Gåtur</span><span style="color:var(--muted);">30-45 min</span></div>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;"><span>12-3-30 (let)</span><span style="color:var(--muted);">30 min</span></div>
@@ -432,7 +536,7 @@ function renderRestDay(){
       <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;"><span>Mobility / stretch</span><span style="color:var(--muted);">10-15 min</span></div>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;"><span>Foam rolling</span><span style="color:var(--muted);">5-10 min</span></div>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;"><span>Søvn</span><span style="color:var(--muted);">7-9 timer</span></div>
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;font-size:13px;"><span>Protein-mål</span><span style="color:var(--muted);">~180 g</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;font-size:13px;"><span>Protein-mål</span><span style="color:var(--muted);">~${s.prot} g</span></div>
     </div>
   </div>`;
   document.getElementById('log-screen').innerHTML=h;
@@ -440,7 +544,6 @@ function renderRestDay(){
 }
 
 function renderLog(){
-  // Hvis vi er i en ny cyklus uden gemt program: vis review-skærm
   const cyc=cycleOf(curWeek);
   if(cyc>1&&!hasProgram(cyc)){
     renderCycleReview();
@@ -451,6 +554,10 @@ function renderLog(){
   const d=days[curDay];
   let data=wcGet(curWeek,d.id);
   if(!data){data=makeInit(curDay,curWeek);wcSet(curWeek,d.id,data);}
+  
+  // Hent sidste uges data (til ghost data)
+  const lwData = curWeek > 1 ? wcGet(curWeek - 1, d.id) : null;
+
   const v=vol(data,d),dn=done(data),tot=total(d),fin=data.finished;
   let h=`<div class="stats-row">
     <div class="stat"><div class="stat-l">Sæt klaret</div><div class="stat-v">${dn}/${tot}</div></div>
@@ -461,10 +568,30 @@ function renderLog(){
     <div class="day-name">${d.title}</div>
     <div class="day-sub">${d.label} · Cyklus ${cycleOf(curWeek)} · Uge ${weekInCycle(curWeek)}${weekInCycle(curWeek)===7?' — Deload':weekInCycle(curWeek)===8?' — PR-uge':''}</div>
   </div>`;
+
   d.ex.forEach((ex,ei)=>{
     const rl=ex.rl||'reps';
-    h+=`<div class="ex-card"><div class="ex-head"><div class="ex-name">${ex.n}</div><div class="ex-target">${ex.t} reps</div></div>
+    
+    // Generer Ghost Data HTML
+    let ghostText = '';
+    if(lwData && lwData.sets && lwData.sets[ei]) {
+        let maxK = 0, bestR = 0, doneSets = 0;
+        lwData.sets[ei].forEach((s, idx) => {
+            if(lwData.checks && lwData.checks[`${ei}-${idx}`]) {
+                doneSets++;
+                if(+s.kg >= maxK) { maxK = +s.kg; bestR = +s.r; }
+            }
+        });
+        if(doneSets > 0) {
+            ghostText = `<div style="font-size:11px;color:var(--muted);margin-top:4px;display:flex;align-items:center;gap:4px;">
+              <i data-lucide="ghost" style="width:12px;height:12px;"></i> Sidste uge: op til ${maxK||'BW'} kg x ${bestR}
+            </div>`;
+        }
+    }
+
+    h+=`<div class="ex-card"><div class="ex-head"><div class="ex-name">${ex.n}</div><div class="ex-target">${ex.t} reps</div>${ghostText}</div>
     <div class="sets-body"><div class="sets-lbl"><span>#</span><span>${ex.bw?'BW':'kg'}</span><span>${rl}</span><span></span></div>`;
+    
     for(let s=0;s<ex.s;s++){
       const key=`${ei}-${s}`;const chk=data.checks[key];
       const sd=(data.sets[ei]||[])[s]||{kg:defaultKg(ex,curWeek),r:ex.r};
@@ -475,12 +602,15 @@ function renderLog(){
     }
     h+=`<textarea class="note" rows="2" placeholder="Note..." onchange="setNote(${ei},this.value)">${data.notes[ei]||''}</textarea></div></div>`;
   });
+
   if(d.hiit)h+=`<div class="hiit-box">+ 12-3-30 / HIIT efter træning</div>`;
   h+=`<div class="fin-area">`;
   if(!fin){h+=`<div class="fin-date-row"><span class="fin-date-label">Træningsdato</span><input type="date" id="finDate" class="fin-date-input" value="${todayISO()}"></div><button class="fin-btn" onclick="toggleFin()">Marker som færdig</button>`;}
   else{h+=`<button class="fin-btn on" onclick="toggleFin()">Træning fuldført ✓</button><div class="fin-done-info">Logget: ${isoToDa(data.date)}</div>`;}
   h+=`</div>`;
+  
   document.getElementById('log-screen').innerHTML=h;
+  if(window.lucide) lucide.createIcons();
   renderTabs();
 }
 
@@ -496,26 +626,29 @@ async function setVal(ei,si,field,val){
   if(sr)sr.innerHTML=`<div class="stat"><div class="stat-l">Sæt klaret</div><div class="stat-v">${dn}/${tot}</div></div><div class="stat"><div class="stat-l">Volumen</div><div class="stat-v">${v.toLocaleString()} kg</div></div>`;
 }
 async function setNote(ei,val){const{d,data}=getData();data.notes[ei]=val;await saveWorkout(curWeek,d.id,data);}
-async function toggleChk(key){const{d,data}=getData();data.checks[key]=!data.checks[key];await saveWorkout(curWeek,d.id,data);renderLog();}
+
+async function toggleChk(key){
+  vibe(40);
+  const{d,data}=getData();
+  data.checks[key]=!data.checks[key];
+  
+  // Start/Stop Timer automatisk
+  if(data.checks[key]) startTimer(90); else stopTimer();
+  
+  await saveWorkout(curWeek,d.id,data);
+  renderLog();
+}
+
 async function toggleFin(){
+  vibe(50);
   const{d,data}=getData();
   if(!data.finished){const di=document.getElementById('finDate');data.finished=true;data.date=di?di.value:todayISO();}
   else{data.finished=false;data.date=null;}
   await saveWorkout(curWeek,d.id,data);renderLog();
 }
-function switchDay(i){curDay=i;curRest=null;renderLog();}
-function switchRest(id){curRest=id;renderLog();}
-async function changeWeek(dir){
-  const n=curWeek+dir;if(n<1)return;
-  curWeek=n;
-  const cyc=cycleOf(curWeek),wic=weekInCycle(curWeek);
-  document.getElementById('weekLabel').textContent=cyc>1?`C${cyc}·U${wic}`:`Uge ${wic}`;
-  document.getElementById('tabs').innerHTML='<div style="padding:8px 0 11px;color:var(--muted);font-size:13px;">Henter...</div>';
-  document.getElementById('log-screen').innerHTML='<div class="loading"><div class="spinner"></div>Henter data...</div>';
-  await preloadWeek(curWeek);
-  renderTabs();
-  renderLog();
-}
+
+function switchDay(i){vibe(20); curDay=i;curRest=null;renderLog();}
+function switchRest(id){vibe(20); curRest=id;renderLog();}
 
 // ── BODY ───────────────────────────────────────────────────────
 function drawBodyChart(entries){
@@ -551,8 +684,10 @@ async function renderBody(){
     <div class="legend-item"><div class="legend-dot" style="background:#d85a30"></div>Fedt %</div>
     <div class="legend-item"><div class="legend-dot" style="background:#1d9e75"></div>Muskler</div>
   </div></div><div class="chart-wrap"><canvas id="bodyChart" style="height:180px;width:100%;"></canvas></div></div>`;
+  
+  const s = getSettings();
   h+=`<div class="input-card"><div class="input-card-head">Uge ${curWeek} — indtast målinger</div><div class="input-card-body">
-    <div class="input-row"><span class="input-label">Vægt</span><input type="text" inputmode="decimal" id="bW" value="${existing.weight||''}" placeholder="93.0"><span class="input-unit">kg</span></div>
+    <div class="input-row"><span class="input-label">Vægt</span><input type="text" inputmode="decimal" id="bW" value="${existing.weight||s.bw||''}" placeholder="93.0"><span class="input-unit">kg</span></div>
     <div class="input-row"><span class="input-label">Fedtprocent</span><input type="text" inputmode="decimal" id="bF" value="${existing.fat||''}" placeholder="23.0"><span class="input-unit">%</span></div>
     <div class="input-row"><span class="input-label">Muskelmasse</span><input type="text" inputmode="decimal" id="bM" value="${existing.muscle||''}" placeholder="0.0"><span class="input-unit">kg</span></div>
   </div></div>
@@ -578,28 +713,32 @@ async function renderBody(){
 }
 
 async function saveBodyEntry(){
+  vibe(50);
   const nrm=v=>(v||'').replace(',','.');
-  await saveBody(curWeek,{weight:nrm(document.getElementById('bW').value),fat:nrm(document.getElementById('bF').value),muscle:nrm(document.getElementById('bM').value),date:new Date().toLocaleDateString('da-DK')});
+  const newW = nrm(document.getElementById('bW').value);
+  await saveBody(curWeek,{weight:newW,fat:nrm(document.getElementById('bF').value),muscle:nrm(document.getElementById('bM').value),date:new Date().toLocaleDateString('da-DK')});
+  
+  // Opdater også automatisk kropsvægt i indstillinger
+  if(newW) {
+      const s = getSettings();
+      s.bw = +newW;
+      saveSettings(s);
+  }
+  
   renderBody();
 }
 
-// ── CYKLUS ANALYSE & PROGRAM GENERERING ───────────────────────
-// Sikrer at alle uger i en cyklus er hentet fra Supabase
+// ── CYKLUS ANALYSE ───────────────────────────────────────────
 async function preloadCycle(cycle){
   const start=globalWeekOf(cycle,1),end=globalWeekOf(cycle,8);
   const promises=[];
   for(let w=start;w<=end;w++){if(!WC[w])promises.push(preloadWeek(w));}
   await Promise.all(promises);
 }
-
-// Round to nearest 2.5
 function r25(n){return Math.round(n*2)/2;}
-
-// Analysér én cyklus → forslag til næste cyklus pr. øvelse
 function analyzeCycle(cycle){
   const days=getDays(cycle);
   const startW=globalWeekOf(cycle,1);
-  // Tunge uger før deload: 5 og 6
   const peakWeeks=[5,6].map(wic=>startW+wic-1);
   const allWeeks=[1,2,3,4,5,6,7,8].map(wic=>startW+wic-1);
 
@@ -646,19 +785,15 @@ function analyzeCycle(cycle){
       if(ex.bw){newKg=0;reason='Bodyweight';}
       else if(totalSets===0){newKg=ex.kg;reason='Ingen logget data — beholder vægt';}
       else if(peakComp>=0.95&&peakAvgReps>=ex.r){
-        // Crushed: bump baseline +5 (peak går fra oldKg+5 til oldKg+10)
         newKg=r25(ex.kg+5);
         reason=`Crushed — ${Math.round(peakComp*100)}% sæt klaret, ${peakAvgReps.toFixed(1)} reps. Peak +5 kg.`;
       } else if(peakComp>=0.8&&peakAvgReps>=ex.r-1){
-        // God progression: +2.5 til baseline
         newKg=r25(ex.kg+2.5);
         reason=`God progression — ${Math.round(peakComp*100)}% sæt klaret. Peak +2,5 kg.`;
       } else if(peakComp>=0.5){
-        // Struggled: gentag samme baseline → samme peak target
         newKg=ex.kg;
         reason=`Hård cyklus (${Math.round(peakComp*100)}%) — gentag samme peak.`;
       } else if(peakComp>0){
-        // Failed mostly: sænk -2,5
         newKg=r25(Math.max(ex.kg-2.5,0));
         reason=`Sænk vægt — kun ${Math.round(peakComp*100)}% sæt klaret.`;
       }
@@ -668,17 +803,9 @@ function analyzeCycle(cycle){
     });
   });
 
-  return{
-    cycle,
-    daysFinished,
-    totalSetsLogged,
-    totalSetsCompleted,
-    overallCompletion:totalSetsLogged?totalSetsCompleted/totalSetsLogged:0,
-    perExercise:results
-  };
+  return{cycle,daysFinished,totalSetsLogged,totalSetsCompleted,overallCompletion:totalSetsLogged?totalSetsCompleted/totalSetsLogged:0,perExercise:results};
 }
 
-// Generér nyt program-array baseret på analyse + bruger-overrides
 function generateProgram(cycle,analysis,overrides){
   const baseDays=getDays(cycle);
   const newDays=JSON.parse(JSON.stringify(baseDays));
@@ -693,9 +820,7 @@ function generateProgram(cycle,analysis,overrides){
   return newDays;
 }
 
-// State for cyklus-overgang skærm
 let cycleReviewOverrides={};
-
 async function renderCycleReview(){
   const newCycle=cycleOf(curWeek);
   const prevCycle=newCycle-1;
@@ -703,7 +828,6 @@ async function renderCycleReview(){
   await preloadCycle(prevCycle);
   const a=analyzeCycle(prevCycle);
 
-  // Group by day
   const days=getDays(prevCycle);
   let daysHtml='';
   days.forEach(day=>{
@@ -711,7 +835,6 @@ async function renderCycleReview(){
     daysHtml+=`<div class="ex-card"><div class="ex-head"><div class="ex-name">${day.title}</div><div class="ex-target">${day.label}</div></div>
       <div class="sets-body" style="padding:8px 14px;">`;
     exItems.forEach(r=>{
-      const dxKg=r.bw?'BW':`<span style="font-weight:600;">${r.newKg} kg</span> <span style="font-size:11px;color:var(--muted);">(var ${r.oldKg})</span>`;
       const overrideKey=`${r.dayId}_${r.exIdx}`;
       const inputVal=cycleReviewOverrides[overrideKey]!=null?cycleReviewOverrides[overrideKey]:r.newKg;
       daysHtml+=`<div style="padding:9px 0;border-bottom:1px solid var(--border);">
@@ -762,7 +885,6 @@ async function commitCycleReview(){
 async function skipCycleReview(){
   const newCycle=cycleOf(curWeek);
   const prevCycle=newCycle-1;
-  // Kopier forrige cyklus' program 1:1
   const days=getDays(prevCycle);
   saveProgram(newCycle,JSON.parse(JSON.stringify(days)));
   cycleReviewOverrides={};
@@ -770,9 +892,9 @@ async function skipCycleReview(){
   renderLog();
 }
 
-// ── STYRKE ────────────────────────────────────────────────────
+// ── STYRKE (FREMGANG) & 1RM ──────────────────────────────────
 async function renderProg(){
-  let h=`<div class="section-title">Styrkeudvikling</div><div class="section-sub" style="margin-bottom:14px;">Baseret på færdige træninger</div>`;
+  let h=`<div class="section-title">Fremgang</div><div class="section-sub" style="margin-bottom:14px;">Baseret på dine færdige træninger</div>`;
   const cids=[];
   for(const[li,lift] of KEY_LIFTS.entries()){
     const entries=[];
@@ -780,10 +902,28 @@ async function renderProg(){
       let data=wcGet(w,lift.dayId);
       if(!data){try{const rows=await sb('workout_log','GET',null,`week=eq.${w}&day_id=eq.${lift.dayId}&order=updated_at.desc&limit=1`);if(rows&&rows.length){data=rows[0].data;wcSet(w,lift.dayId,data);}}catch(e){}}
       if(!data||!data.finished)continue;
+      
       const sets=(data.sets[lift.ei]||[]);
-      const mk=Math.max(...sets.map(s=>+s.kg||0));
-      const v=Math.round(sets.reduce((a,s)=>(+s.kg||0)*(+s.r||0)+a,0));
-      if(mk>0)entries.push({week:w,kg:mk,vol:v,date:data.date?isoToDa(data.date):''});
+      
+      // Beregn Max kg og estimeret 1RM (Epley Formel) ud fra gennemførte sæt
+      let mk = 0;
+      let m1rm = 0;
+      let validVol = 0;
+      
+      sets.forEach((s, idx) => {
+          if(data.checks[`${lift.ei}-${idx}`]) {
+              const kg = +s.kg || 0;
+              const r = +s.r || 0;
+              validVol += (kg * r);
+              if(kg > mk) mk = kg;
+              
+              // Epley 1RM formula: Weight * (1 + Reps / 30)
+              const rm = kg * (1 + r / 30);
+              if(rm > m1rm) m1rm = rm;
+          }
+      });
+      
+      if(mk>0)entries.push({week:w, kg:mk, vol:Math.round(validVol), max1rm:Math.round(m1rm), date:data.date?isoToDa(data.date):''});
     }
     const mk=entries.length?Math.max(...entries.map(e=>e.kg)):0;
     const cid=`lc_${li}`;const sc=entries.length>=2;
@@ -793,11 +933,17 @@ async function renderProg(){
     if(!entries.length)h+=`<div class="no-data">Ingen data endnu</div>`;
     else entries.forEach((e,i)=>{
       const pr=e.kg===mk&&i===entries.map(x=>x.kg).lastIndexOf(mk);
-      h+=`<div class="lift-row"><span class="lift-date">Uge ${e.week}${e.date?' · '+e.date:''}</span><span><span class="lift-val">${e.kg} kg</span><span class="lift-vol">${e.vol} vol</span>${pr&&entries.length>1?'<span class="pr-badge">PR</span>':''}</span></div>`;
+      h+=`<div class="lift-row">
+        <span class="lift-date">Uge ${e.week}${e.date?' · '+e.date:''}</span>
+        <span style="text-align:right;">
+            <span class="lift-val">${e.kg} kg ${pr&&entries.length>1?'<span class="pr-badge">PR</span>':''}</span><br>
+            <span class="lift-vol">Est. 1RM: <b>${e.max1rm}</b> kg</span>
+        </span>
+      </div>`;
     });
     h+=`</div></div>`;
   }
-  // Cyklus-analyse forhåndsvisning — viser foreslåede vægte for næste cyklus
+
   const curCyc=cycleOf(curWeek);
   await preloadCycle(curCyc);
   const an=analyzeCycle(curCyc);
@@ -833,35 +979,111 @@ async function renderProg(){
   setTimeout(()=>cids.forEach(c=>dlc(c.entries,c.cid)),50);
 }
 
-// ── EKSPORT ───────────────────────────────────────────────────
-async function renderExport(){
-  let csv='Uge,Dato,Kategori,Øvelse,Sæt,Kg,Reps\n';let has=false;
-  for(let w=1;w<=8;w++){
-    for(const d of DAYS){
-      let data=wcGet(w,d.id);
-      if(!data){try{const rows=await sb('workout_log','GET',null,`week=eq.${w}&day_id=eq.${d.id}&order=updated_at.desc&limit=1`);if(rows&&rows.length){data=rows[0].data;wcSet(w,d.id,data);}}catch(e){}}
-      if(!data||!data.finished)continue;has=true;
-      const dato=data.date?isoToDa(data.date):'';
-      d.ex.forEach((ex,ei)=>{(data.sets[ei]||[]).forEach((s,si)=>{csv+=`${w},${dato},${d.title},${ex.n},${si+1},${s.kg||'BW'},${s.r}\n`;});});
-    }
-    const b=bcGet(w);
-    if(b&&(b.weight||b.fat||b.muscle)){has=true;
-      if(b.weight)csv+=`${w},,Krop,Vægt,—,${b.weight},kg\n`;
-      if(b.fat)csv+=`${w},,Krop,Fedtprocent,—,${b.fat},%\n`;
-      if(b.muscle)csv+=`${w},,Krop,Muskelmasse,—,${b.muscle},kg\n`;
-    }
-  }
-  window._csv=csv;
-  document.getElementById('export-screen').innerHTML=`
-    <div class="section-title">Eksport</div>
-    <div class="section-sub" style="margin-bottom:14px;">Data gemmes i Supabase cloud. Kopiér og send til Claude for analyse.</div>
-    <div class="export-box">${has?csv:'Ingen data endnu.'}</div>
-    ${has?`<button class="copy-btn" onclick="copyCSV()">Kopiér til udklipsholder</button>`:''}
-    <button class="clear-btn" onclick="clearAll()">Slet lokal cache</button>`;
+// ── INDSTILLINGER & EKSPORT ──────────────────────────────────
+async function renderSettings(){
+  const s = getSettings();
+  
+  // Cardio Calculation (Karvonen formel for max fedttab @ 80%)
+  const maxHr = 220 - (s.age || 30);
+  const reserve = maxHr - (s.rhr || 60);
+  const targetHr = Math.round((reserve * 0.80) + (s.rhr || 60));
+
+  let h = `
+    <div class="section-title">Indstillinger</div>
+    <div class="section-sub">Dine personlige mål og data</div>
+
+    <div class="input-card">
+        <div class="input-card-head">Makro Mål</div>
+        <div class="input-card-body">
+            <div class="input-row"><span class="input-label">Kalorier</span><input type="number" id="setKcal" value="${s.kcal}"><span class="input-unit">kcal</span></div>
+            <div class="input-row"><span class="input-label">Protein</span><input type="number" id="setProt" value="${s.prot}"><span class="input-unit">g</span></div>
+            <div class="input-row"><span class="input-label">Kulhydrat</span><input type="number" id="setKh" value="${s.kh}"><span class="input-unit">g</span></div>
+            <div class="input-row"><span class="input-label">Fedt</span><input type="number" id="setFat" value="${s.fat}"><span class="input-unit">g</span></div>
+        </div>
+    </div>
+
+    <div class="input-card">
+        <div class="input-card-head">Krop & Cardio</div>
+        <div class="input-card-body">
+            <div class="input-row"><span class="input-label">Kropsvægt</span><input type="number" id="setBw" value="${s.bw}"><span class="input-unit">kg</span></div>
+            <div class="input-row"><span class="input-label">Alder</span><input type="number" id="setAge" value="${s.age}"><span class="input-unit">år</span></div>
+            <div class="input-row"><span class="input-label">Hvilepuls</span><input type="number" id="setRhr" value="${s.rhr}"><span class="input-unit">bpm</span></div>
+        </div>
+    </div>
+
+    <div class="hiit-box" style="background:var(--blue-bg);color:var(--blue-t); display:flex; align-items:center; gap:12px; margin-bottom:14px;">
+        <i data-lucide="activity" style="width:24px;height:24px;flex-shrink:0;"></i>
+        <div>
+            <div style="font-weight:700;">Optimal Fedttabs-Puls</div>
+            <div style="font-size:11px; opacity:0.8;">Ved 80% intensitet (Karvonen formel)</div>
+            <div style="font-size:20px; margin-top:2px;">~${targetHr} bpm</div>
+        </div>
+    </div>
+
+    <button class="save-btn" onclick="saveSettingsForm()">Gem Indstillinger</button>
+
+    <div class="section-title" style="margin-top:32px;">Data & Eksport</div>
+    <div class="section-sub" style="margin-bottom:14px;">Data gemmes i Supabase cloud. Kopiér til Claude for analyse.</div>
+    <div class="export-box" id="exportBox">Genererer CSV...</div>
+    <button class="copy-btn" onclick="copyCSV()">Kopiér til udklipsholder</button>
+    <button class="clear-btn" onclick="clearAll()">Slet lokal cache</button>
+  `;
+  
+  document.getElementById('settings-screen').innerHTML = h;
+  if(window.lucide) lucide.createIcons();
+
+  // Generer CSV async så siden ikke hænger
+  setTimeout(async () => {
+      let csv='Uge,Dato,Kategori,Øvelse,Sæt,Kg,Reps\n';let has=false;
+      for(let w=1;w<=8;w++){
+        for(const d of DAYS){
+          let data=wcGet(w,d.id);
+          if(!data){try{const rows=await sb('workout_log','GET',null,`week=eq.${w}&day_id=eq.${d.id}&order=updated_at.desc&limit=1`);if(rows&&rows.length){data=rows[0].data;wcSet(w,d.id,data);}}catch(e){}}
+          if(!data||!data.finished)continue;has=true;
+          const dato=data.date?isoToDa(data.date):'';
+          d.ex.forEach((ex,ei)=>{(data.sets[ei]||[]).forEach((s,si)=>{csv+=`${w},${dato},${d.title},${ex.n},${si+1},${s.kg||'BW'},${s.r}\n`;});});
+        }
+        const b=bcGet(w);
+        if(b&&(b.weight||b.fat||b.muscle)){has=true;
+          if(b.weight)csv+=`${w},,Krop,Vægt,—,${b.weight},kg\n`;
+          if(b.fat)csv+=`${w},,Krop,Fedtprocent,—,${b.fat},%\n`;
+          if(b.muscle)csv+=`${w},,Krop,Muskelmasse,—,${b.muscle},kg\n`;
+        }
+      }
+      window._csv=csv;
+      document.getElementById('exportBox').textContent = has ? csv : 'Ingen data endnu.';
+  }, 100);
 }
 
-function copyCSV(){navigator.clipboard.writeText(window._csv||'').then(()=>{const b=document.querySelector('.copy-btn');if(b){b.textContent='Kopieret ✓';setTimeout(()=>{b.textContent='Kopiér til udklipsholder';},2000);}});}
+function saveSettingsForm() {
+    vibe(50);
+    const s = {
+        kcal: +document.getElementById('setKcal').value,
+        prot: +document.getElementById('setProt').value,
+        kh: +document.getElementById('setKh').value,
+        fat: +document.getElementById('setFat').value,
+        bw: +document.getElementById('setBw').value,
+        age: +document.getElementById('setAge').value,
+        rhr: +document.getElementById('setRhr').value,
+    };
+    saveSettings(s);
+    
+    // Vis feedback i knappen
+    const btn = document.querySelector('.save-btn');
+    const oldText = btn.textContent;
+    btn.textContent = 'Gemt ✓';
+    btn.style.background = 'var(--green-bg)';
+    btn.style.color = 'var(--green-t)';
+    btn.style.borderColor = 'var(--green-b)';
+    
+    setTimeout(() => {
+        renderSettings(); // Opdater cardio-beregneren med nye tal
+    }, 1000);
+}
+
+function copyCSV(){vibe(30); navigator.clipboard.writeText(window._csv||'').then(()=>{const b=document.querySelector('.copy-btn');if(b){b.textContent='Kopieret ✓';setTimeout(()=>{b.textContent='Kopiér til udklipsholder';},2000);}});}
 function clearAll(){
+  vibe(40);
   if(!confirm('Slet lokal cache? Cloud-data i Supabase bevares.'))return;
   for(let w=1;w<=8;w++){DAYS.forEach(d=>localStorage.removeItem(lsKey(w,d.id)));localStorage.removeItem(bodyLsKey(w));}
   Object.keys(WC).forEach(k=>delete WC[k]);Object.keys(BC).forEach(k=>delete BC[k]);
@@ -869,36 +1091,154 @@ function clearAll(){
 }
 
 async function showScreen(name){
+  vibe(20);
   curScreen=name;
-  ['log','body','prog','export','kost'].forEach(s=>{document.getElementById(s+'-screen').classList.toggle('visible',s===name);document.getElementById('bnav-'+s).classList.toggle('active',s===name);});
-  document.getElementById('tabs').style.display=name==='log'?'flex':'none';
-  document.getElementById('navRight').style.display=name==='log'?'flex':'none';
-  document.getElementById('navTitle').textContent={log:'Træningslog',body:'Krop',prog:'Styrke',export:'Eksport',kost:'Kostlog'}[name];
-  if(name==='body')await renderBody();
-  if(name==='prog')await renderProg();
-  if(name==='export')await renderExport();
+  ['dash','log','body','prog','settings','kost'].forEach(s=>{
+    const sc=document.getElementById(s+'-screen'); if(sc) sc.classList.toggle('visible',s===name);
+    const bn=document.getElementById('bnav-'+s); if(bn) bn.classList.toggle('active',s===name);
+  });
+  document.getElementById('tabs').style.display=(name==='log')?'flex':'none';
+  document.getElementById('navRight').style.display=(name==='log'||name==='dash')?'flex':'none';
+  
+  const titles={dash:'Overblik',log:'Træningslog',body:'Målinger',prog:'Fremgang',settings:'Indstillinger',kost:'Makrolog'};
+  document.getElementById('navTitle').textContent=titles[name];
+  
+  if(name==='dash') await renderDash();
+  if(name==='log') renderLog();
+  if(name==='body') await renderBody();
+  if(name==='prog') await renderProg();
+  if(name==='settings') await renderSettings();
   if(name==='kost'){await loadKostRemoteRange(7);renderKost();}
 }
 
-// ── AUTO SELECT DAY BASED ON WEEKDAY ─────────────────────────
-// 0=Sun,1=Mon,2=Tue,3=Wed,4=Thu,5=Fri,6=Sat
-// Program: Man=0, Tir=1, Tor=2, Fre=3, Lør=4
-// Ons+Søn = hviledag → vis næste træningsdag
+async function changeWeek(dir){
+  const n=curWeek+dir;if(n<1)return;
+  curWeek=n;
+  const cyc=cycleOf(curWeek),wic=weekInCycle(curWeek);
+  document.getElementById('weekLabel').textContent=cyc>1?`C${cyc}·U${wic}`:`Uge ${wic}`;
+  document.getElementById('tabs').innerHTML='<div style="padding:8px 0 11px;color:var(--muted);font-size:13px;">Henter...</div>';
+  
+  if(curScreen==='log') document.getElementById('log-screen').innerHTML='<div class="loading"><div class="spinner"></div>Henter data...</div>';
+  else if(curScreen==='dash') document.getElementById('dash-screen').innerHTML='<div class="loading"><div class="spinner"></div>Henter overblik...</div>';
+
+  await preloadWeek(curWeek);
+  renderTabs();
+  
+  if(curScreen === 'log') renderLog();
+  else if(curScreen === 'dash') await renderDash();
+}
+
+// ── DASHBOARD ──────────────────────────────────────────────────
+async function renderDash() {
+  const cyc = cycleOf(curWeek);
+  const wic = weekInCycle(curWeek);
+  const days = getDays(cyc);
+  
+  let daysDone = 0;
+  let totalVol = 0;
+  let totalSetsDone = 0;
+  let totalSets = 0;
+  
+  days.forEach(d => {
+    const dat = wcGet(curWeek, d.id);
+    if(dat && dat.finished) daysDone++;
+    totalSets += total(d);
+    if(dat) {
+        totalVol += vol(dat, d);
+        totalSetsDone += done(dat);
+    }
+  });
+  
+  const pctDone = Math.round((daysDone / days.length) * 100) || 0;
+  
+  const s = getSettings();
+  const kData = loadKost(curKostDate);
+  const kcal = +(kData.kcal || 0);
+  const burned = +(kData.burned || 0);
+  const net = kcal - burned;
+  const prot = +(kData.prot || 0);
+  const pTarget = s.prot;
+  const TARGET_KCAL = s.kcal;
+  
+  const bodyEntries = await loadAllBody();
+  const latestBody = bodyEntries.length ? bodyEntries[bodyEntries.length - 1] : null;
+  const firstBody = bodyEntries.length ? bodyEntries[0] : null;
+  const weightDiff = latestBody && firstBody && latestBody.week !== firstBody.week ? (+latestBody.weight - +firstBody.weight).toFixed(1) : null;
+  
+  let h = `
+    <div class="day-intro">
+        <span class="badge" style="background:var(--blue-bg);color:var(--blue-t);">Cyklus ${cyc} · Uge ${wic}</span>
+        <div class="day-name">Dit Overblik</div>
+        <div class="day-sub">Dine vigtigste tal samlet ét sted.</div>
+    </div>
+    
+    <div class="ex-card dash-card" onclick="showScreen('log')">
+        <div class="ex-head" style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="ex-name" style="display:flex; align-items:center; gap:6px;"><i data-lucide="dumbbell" style="width:18px;height:18px;"></i> Ugens Træning</div>
+            <div style="font-size:18px; font-weight:700; color:var(--blue-t);">${daysDone} / ${days.length}</div>
+        </div>
+        <div class="sets-body" style="padding: 14px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom: 6px; font-size: 12px; color: var(--muted);">
+                <span>${totalSetsDone} sæt klaret</span>
+                <span>${totalVol.toLocaleString()} kg løftet</span>
+            </div>
+            <div style="height:8px; background:var(--input-bg); border-radius:4px; overflow:hidden;">
+                <div style="height:100%; width:${pctDone}%; background:var(--blue-t); border-radius:4px; transition: width 0.5s ease;"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="ex-card dash-card" onclick="showScreen('kost')">
+        <div class="ex-head" style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="ex-name" style="display:flex; align-items:center; gap:6px;"><i data-lucide="utensils" style="width:18px;height:18px;"></i> Dagens Makro</div>
+            <div style="font-size:13px; color:var(--muted);">${kostDayLabel(curKostDate).split(' ')[0]}</div>
+        </div>
+        <div class="sets-body" style="padding: 14px; display: flex; gap: 10px;">
+            <div style="flex:1; background:var(--input-bg); padding:10px; border-radius:10px; border:1px solid var(--border);">
+                <div style="font-size:11px; color:var(--muted); margin-bottom:2px;">Netto kcal</div>
+                <div style="font-size:18px; font-weight:700; color:${net > TARGET_KCAL ? 'var(--red-t)' : 'var(--text)'}">${net}</div>
+                <div style="font-size:10px; color:var(--hint);">Mål: ${TARGET_KCAL}</div>
+            </div>
+            <div style="flex:1; background:var(--input-bg); padding:10px; border-radius:10px; border:1px solid var(--border);">
+                <div style="font-size:11px; color:var(--muted); margin-bottom:2px;">Protein</div>
+                <div style="font-size:18px; font-weight:700; color:${prot >= pTarget ? 'var(--green-t)' : 'var(--text)'}">${prot}g</div>
+                <div style="font-size:10px; color:var(--hint);">Mål: ${pTarget}g</div>
+            </div>
+        </div>
+    </div>
+  `;
+  
+  if(latestBody) {
+      h += `
+    <div class="ex-card dash-card" onclick="showScreen('body')">
+        <div class="ex-head" style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="ex-name" style="display:flex; align-items:center; gap:6px;"><i data-lucide="scale" style="width:18px;height:18px;"></i> Kropsmålinger</div>
+            <div style="font-size:13px; color:var(--muted);">Uge ${latestBody.week}</div>
+        </div>
+        <div class="sets-body" style="padding: 14px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <div style="font-size:22px; font-weight:700;">${latestBody.weight} kg</div>
+                <div style="font-size:12px; color:var(--muted); margin-top:2px;">${latestBody.fat ? latestBody.fat + '% fedt' : 'Ingen fedt% logget'}</div>
+            </div>
+            ${weightDiff !== null ? `<div style="font-size:15px; font-weight:700; background:var(--input-bg); padding:6px 12px; border-radius:999px;">${dH(weightDiff, true)}</div>` : ''}
+        </div>
+    </div>
+      `;
+  }
+  
+  document.getElementById('dash-screen').innerHTML = h;
+  if(window.lucide) lucide.createIcons();
+}
+
 function autoSelectDay(){
   const jsDay=new Date().getDay();
-  // Wed(3)→r1 (Ons hviledag), Sun(0)→r2 (Søn hviledag)
   if(jsDay===3){curRest='r1';return;}
   if(jsDay===0){curRest='r2';return;}
-  // Mon=0, Tue=1, Thu=2, Fri=3, Sat=4
   curDay={1:0,2:1,4:2,5:3,6:4}[jsDay];
   curRest=null;
 }
 
-// ── STARTUP ───────────────────────────────────────────────────
-
-// ── KOST ──────────────────────────────────────────────────────
-const TARGET_KCAL=2520,TARGET_PROT=180,TARGET_KH=260,TARGET_FAT=84;
-const BODY_WEIGHT=93;
+// ── KOST / MAKRO ──────────────────────────────────────────────
 let curKostDate=todayISO();
 
 function kostKey(date){return'kost_'+date;}
@@ -908,6 +1248,7 @@ function saveKostLocal(date,data){localStorage.setItem(kostKey(date),JSON.string
 async function saveKostRemote(date,data){
   setSync('');
   try{
+    await sb('kost_log','DELETE',null,`date=eq.${date}`);
     await sb('kost_log','POST',{date,kcal:data.kcal?+data.kcal:null,prot:data.prot?+data.prot:null,kh:data.kh?+data.kh:null,fat:data.fat?+data.fat:null,burned:data.burned?+data.burned:null});
     setSync('ok');
   }catch(e){setSync('err');}
@@ -918,7 +1259,6 @@ async function loadKostRemoteRange(days){
     const dates=[];
     for(let i=0;i<days;i++){const d=new Date();d.setDate(d.getDate()-i);dates.push(d.toISOString().split('T')[0]);}
     const rows=await sb('kost_log','GET',null,'date=in.('+dates.join(',')+')'+'&order=date.desc');
-    // Build set of dates that exist in Supabase with real data
     const remoteSet=new Set();
     (rows||[]).forEach(r=>{
       if(r.kcal||r.prot||r.kh||r.fat||r.burned){
@@ -927,7 +1267,6 @@ async function loadKostRemoteRange(days){
         localStorage.setItem(kostKey(r.date),JSON.stringify(d));
       }
     });
-    // Clear any local dates NOT in Supabase (e.g. deleted on another device)
     dates.forEach(date=>{
       if(!remoteSet.has(date)){
         localStorage.removeItem(kostKey(date));
@@ -956,22 +1295,26 @@ function ring(pct,color,val,unit,label,sub){
     '</div>';}
 
 function renderKost(){
+  const s = getSettings();
+  const TARGET_KCAL = s.kcal;
+  const protTarget = s.prot;
+  const TARGET_KH = s.kh;
+  const TARGET_FAT = s.fat;
+
   const data=loadKost(curKostDate);
   const kcal=+data.kcal||0,prot=+data.prot||0,kh=+data.kh||0,fat=+data.fat||0,burned=+data.burned||0;
   const net=kcal-burned;
   const balance=net-TARGET_KCAL;
-  const protTarget=Math.round(BODY_WEIGHT*2);
+  
   const isDeficit=balance<0,isSurplus=balance>0;
   const balClass=isDeficit?'deficit':isSurplus?'surplus':'neutral';
   const balSign=balance>0?'+':'';
 
-  // Protein status
   const protPct=protTarget>0?Math.round(prot/protTarget*100):0;
   const protOk=prot>=protTarget;
-  const protClass=protOk?'deficit':'surplus'; // green if ok, red if not
+  const protClass=protOk?'deficit':'surplus'; 
   const protText=protOk?'Proteinm\u00e5l n\u00e5et \u2713':'Proteinm\u00e5l ikke n\u00e5et';
 
-  // Kalorie status text
   const balText=isDeficit?'Kalorieunderskud \u2713 — fedttab p\u00e5 rette spor':
     isSurplus?'Kalorieoverskud — overstiger m\u00e5l':'Balanceret — p\u00e5 vedligeholdelse';
 
@@ -1002,7 +1345,7 @@ function renderKost(){
       '</div></div>');
   }
 
-  let h='<div class="section-title">Kostlog</div>'+
+  let h='<div class="section-title">Makrolog</div>'+
     '<div class="section-sub">M\u00e5l: '+TARGET_KCAL+' kcal \u00b7 '+protTarget+'g protein \u00b7 '+TARGET_KH+'g kh \u00b7 '+TARGET_FAT+'g fedt</div>'+
     '<div class="kost-date-nav">'+
     '<button class="icon-btn" onclick="kostChangeDay(-1)">\u25c4</button>'+
@@ -1010,7 +1353,6 @@ function renderKost(){
     '<button class="icon-btn" onclick="kostChangeDay(1)">\u25ba</button>'+
     '</div>';
 
-  // Always show status cards
   h+='<div class="balance-card '+balClass+'">'+
     '<div>'+
     '<div class="balance-label '+balClass+'">'+balText+'</div>'+
@@ -1027,7 +1369,6 @@ function renderKost(){
     '<div class="balance-val '+protClass+'">'+prot+'g</div>'+
     '</div>';
 
-  // Rings only when data entered
   if(kcal>0||prot>0){
     h+='<div class="kost-rings">'+
       ring(kcal/TARGET_KCAL,'#378add',kcal,'kcal','Kalorier','m\u00e5l '+TARGET_KCAL)+
@@ -1048,16 +1389,17 @@ function renderKost(){
     '<div class="kost-field-label">Forbr\u00e6ndt (kcal fra tr\u00e6ning/cardio)</div>'+
     '<input type="number" inputmode="numeric" id="kBurned" value="'+(data.burned||'')+'" placeholder="0"></div>'+
     '</div></div>'+
-    '<button class="kost-save-btn" onclick="saveKostEntry()">Gem</button>'+
-    '<button onclick="resetKostEntry()" style="width:100%;padding:11px;border-radius:12px;border:1.5px solid var(--border);background:transparent;color:var(--muted);font-size:14px;font-weight:500;font-family:inherit;cursor:pointer;margin-bottom:14px;">Nulstil dag</button>';
+    '<div class="sticky-save-wrap">'+
+        '<button class="kost-save-btn" style="margin-bottom:0;" onclick="saveKostEntry()">Gem Makro</button>'+
+    '</div>'+
+    '<button onclick="resetKostEntry()" style="width:100%;padding:11px;border-radius:12px;border:1.5px solid var(--border);background:transparent;color:var(--muted);font-size:14px;font-weight:500;font-family:inherit;cursor:pointer;margin-bottom:14px;margin-top:14px;">Nulstil dag</button>';
 
   if(weekRows.length>0){
     const avgKcal=Math.round(weekTotalKcal/weekDays);
     const avgProt=Math.round(weekTotalProt/weekDays);
     const totBalSign=weekTotalBalance>0?'+':'';
     const totBalClass=weekTotalBalance<0?'def':'sur';
-    const protTarget2=Math.round(BODY_WEIGHT*2);
-    const avgProtOk=avgProt>=protTarget2;
+    const avgProtOk=avgProt>=protTarget;
 
     h+='<div class="week-kost-card"><div class="week-kost-head">Sidste 7 dage</div>'+weekRows.join('')+'</div>';
 
@@ -1089,9 +1431,9 @@ function renderKost(){
 }
 
 function kostChangeDay(dir){
+  vibe(20);
   const d=new Date(curKostDate);d.setDate(d.getDate()+dir);
   const newDate=d.toISOString().split('T')[0];
-  // Allow up to tomorrow (so Sunday is accessible on Saturday)
   const tomorrow=new Date();tomorrow.setDate(tomorrow.getDate()+1);
   const tomorrowISO=tomorrow.toISOString().split('T')[0];
   if(newDate>tomorrowISO)return;
@@ -1099,10 +1441,9 @@ function kostChangeDay(dir){
 }
 
 async function resetKostEntry(){
+  vibe(40);
   if(!confirm('Nulstil kostdata for ' + kostDayLabel(curKostDate) + '?'))return;
-  // Clear localStorage
   localStorage.removeItem(kostKey(curKostDate));
-  // Delete row from Supabase
   setSync('');
   try{
     const url=SB_URL+'/rest/v1/kost_log?date=eq.'+curKostDate;
@@ -1113,6 +1454,7 @@ async function resetKostEntry(){
 }
 
 async function saveKostEntry(){
+  vibe(50);
   const data={
     kcal:document.getElementById('kKcal').value,
     prot:document.getElementById('kProt').value,
@@ -1122,35 +1464,44 @@ async function saveKostEntry(){
   };
   saveKostLocal(curKostDate,data);
   await saveKostRemote(curKostDate,data);
-  renderKost();
+  
+  // Opdater knap tekst midlertidigt for feedback
+  const btn = document.querySelector('.kost-save-btn');
+  const old = btn.textContent;
+  btn.textContent = "Makro Gemt ✓";
+  btn.style.background = 'var(--green-bg)';
+  btn.style.color = 'var(--green-t)';
+  btn.style.borderColor = 'var(--green-b)';
+  setTimeout(()=>{ renderKost(); }, 1000);
 }
 
-// Cyklus helpers: 8 uger pr. cyklus, weeks tæller globalt (1..8 = cyk 1, 9..16 = cyk 2, osv.)
+// Cyklus helpers: 8 uger pr. cyklus, weeks tæller globalt
 function cycleOf(globalWeek){return Math.floor((globalWeek-1)/8)+1;}
 function weekInCycle(globalWeek){return ((globalWeek-1)%8)+1;}
 function globalWeekOf(cycle,wic){return (cycle-1)*8+wic;}
 
-async function autoSelectWeek(){
-  // Program start: Monday 20 April 2026 = uge 1 (cyklus 1)
+function getActualCurrentWeek(){
   const programStart=new Date('2026-04-20');
   const today=new Date();
   today.setHours(0,0,0,0);
   const daysSinceStart=Math.floor((today-programStart)/(1000*60*60*24));
-  const weeksSinceStart=Math.max(Math.floor(daysSinceStart/7),0);
-  curWeek=weeksSinceStart+1;
+  return Math.max(Math.floor(daysSinceStart/7),0)+1;
+}
+
+async function autoSelectWeek(){
+  curWeek=getActualCurrentWeek();
   await preloadWeek(curWeek);
 }
 
 async function init(){
   autoSelectDay();
-  document.getElementById('log-screen').innerHTML='<div class="loading"><div class="spinner"></div>Henter data...</div>';
-  // Load all data in parallel - workout week + last 7 days kost
+  document.getElementById('dash-screen').innerHTML='<div class="loading"><div class="spinner"></div>Henter overblik...</div>';
   await Promise.all([
     autoSelectWeek(),
     loadKostRemoteRange(7)
   ]);
-  renderTabs();
-  renderLog();
+  await showScreen('dash');
+  if(window.lucide) lucide.createIcons();
 }
 
 init();
