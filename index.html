@@ -221,7 +221,6 @@ canvas{display:block;}
 </head>
 <body ontouchstart="">
 
-<!-- REST TIMER UI -->
 <div class="timer-bar" id="restTimer">
     <i data-lucide="timer" style="width:18px;height:18px;"></i>
     <span id="timerText" style="min-width:44px; text-align:center;">01:30</span>
@@ -300,6 +299,24 @@ function getSettings() {
 }
 function saveSettings(s) {
     localStorage.setItem('user_settings', JSON.stringify(s));
+}
+
+// Cyklus helpers: 8 uger pr. cyklus, weeks tæller globalt
+function cycleOf(globalWeek){return Math.floor((globalWeek-1)/8)+1;}
+function weekInCycle(globalWeek){return ((globalWeek-1)%8)+1;}
+function globalWeekOf(cycle,wic){return (cycle-1)*8+wic;}
+
+function getActualCurrentWeek(){
+  const programStart=new Date('2026-04-20');
+  const today=new Date();
+  today.setHours(0,0,0,0);
+  const daysSinceStart=Math.floor((today-programStart)/(1000*60*60*24));
+  return Math.max(Math.floor(daysSinceStart/7),0)+1;
+}
+
+async function autoSelectWeek(){
+  curWeek=getActualCurrentWeek();
+  await preloadWeek(curWeek);
 }
 
 // Per-cyklus program
@@ -502,10 +519,11 @@ function renderRestDay(){
   const rd=REST_DAYS.find(r=>r.id===curRest);
   if(!rd){curRest=null;return renderLog();}
   
-  // Hent settings for at vise cardio puls forslag
   const s = getSettings();
   const maxHr = 220 - (s.age || 30);
-  const targetHr = Math.round(((maxHr - (s.rhr || 60)) * 0.80) + (s.rhr || 60));
+  const reserve = maxHr - (s.rhr || 60);
+  const targetMin = Math.round((reserve * 0.60) + (s.rhr || 60));
+  const targetMax = Math.round((reserve * 0.70) + (s.rhr || 60));
 
   const h=`<div class="day-intro">
     <span class="badge" style="background:var(--teal-bg);color:var(--teal-t);">Restitution</span>
@@ -523,7 +541,7 @@ function renderRestDay(){
     </div>
   </div>
   <div class="ex-card"><div class="ex-head"><div class="ex-name">Forslag: Zone 2 / Fedttabs Cardio</div>
-    <div class="ex-target">Hold pulsen omkring <b>${targetHr} bpm</b> (80% reserve)</div></div>
+    <div class="ex-target">Hold pulsen mellem <b>${targetMin} - ${targetMax} bpm</b></div></div>
     <div class="sets-body" style="padding:12px 14px;">
       <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;"><span>Gåtur</span><span style="color:var(--muted);">30-45 min</span></div>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;"><span>12-3-30 (let)</span><span style="color:var(--muted);">30 min</span></div>
@@ -555,7 +573,6 @@ function renderLog(){
   let data=wcGet(curWeek,d.id);
   if(!data){data=makeInit(curDay,curWeek);wcSet(curWeek,d.id,data);}
   
-  // Hent sidste uges data (til ghost data)
   const lwData = curWeek > 1 ? wcGet(curWeek - 1, d.id) : null;
 
   const v=vol(data,d),dn=done(data),tot=total(d),fin=data.finished;
@@ -572,7 +589,6 @@ function renderLog(){
   d.ex.forEach((ex,ei)=>{
     const rl=ex.rl||'reps';
     
-    // Generer Ghost Data HTML
     let ghostText = '';
     if(lwData && lwData.sets && lwData.sets[ei]) {
         let maxK = 0, bestR = 0, doneSets = 0;
@@ -631,10 +647,7 @@ async function toggleChk(key){
   vibe(40);
   const{d,data}=getData();
   data.checks[key]=!data.checks[key];
-  
-  // Start/Stop Timer automatisk
   if(data.checks[key]) startTimer(90); else stopTimer();
-  
   await saveWorkout(curWeek,d.id,data);
   renderLog();
 }
@@ -718,13 +731,11 @@ async function saveBodyEntry(){
   const newW = nrm(document.getElementById('bW').value);
   await saveBody(curWeek,{weight:newW,fat:nrm(document.getElementById('bF').value),muscle:nrm(document.getElementById('bM').value),date:new Date().toLocaleDateString('da-DK')});
   
-  // Opdater også automatisk kropsvægt i indstillinger
   if(newW) {
       const s = getSettings();
       s.bw = +newW;
       saveSettings(s);
   }
-  
   renderBody();
 }
 
@@ -905,7 +916,6 @@ async function renderProg(){
       
       const sets=(data.sets[lift.ei]||[]);
       
-      // Beregn Max kg og estimeret 1RM (Epley Formel) ud fra gennemførte sæt
       let mk = 0;
       let m1rm = 0;
       let validVol = 0;
@@ -983,10 +993,11 @@ async function renderProg(){
 async function renderSettings(){
   const s = getSettings();
   
-  // Cardio Calculation (Karvonen formel for max fedttab @ 80%)
+  // Cardio Calculation (Karvonen formel for max fedttab @ 60-70%)
   const maxHr = 220 - (s.age || 30);
   const reserve = maxHr - (s.rhr || 60);
-  const targetHr = Math.round((reserve * 0.80) + (s.rhr || 60));
+  const targetMin = Math.round((reserve * 0.60) + (s.rhr || 60));
+  const targetMax = Math.round((reserve * 0.70) + (s.rhr || 60));
 
   let h = `
     <div class="section-title">Indstillinger</div>
@@ -1014,9 +1025,9 @@ async function renderSettings(){
     <div class="hiit-box" style="background:var(--blue-bg);color:var(--blue-t); display:flex; align-items:center; gap:12px; margin-bottom:14px;">
         <i data-lucide="activity" style="width:24px;height:24px;flex-shrink:0;"></i>
         <div>
-            <div style="font-weight:700;">Optimal Fedttabs-Puls</div>
-            <div style="font-size:11px; opacity:0.8;">Ved 80% intensitet (Karvonen formel)</div>
-            <div style="font-size:20px; margin-top:2px;">~${targetHr} bpm</div>
+            <div style="font-weight:700;">Zone 2 Puls (Fedttab)</div>
+            <div style="font-size:11px; opacity:0.8;">60-70% intensitet (Karvonen)</div>
+            <div style="font-size:20px; margin-top:2px;">~${targetMin} - ${targetMax} bpm</div>
         </div>
     </div>
 
@@ -1032,7 +1043,6 @@ async function renderSettings(){
   document.getElementById('settings-screen').innerHTML = h;
   if(window.lucide) lucide.createIcons();
 
-  // Generer CSV async så siden ikke hænger
   setTimeout(async () => {
       let csv='Uge,Dato,Kategori,Øvelse,Sæt,Kg,Reps\n';let has=false;
       for(let w=1;w<=8;w++){
@@ -1068,16 +1078,14 @@ function saveSettingsForm() {
     };
     saveSettings(s);
     
-    // Vis feedback i knappen
     const btn = document.querySelector('.save-btn');
-    const oldText = btn.textContent;
     btn.textContent = 'Gemt ✓';
     btn.style.background = 'var(--green-bg)';
     btn.style.color = 'var(--green-t)';
     btn.style.borderColor = 'var(--green-b)';
     
     setTimeout(() => {
-        renderSettings(); // Opdater cardio-beregneren med nye tal
+        renderSettings(); 
     }, 1000);
 }
 
@@ -1465,7 +1473,6 @@ async function saveKostEntry(){
   saveKostLocal(curKostDate,data);
   await saveKostRemote(curKostDate,data);
   
-  // Opdater knap tekst midlertidigt for feedback
   const btn = document.querySelector('.kost-save-btn');
   const old = btn.textContent;
   btn.textContent = "Makro Gemt ✓";
@@ -1473,24 +1480,6 @@ async function saveKostEntry(){
   btn.style.color = 'var(--green-t)';
   btn.style.borderColor = 'var(--green-b)';
   setTimeout(()=>{ renderKost(); }, 1000);
-}
-
-// Cyklus helpers: 8 uger pr. cyklus, weeks tæller globalt
-function cycleOf(globalWeek){return Math.floor((globalWeek-1)/8)+1;}
-function weekInCycle(globalWeek){return ((globalWeek-1)%8)+1;}
-function globalWeekOf(cycle,wic){return (cycle-1)*8+wic;}
-
-function getActualCurrentWeek(){
-  const programStart=new Date('2026-04-20');
-  const today=new Date();
-  today.setHours(0,0,0,0);
-  const daysSinceStart=Math.floor((today-programStart)/(1000*60*60*24));
-  return Math.max(Math.floor(daysSinceStart/7),0)+1;
-}
-
-async function autoSelectWeek(){
-  curWeek=getActualCurrentWeek();
-  await preloadWeek(curWeek);
 }
 
 async function init(){
