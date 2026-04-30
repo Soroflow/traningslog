@@ -260,9 +260,91 @@ canvas{display:block;}
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>
-const SB_URL='https://dktmdmleeaenntwknhxe.supabase.co';
-const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRrdG1kbWxlZWFlbm50d2tuaHhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3ODMyMDMsImV4cCI6MjA5MjM1OTIwM30.OCmLYJRztPb9yJI6flE7Qos5Wdsck_f0Dk7EmwAosRk';
-const HDR={'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY};
+const SB_URL = 'https://dktmdmleeaenntwknhxe.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRrdG1kbWxlZWFlbm50d2tuaHhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3ODMyMDMsImV4cCI6MjA5MjM1OTIwM30.OCmLYJRztPb9yJI6flE7Qos5Wdsck_f0Dk7EmwAosRk';
+
+// Hent session fra localStorage
+let session = JSON.parse(localStorage.getItem('sb-session'));
+
+// Dynamiske headers
+function getHeaders() {
+    const s = JSON.parse(localStorage.getItem('sb-session'));
+    return {
+        'Content-Type': 'application/json',
+        'apikey': SB_KEY,
+        'Authorization': `Bearer ${s ? s.access_token : SB_KEY}`
+    };
+}
+
+// --- AUTH FUNKTIONER ---
+async function signIn(email, password) {
+    vibe(20);
+    const btn = document.querySelector('.login-btn');
+    if(btn) btn.textContent = 'Logger ind...';
+    
+    const r = await fetch(`${SB_URL}/auth/v1/token?grant_type=password`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ email, password })
+    });
+    const data = await r.json();
+    if (data.access_token) {
+        localStorage.setItem('sb-session', JSON.stringify(data));
+        location.reload();
+    } else {
+        alert('Fejl: ' + (data.error_description || 'Tjek email/adgangskode'));
+        if(btn) btn.textContent = 'Log ind';
+    }
+}
+
+async function signUp(email, password) {
+    vibe(20);
+    const r = await fetch(`${SB_URL}/auth/v1/signup`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ email, password })
+    });
+    const data = await r.json();
+    if (data.id || data.email) {
+        alert('Bruger oprettet! Du kan nu logge ind.');
+    } else {
+        alert('Fejl: ' + (data.msg || data.message));
+    }
+}
+
+function signOut() {
+    vibe(40);
+    localStorage.removeItem('sb-session');
+    location.reload();
+}
+
+// --- LOGIN SKÆRM ---
+if (!session) {
+    document.body.innerHTML = `
+    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:20px; font-family:sans-serif; background:var(--bg); color:var(--text);">
+        <div style="background:var(--card); padding:30px; border-radius:20px; border:1px solid var(--border); width:100%; max-width:340px; box-shadow:var(--shadow);">
+            <h2 style="margin-bottom:8px;">Velkommen</h2>
+            <p style="color:var(--muted); font-size:14px; margin-bottom:24px;">Log ind for at se din træning</p>
+            <input type="email" id="email" placeholder="Email" style="width:100%; padding:12px; margin-bottom:12px; border-radius:10px; border:1px solid var(--border); background:var(--input-bg); color:var(--text); font-family:inherit;">
+            <input type="password" id="password" placeholder="Adgangskode" style="width:100%; padding:12px; margin-bottom:20px; border-radius:10px; border:1px solid var(--border); background:var(--input-bg); color:var(--text); font-family:inherit;">
+            <button class="login-btn" onclick="signIn(document.getElementById('email').value, document.getElementById('password').value)" style="width:100%; padding:14px; border-radius:12px; background:var(--text); color:var(--bg); border:none; font-weight:700; cursor:pointer; margin-bottom:12px; font-family:inherit;">Log ind</button>
+            <button onclick="signUp(document.getElementById('email').value, document.getElementById('password').value)" style="width:100%; background:none; border:none; color:var(--muted); font-size:13px; cursor:pointer; font-family:inherit;">Opret ny konto</button>
+        </div>
+    </div>`;
+    // Vi stopper resten af koden her, så navigationsbar osv. ikke vises
+    window.stop(); 
+    document.execCommand("Stop");
+}
+
+// Opdateret sb() funktion der bruger de nye headers
+async function sb(table, method, body, qs){
+    const url = `${SB_URL}/rest/v1/${table}${qs ? '?' + qs : ''}`;
+    const opts = { method, headers: getHeaders() };
+    if (body) opts.body = JSON.stringify(body);
+    const r = await fetch(url, opts);
+    if (!r.ok) { setSync('err'); return method === 'GET' ? [] : false; }
+    return method === 'GET' ? r.json() : true;
+}
 
 const DAYS=[
   {id:'d1',short:'Man',label:'Dag 1',title:'Upper styrke',bs:'background:var(--blue-bg);color:var(--blue-t);',bt:'Styrke',
@@ -1524,32 +1606,6 @@ function todayISO(){
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
-}
-
-// Opdateret Supabase fix med bedre fejlhåndtering
-async function sb(table, method, body, qs){
-  const url = `${SB_URL}/rest/v1/${table}${qs ? '?' + qs : ''}`;
-  const headers = { ...HDR };
-
-  headers.Prefer = method === 'POST'
-    ? 'resolution=merge-duplicates,return=minimal'
-    : 'return=minimal';
-
-  const opts = { method, headers };
-
-  if (body) opts.body = JSON.stringify(body);
-
-  const r = await fetch(url, opts);
-
-  if (!r.ok) {
-    console.error('Supabase fejl:', table, method, r.status);
-    setSync('err');
-    return method === 'GET' ? [] : false;
-  }
-
-  if (method === 'GET') return r.json();
-
-  return true;
 }
 
 // Start appen (kun én gang!)
