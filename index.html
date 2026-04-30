@@ -351,14 +351,7 @@ function vibe(ms = 30) {
 
 function setSync(s){const d=document.getElementById('syncDot');if(d){d.className='sync-dot'+(s==='ok'?' ok':s==='err'?' err':'');}}
 
-async function sb(table,method,body,qs){
-  const url=`${SB_URL}/rest/v1/${table}${qs?'?'+qs:''}`;
-  const opts={method,headers:{...HDR,Prefer:method==='POST'?'resolution=merge-duplicates,return=minimal':'return=minimal'}};
-  if(body)opts.body=JSON.stringify(body);
-  const r=await fetch(url,opts);
-  if(method==='GET')return r.json();
-  return r.ok;
-}
+
 
 // ── WORKOUT CACHE ──────────────────────────────────────────────
 function wcGet(w,id){
@@ -1524,9 +1517,9 @@ async function init(){
   if(window.lucide) lucide.createIcons();
 }
 
-// ── BUGFIX ─────────────────────────────────────────
+// ── BUGFIX VERSIONER AF FUNKTIONER ─────────────────────────
 
-// Lokal dato (fix mobil bug)
+// Lokal dato (fixer mobil bug med tidszoner)
 function todayISO(){
   const d = new Date();
   const y = d.getFullYear();
@@ -1535,7 +1528,7 @@ function todayISO(){
   return `${y}-${m}-${day}`;
 }
 
-// Supabase fix
+// Opdateret Supabase fix med bedre fejlhåndtering
 async function sb(table, method, body, qs){
   const url = `${SB_URL}/rest/v1/${table}${qs ? '?' + qs : ''}`;
   const headers = { ...HDR };
@@ -1560,6 +1553,8 @@ async function sb(table, method, body, qs){
 
   return true;
 }
+
+// Start appen (kun én gang!)
 init();
 </script>
 </body>
