@@ -268,11 +268,11 @@ let session = JSON.parse(localStorage.getItem('sb-session'));
 
 function getHeaders() {
     const s = JSON.parse(localStorage.getItem('sb-session'));
+    const token = (s && s.access_token) ? s.access_token : SB_KEY;
     return {
         'Content-Type': 'application/json',
         'apikey': SB_KEY,
-        // Her er fixet: Vi falder tilbage på SB_KEY, hvis s ikke findes
-        'Authorization': `Bearer ${s ? s.access_token : SB_KEY}`
+        'Authorization': `Bearer ${token}`
     };
 }
 
