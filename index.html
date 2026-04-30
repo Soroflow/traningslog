@@ -1248,7 +1248,7 @@ async function renderDash() {
         <div class="sets-body" style="padding: 14px; display: flex; justify-content: space-between; align-items: center;">
             <div>
                 <div style="font-size:22px; font-weight:700;">${latestBody.weight} kg</div>
-                <div style="font-size:12px; color:var(--muted); margin-top:2px;">${latestBody.waist ? latestBody.waist + ' cm livvidde' : (latestBody.fat ? latestBody.fat + '% fedt' : 'Ingen fedt% logget')}</div>
+                <div style="font-size:12px; color:var(--muted); margin-top:2px;">${latestBody.fat ? latestBody.fat + '% fedt' : 'Ingen fedt% logget'}${latestBody.waist ? ' · ' + latestBody.waist + ' cm' : ''}</div>
             </div>
             ${weightDiff !== null ? `<div style="font-size:15px; font-weight:700; background:var(--input-bg); padding:6px 12px; border-radius:999px;">${dH(weightDiff, true)}</div>` : ''}
         </div>
