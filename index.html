@@ -316,6 +316,11 @@ function getActualCurrentWeek(){
 
 async function autoSelectWeek(){
   curWeek=getActualCurrentWeek();
+  
+  // Opdaterer teksten i toppen af skærmen med det samme appen åbner
+  const cyc=cycleOf(curWeek),wic=weekInCycle(curWeek);
+  document.getElementById('weekLabel').textContent=cyc>1?`C${cyc}·U${wic}`:`Uge ${wic}`;
+  
   await preloadWeek(curWeek);
 }
 
