@@ -299,20 +299,35 @@ async function signIn(email, password) {
 
 async function signUp(email, password) {
     vibe(20);
-    const r = await fetch(`${SB_URL}/auth/v1/signup`, {
-        method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify({ email, password })
-    });
-    const data = await r.json();
-    
-    // Tjekker om brugeren er oprettet (Supabase sender enten 'id' eller hele 'user' objektet)
-    if (data.id || data.email || (data.user && data.user.id)) {
-        alert('Bruger oprettet! Du kan nu logge ind.');
-    } else {
-        // Her fanger vi den præcise årsag fra Supabase
-        const msg = data.msg || data.message || data.error_description || "Ukendt fejl";
-        alert('Fejl: ' + msg);
+    console.log("Forsøger signUp med:", email);
+
+    // Vi definerer alt manuelt her for at udelukke fejl i getHeaders()
+    const rawHeaders = new Headers();
+    rawHeaders.append("Content-Type", "application/json");
+    rawHeaders.append("apikey", SB_KEY);
+    rawHeaders.append("Authorization", "Bearer " + SB_KEY);
+
+    try {
+        const response = await fetch(`${SB_URL}/auth/v1/signup`, {
+            method: 'POST',
+            headers: rawHeaders,
+            body: JSON.stringify({ email, password }),
+            redirect: 'follow'
+        });
+
+        const result = await response.json();
+        console.log("Supabase svar:", result);
+
+        if (response.ok && (result.id || result.user)) {
+            alert('Bruger oprettet! Du kan nu logge ind.');
+        } else {
+            // Hvis det fejler, viser vi præcis hvad Supabase siger
+            const errorMsg = result.msg || result.message || result.error_description || JSON.stringify(result);
+            alert('Fejl fra Supabase: ' + errorMsg);
+        }
+    } catch (error) {
+        console.error('Fejl:', error);
+        alert('Netværksfejl: ' + error.message);
     }
 }
 
