@@ -210,7 +210,10 @@ canvas{display:block;}
 
 /* --- REST TIMER --- */
 .timer-bar { position: fixed; left: 50%; transform: translateX(-50%); bottom: -100px; background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 999px; font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 12px; z-index: 9999; transition: bottom 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
-.timer-bar.show { bottom: 20px; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); }
+.timer-bar.show {
+  bottom: 155px;
+  bottom: calc(155px + env(safe-area-inset-bottom, 0px));
+}
 .timer-btn { background: rgba(255,255,255,0.2); border: none; color: var(--bg); border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight:700; font-size:12px; }
 .timer-btn:active { transform: scale(0.9); }
 
@@ -1520,6 +1523,42 @@ async function init(){
   if(window.lucide) lucide.createIcons();
 }
 
+// ── BUGFIX ─────────────────────────────────────────
+
+// Lokal dato (fix mobil bug)
+function todayISO(){
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+// Supabase fix
+async function sb(table, method, body, qs){
+  const url = `${SB_URL}/rest/v1/${table}${qs ? '?' + qs : ''}`;
+  const headers = { ...HDR };
+
+  headers.Prefer = method === 'POST'
+    ? 'resolution=merge-duplicates,return=minimal'
+    : 'return=minimal';
+
+  const opts = { method, headers };
+
+  if (body) opts.body = JSON.stringify(body);
+
+  const r = await fetch(url, opts);
+
+  if (!r.ok) {
+    console.error('Supabase fejl:', table, method, r.status);
+    setSync('err');
+    return method === 'GET' ? [] : false;
+  }
+
+  if (method === 'GET') return r.json();
+
+  return true;
+}
 init();
 </script>
 </body>
