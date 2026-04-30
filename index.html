@@ -75,7 +75,7 @@ input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-
 @keyframes spin{to{transform:rotate(360deg);}}
 .section-title{font-size:19px;font-weight:700;margin-bottom:4px;}
 .section-sub{font-size:13px;color:var(--muted);margin-bottom:14px;}
-.body-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;}
+.body-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
 .bstat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 11px;}
 .bstat-l{font-size:10px;color:var(--muted);margin-bottom:2px;}
 .bstat-v{font-size:17px;font-weight:700;}
@@ -107,7 +107,7 @@ canvas{display:block;}
 .hist-row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);font-size:13px;}
 .hist-row:last-child{border-bottom:none;}
 .hist-week{font-weight:600;color:var(--muted);}
-.hist-vals{display:flex;gap:12px;}
+.hist-vals{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;text-align:right;}
 .hist-val{display:flex;flex-direction:column;align-items:flex-end;}
 .hv-num{font-size:14px;font-weight:600;}
 .hv-label{font-size:10px;color:var(--hint);}
@@ -301,7 +301,7 @@ function saveSettings(s) {
     localStorage.setItem('user_settings', JSON.stringify(s));
 }
 
-// Cyklus helpers: 8 uger pr. cyklus, weeks tæller globalt
+// Cyklus helpers
 function cycleOf(globalWeek){return Math.floor((globalWeek-1)/8)+1;}
 function weekInCycle(globalWeek){return ((globalWeek-1)%8)+1;}
 function globalWeekOf(cycle,wic){return (cycle-1)*8+wic;}
@@ -401,7 +401,7 @@ async function saveBody(w,data){
   setSync('');
   try{
     await sb('body_log','DELETE',null,`week=eq.${w}`);
-    await sb('body_log','POST',{week:w,weight:data.weight?parseFloat(data.weight):null,fat:data.fat?parseFloat(data.fat):null,muscle:data.muscle?parseFloat(data.muscle):null,date:data.date});
+    await sb('body_log','POST',{week:w,weight:data.weight?parseFloat(data.weight):null,fat:data.fat?parseFloat(data.fat):null,muscle:data.muscle?parseFloat(data.muscle):null,waist:data.waist?parseFloat(data.waist):null,date:data.date});
     setSync('ok');
   }catch(e){setSync('err');}
 }
@@ -419,15 +419,15 @@ async function resetBodyEntry(w){
 }
 async function loadBodyRemote(w){
   if(BC[w])return BC[w];
-  try{const rows=await sb('body_log','GET',null,`week=eq.${w}&limit=1`);if(rows&&rows.length){const d={weight:rows[0].weight,fat:rows[0].fat,muscle:rows[0].muscle,date:rows[0].date};BC[w]=d;localStorage.setItem(bodyLsKey(w),JSON.stringify(d));return d;}}catch(e){}
+  try{const rows=await sb('body_log','GET',null,`week=eq.${w}&limit=1`);if(rows&&rows.length){const d={weight:rows[0].weight,fat:rows[0].fat,muscle:rows[0].muscle,waist:rows[0].waist,date:rows[0].date};BC[w]=d;localStorage.setItem(bodyLsKey(w),JSON.stringify(d));return d;}}catch(e){}
   return null;
 }
 async function loadAllBody(){
   try{
     const rows=await sb('body_log','GET',null,'order=week.asc');
-    if(rows&&rows.length){rows.forEach(r=>{const d={weight:r.weight,fat:r.fat,muscle:r.muscle,date:r.date};BC[r.week]=d;localStorage.setItem(bodyLsKey(r.week),JSON.stringify(d));});return rows.map(r=>({week:r.week,...BC[r.week]}));}
+    if(rows&&rows.length){rows.forEach(r=>{const d={weight:r.weight,fat:r.fat,muscle:r.muscle,waist:r.waist,date:r.date};BC[r.week]=d;localStorage.setItem(bodyLsKey(r.week),JSON.stringify(d));});return rows.map(r=>({week:r.week,...BC[r.week]}));}
   }catch(e){}
-  const e=[];for(let w=1;w<=8;w++){const d=bcGet(w);if(d&&(d.weight||d.fat||d.muscle))e.push({week:w,...d});}return e;
+  const e=[];for(let w=1;w<=8;w++){const d=bcGet(w);if(d&&(d.weight||d.fat||d.muscle||d.waist))e.push({week:w,...d});}return e;
 }
 
 // ── HELPERS ────────────────────────────────────────────────────
@@ -679,33 +679,40 @@ function drawBodyChart(entries){
   const gc=dk?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.06)',tc=dk?'#7a7670':'#888580';
   if(charts.body){charts.body.destroy();delete charts.body;}
   const ctx=document.getElementById('bodyChart');if(!ctx)return;
-  const w=entries.map(e=>e.weight?+e.weight:null),f=entries.map(e=>e.fat?+e.fat:null),m=entries.map(e=>e.muscle?+e.muscle:null);
+  const w=entries.map(e=>e.weight?+e.weight:null),f=entries.map(e=>e.fat?+e.fat:null),m=entries.map(e=>e.muscle?+e.muscle:null),wa=entries.map(e=>e.waist?+e.waist:null);
   const ds=[
     {label:'Vægt',data:w,borderColor:'#378add',backgroundColor:'rgba(55,138,221,0.08)',tension:.4,pointRadius:4,pointBackgroundColor:'#378add',yAxisID:'y'},
-    {label:'Fedt %',data:f,borderColor:'#d85a30',backgroundColor:'rgba(216,90,48,0.08)',tension:.4,pointRadius:4,pointBackgroundColor:'#d85a30',yAxisID:'y2'},
+    {label:'Fedt %',data:f,borderColor:'#d85a30',backgroundColor:'rgba(216,90,48,0.08)',tension:.4,pointRadius:4,pointBackgroundColor:'#d85a30',yAxisID:'y2'}
   ];
   if(m.some(x=>x!==null))ds.push({label:'Muskler',data:m,borderColor:'#1d9e75',backgroundColor:'rgba(29,158,117,0.08)',tension:.4,pointRadius:4,pointBackgroundColor:'#1d9e75',yAxisID:'y'});
-  charts.body=new Chart(ctx,{type:'line',data:{labels:entries.map(e=>`U${e.week}`),datasets:ds},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false}},scales:{x:{grid:{color:gc},ticks:{color:tc,font:{size:11}}},y:{position:'left',grid:{color:gc},ticks:{color:tc,font:{size:11}},title:{display:true,text:'kg',color:tc,font:{size:10}}},y2:{position:'right',grid:{drawOnChartArea:false},ticks:{color:tc,font:{size:11}},title:{display:true,text:'%',color:tc,font:{size:10}}}}}});
+  if(wa.some(x=>x!==null))ds.push({label:'Livvidde',data:wa,borderColor:'#9b59b6',backgroundColor:'rgba(155,89,182,0.08)',tension:.4,pointRadius:4,pointBackgroundColor:'#9b59b6',yAxisID:'y'});
+
+  charts.body=new Chart(ctx,{type:'line',data:{labels:entries.map(e=>`U${e.week}`),datasets:ds},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false}},scales:{x:{grid:{color:gc},ticks:{color:tc,font:{size:11}}},y:{position:'left',grid:{color:gc},ticks:{color:tc,font:{size:11}},title:{display:true,text:'kg/cm',color:tc,font:{size:10}}},y2:{position:'right',grid:{drawOnChartArea:false},ticks:{color:tc,font:{size:11}},title:{display:true,text:'%',color:tc,font:{size:10}}}}}});
 }
 
 async function renderBody(){
   const entries=await loadAllBody();
-  const existing=await loadBodyRemote(curWeek)||{weight:'',fat:'',muscle:''};
+  const existing=await loadBodyRemote(curWeek)||{weight:'',fat:'',muscle:'',waist:''};
   const lat=entries.length?entries[entries.length-1]:null,fst=entries.length?entries[0]:null;
   const wD=lat&&fst&&lat.week!==fst.week?(+lat.weight-+fst.weight).toFixed(1):null;
   const fD=lat&&fst&&lat.week!==fst.week?(+lat.fat-+fst.fat).toFixed(1):null;
   const mD=lat&&fst&&lat.week!==fst.week&&lat.muscle&&fst.muscle?(+lat.muscle-+fst.muscle).toFixed(1):null;
+  const waD=lat&&fst&&lat.week!==fst.week&&lat.waist&&fst.waist?(+lat.waist-+fst.waist).toFixed(1):null;
   const sc=entries.length>=2;
-  let h=`<div class="section-title">Kropsmåling</div><div class="section-sub">Log data fra PureGym bodytracker</div>`;
+  
+  let h=`<div class="section-title">Kropsmåling</div><div class="section-sub">Log data fra PureGym bodytracker & målebånd</div>`;
   if(entries.length>0)h+=`<div class="body-stats">
     <div class="bstat"><div class="bstat-l">Vægt</div><div class="bstat-v">${lat.weight||'—'} kg</div><div class="bstat-d">${dH(wD,true)}</div></div>
     <div class="bstat"><div class="bstat-l">Fedt %</div><div class="bstat-v">${lat.fat||'—'}%</div><div class="bstat-d">${dH(fD,true)}</div></div>
     <div class="bstat"><div class="bstat-l">Muskler</div><div class="bstat-v">${lat.muscle||'—'} kg</div><div class="bstat-d">${dH(mD,false)}</div></div>
+    <div class="bstat"><div class="bstat-l">Livvidde</div><div class="bstat-v">${lat.waist||'—'} cm</div><div class="bstat-d">${dH(waD,true)}</div></div>
   </div>`;
+  
   if(sc)h+=`<div class="chart-card"><div class="chart-head"><span class="chart-title">Kropskomposition</span><div class="chart-legend">
     <div class="legend-item"><div class="legend-dot" style="background:#378add"></div>Vægt</div>
-    <div class="legend-item"><div class="legend-dot" style="background:#d85a30"></div>Fedt %</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#d85a30"></div>Fedt</div>
     <div class="legend-item"><div class="legend-dot" style="background:#1d9e75"></div>Muskler</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#9b59b6"></div>Livvidde</div>
   </div></div><div class="chart-wrap"><canvas id="bodyChart" style="height:180px;width:100%;"></canvas></div></div>`;
   
   const s = getSettings();
@@ -713,9 +720,11 @@ async function renderBody(){
     <div class="input-row"><span class="input-label">Vægt</span><input type="text" inputmode="decimal" id="bW" value="${existing.weight||s.bw||''}" placeholder="93.0"><span class="input-unit">kg</span></div>
     <div class="input-row"><span class="input-label">Fedtprocent</span><input type="text" inputmode="decimal" id="bF" value="${existing.fat||''}" placeholder="23.0"><span class="input-unit">%</span></div>
     <div class="input-row"><span class="input-label">Muskelmasse</span><input type="text" inputmode="decimal" id="bM" value="${existing.muscle||''}" placeholder="0.0"><span class="input-unit">kg</span></div>
+    <div class="input-row"><span class="input-label">Livvidde</span><input type="text" inputmode="decimal" id="bWaist" value="${existing.waist||''}" placeholder="85.0"><span class="input-unit">cm</span></div>
   </div></div>
   <button class="save-btn" onclick="saveBodyEntry()">Gem måling for uge ${curWeek}</button>
   <button onclick="resetBodyEntry(${curWeek})" style="width:100%;padding:11px;border-radius:12px;border:1.5px solid var(--border);background:transparent;color:var(--muted);font-size:14px;font-weight:500;font-family:inherit;cursor:pointer;margin-bottom:14px;">Nulstil måling</button>`;
+  
   if(entries.length>0){
     h+=`<div class="hist-card"><div class="hist-head">Historik</div>`;
     [...entries].reverse().forEach((e,i,arr)=>{
@@ -723,11 +732,13 @@ async function renderBody(){
       const wDx=p&&e.weight&&p.weight?(+e.weight-+p.weight).toFixed(1):null;
       const fDx=p&&e.fat&&p.fat?(+e.fat-+p.fat).toFixed(1):null;
       const mDx=p&&e.muscle&&p.muscle?(+e.muscle-+p.muscle).toFixed(1):null;
+      const waDx=p&&e.waist&&p.waist?(+e.waist-+p.waist).toFixed(1):null;
       h+=`<div class="hist-row"><span class="hist-week">Uge ${e.week}${e.date?' · '+e.date:''}</span>
         <div class="hist-vals">
           <div class="hist-val"><span class="hv-num">${e.weight||'—'} kg ${wDx!==null?dH(wDx,true):''}</span><span class="hv-label">Vægt</span></div>
           <div class="hist-val"><span class="hv-num">${e.fat||'—'}% ${fDx!==null?dH(fDx,true):''}</span><span class="hv-label">Fedt</span></div>
           <div class="hist-val"><span class="hv-num">${e.muscle||'—'} kg ${mDx!==null?dH(mDx,false):''}</span><span class="hv-label">Muskler</span></div>
+          <div class="hist-val"><span class="hv-num">${e.waist||'—'} cm ${waDx!==null?dH(waDx,true):''}</span><span class="hv-label">Livvidde</span></div>
         </div></div>`;
     });h+=`</div>`;
   }
@@ -739,7 +750,7 @@ async function saveBodyEntry(){
   vibe(50);
   const nrm=v=>(v||'').replace(',','.');
   const newW = nrm(document.getElementById('bW').value);
-  await saveBody(curWeek,{weight:newW,fat:nrm(document.getElementById('bF').value),muscle:nrm(document.getElementById('bM').value),date:new Date().toLocaleDateString('da-DK')});
+  await saveBody(curWeek,{weight:newW,fat:nrm(document.getElementById('bF').value),muscle:nrm(document.getElementById('bM').value),waist:nrm(document.getElementById('bWaist').value),date:new Date().toLocaleDateString('da-DK')});
   
   if(newW) {
       const s = getSettings();
@@ -1064,10 +1075,11 @@ async function renderSettings(){
           d.ex.forEach((ex,ei)=>{(data.sets[ei]||[]).forEach((s,si)=>{csv+=`${w},${dato},${d.title},${ex.n},${si+1},${s.kg||'BW'},${s.r}\n`;});});
         }
         const b=bcGet(w);
-        if(b&&(b.weight||b.fat||b.muscle)){has=true;
+        if(b&&(b.weight||b.fat||b.muscle||b.waist)){has=true;
           if(b.weight)csv+=`${w},,Krop,Vægt,—,${b.weight},kg\n`;
           if(b.fat)csv+=`${w},,Krop,Fedtprocent,—,${b.fat},%\n`;
           if(b.muscle)csv+=`${w},,Krop,Muskelmasse,—,${b.muscle},kg\n`;
+          if(b.waist)csv+=`${w},,Krop,Livvidde,—,${b.waist},cm\n`;
         }
       }
       window._csv=csv;
@@ -1236,7 +1248,7 @@ async function renderDash() {
         <div class="sets-body" style="padding: 14px; display: flex; justify-content: space-between; align-items: center;">
             <div>
                 <div style="font-size:22px; font-weight:700;">${latestBody.weight} kg</div>
-                <div style="font-size:12px; color:var(--muted); margin-top:2px;">${latestBody.fat ? latestBody.fat + '% fedt' : 'Ingen fedt% logget'}</div>
+                <div style="font-size:12px; color:var(--muted); margin-top:2px;">${latestBody.waist ? latestBody.waist + ' cm livvidde' : (latestBody.fat ? latestBody.fat + '% fedt' : 'Ingen fedt% logget')}</div>
             </div>
             ${weightDiff !== null ? `<div style="font-size:15px; font-weight:700; background:var(--input-bg); padding:6px 12px; border-radius:999px;">${dH(weightDiff, true)}</div>` : ''}
         </div>
