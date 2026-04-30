@@ -647,7 +647,17 @@ async function toggleChk(key){
   vibe(40);
   const{d,data}=getData();
   data.checks[key]=!data.checks[key];
-  if(data.checks[key]) startTimer(90); else stopTimer();
+  
+  if(data.checks[key]) {
+      const ei = key.split('-')[0];
+      const exName = d.ex[ei].n.toLowerCase();
+      const isCompound = /bænkpres|squat|deadlift|pull-up|chin-up|row|press|dips|lunges/i.test(exName);
+      const restTime = isCompound ? 180 : 90;
+      startTimer(restTime);
+  } else {
+      stopTimer();
+  }
+  
   await saveWorkout(curWeek,d.id,data);
   renderLog();
 }
