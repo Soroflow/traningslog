@@ -425,11 +425,11 @@ async function loadAllBody(){
     const rows=await sb('body_log','GET',null,'order=week.asc');
     if(rows&&rows.length){rows.forEach(r=>{const d={weight:r.weight,fat:r.fat,muscle:r.muscle,waist:r.waist,date:r.date};BC[r.week]=d;localStorage.setItem(bodyLsKey(r.week),JSON.stringify(d));});return rows.map(r=>({week:r.week,...BC[r.week]}));}
   }catch(e){}
-  const e=[];for(let w=1;w<=8;w++){const d=bcGet(w);if(d&&(d.weight||d.fat||d.muscle||d.waist))e.push({week:w,...d});}return e;
+  const maxW = getActualCurrentWeek();
+  const e=[];for(let w=1;w<=maxW+4;w++){const d=bcGet(w);if(d&&(d.weight||d.fat||d.muscle||d.waist))e.push({week:w,...d});}return e;
 }
 
 // ── HELPERS ────────────────────────────────────────────────────
-function todayISO(){return new Date().toISOString().split('T')[0];}
 function isoToDa(s){if(!s)return'';const[y,m,d]=s.split('-');return`${d}/${m}/${y}`;}
 function defaultKg(ex,gw){if(ex.bw)return'';const w=weekInCycle(gw);if(w===7)return+(ex.kg*.85).toFixed(1);if(w<=2)return ex.kg;if(w<=4)return ex.kg+2.5;if(w<=6)return ex.kg+5;return ex.kg+5;}
 function makeInit(di,w){const days=getDays(cycleOf(w));const d=days[di];const r={sets:{},checks:{},notes:{},finished:false,date:null};d.ex.forEach((e,ei)=>{r.sets[ei]=Array.from({length:e.s},()=>({kg:defaultKg(e,w),r:e.r}));r.notes[ei]='';});return r;}
@@ -1303,9 +1303,11 @@ async function loadKostRemoteRange(days){
   }catch(e){}
 }
 
-function kostDayLabel(iso){
-  const days=['S\u00f8n','Man','Tir','Ons','Tor','Fre','L\u00f8r'];
-  const d=new Date(iso);return days[d.getDay()]+' '+iso.split('-').slice(1).join('/');}
+function kostDayLabel(iso) {
+  const days = ['Søn', 'Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør'];
+  const d = new Date(iso + 'T12:00:00'); 
+  return days[d.getDay()] + ' ' + iso.split('-').slice(1).reverse().join('/');
+}
 
 function ring(pct,color,val,unit,label,sub){
   const r=34,circ=2*Math.PI*r,dash=Math.min(pct,1)*circ;
