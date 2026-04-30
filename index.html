@@ -266,12 +266,12 @@ const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 // Hent session fra localStorage
 let session = JSON.parse(localStorage.getItem('sb-session'));
 
-// Dynamiske headers
 function getHeaders() {
     const s = JSON.parse(localStorage.getItem('sb-session'));
     return {
         'Content-Type': 'application/json',
         'apikey': SB_KEY,
+        // Her er fixet: Vi falder tilbage på SB_KEY, hvis s ikke findes
         'Authorization': `Bearer ${s ? s.access_token : SB_KEY}`
     };
 }
@@ -305,10 +305,14 @@ async function signUp(email, password) {
         body: JSON.stringify({ email, password })
     });
     const data = await r.json();
-    if (data.id || data.email) {
+    
+    // Tjekker om brugeren er oprettet (Supabase sender enten 'id' eller hele 'user' objektet)
+    if (data.id || data.email || (data.user && data.user.id)) {
         alert('Bruger oprettet! Du kan nu logge ind.');
     } else {
-        alert('Fejl: ' + (data.msg || data.message));
+        // Her fanger vi den præcise årsag fra Supabase
+        const msg = data.msg || data.message || data.error_description || "Ukendt fejl";
+        alert('Fejl: ' + msg);
     }
 }
 
