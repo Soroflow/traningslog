@@ -129,7 +129,6 @@ canvas{display:block;}
 .copy-btn{width:100%;padding:13px;border-radius:12px;border:1.5px solid var(--border);background:var(--blue-bg);color:var(--blue-t);font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;margin-bottom:8px;}
 .copy-btn:active{transform:scale(.98);}
 .clear-btn{width:100%;padding:13px;border-radius:12px;border:1.5px solid var(--border);background:var(--red-bg);color:var(--red-t);font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;}
-
 /* ── KOST ─────────────────────────────────────────────────── */
 .kost-date-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
 .kost-date-label{font-size:16px;font-weight:700;}
@@ -176,7 +175,6 @@ canvas{display:block;}
 .wkr-bal.def{background:var(--green-bg);color:var(--green-t);}
 .wkr-bal.sur{background:var(--red-bg);color:var(--red-t);}
 .wkr-prot{font-size:11px;color:var(--muted);}
-
 .bottom-nav { position: fixed; bottom: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); left: 16px; right: 16px; background: var(--card); border: 1px solid var(--border); border-radius: 20px; display: flex; padding: 8px 0; z-index: 50; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
 .bnav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:none;cursor:pointer;padding:4px 0;font-family:inherit;}
 .bnav-icon{display:flex;align-items:center;justify-content:center;color:var(--muted);}
@@ -185,17 +183,12 @@ canvas{display:block;}
 .bnav-btn.active .bnav-label{color:var(--text);font-weight:600;}
 .bnav-btn.active .bnav-icon{color:var(--text);}
 .bnav-btn.active .bnav-icon svg{stroke-width:2.5;}
-
-/* --- PREMIUM FEEL (Taktilt feedback & animationer) --- */
 .icon-btn { transition: all 0.15s ease; }
 .icon-btn:active:not(.wk) { transform: scale(0.92); background: var(--border); }
-
 .tab, .tab-rest { transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
 .tab:active, .tab-rest:active { transform: scale(0.92); }
-
 .chk { transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
 .chk:active { transform: scale(0.82); }
-
 .fin-btn, .save-btn, .kost-save-btn, .copy-btn, .clear-btn, button[onclick^="reset"] {
   transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   box-shadow: var(--shadow);
@@ -205,33 +198,23 @@ canvas{display:block;}
   box-shadow: var(--shadow-act);
   opacity: 0.9;
 }
-
 .bnav-btn:active .bnav-icon svg { transform: scale(0.85) translateY(2px); }
-
-/* --- DASHBOARD --- */
 .dash-card { transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94); cursor: pointer; box-shadow: var(--shadow); }
 .dash-card:active { transform: scale(0.96) translateY(2px); box-shadow: var(--shadow-act); opacity: 0.9; }
-
-/* --- REST TIMER --- */
 .timer-bar { position: fixed; left: 50%; bottom: calc(90px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 130%); opacity: 0; visibility: hidden; background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 999px; font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 12px; z-index: 9999; transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.28s ease, visibility 0.28s ease; box-shadow: 0 8px 24px rgba(0,0,0,0.25); will-change: transform, opacity; }
 .timer-bar.show { transform: translate(-50%, 0); visibility: visible; opacity: 1; }
 .timer-btn { background: rgba(255,255,255,0.2); border: none; color: var(--bg); border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight:700; font-size:12px; }
 .timer-btn:active { transform: scale(0.9); }
-
-/* --- STICKY GEM KNAP --- */
 .sticky-save-wrap { position: sticky; bottom: 20px; z-index: 10; padding-top: 10px; padding-bottom: 5px; }
-
 </style>
 </head>
 <body ontouchstart="">
-
 <div class="timer-bar" id="restTimer">
     <i data-lucide="timer" style="width:18px;height:18px;"></i>
     <span id="timerText" style="min-width:44px; text-align:center;">01:30</span>
     <button class="timer-btn" onclick="addTimerTime(30)">+30</button>
     <button class="timer-btn" onclick="stopTimer()"><i data-lucide="x" style="width:16px;height:16px;"></i></button>
 </div>
-
 <div class="nav">
   <div class="nav-top">
     <span class="nav-title" id="navTitle">Træningslog</span>
@@ -248,11 +231,9 @@ canvas{display:block;}
 </div> <!-- Denne lukker hele 'nav' sektionen korrekt -->
 <div id="onboarding-screen" class="screen" style="display:none; padding-top: 20px;">
   <div class="onboarding-container" style="max-width: 400px; margin: 0 auto; padding: 0 15px;">
-    
     <div id="onboarding-step-1">
       <h2 style="margin-bottom:10px; font-size: 24px;">Velkommen! 👋</h2>
       <p style="color:var(--muted); margin-bottom:24px; font-size: 14px;">Lad os skræddersy din træning efter din krop og dine mål.</p>
-      
       <div class="input-card">
         <div class="input-card-body" style="display: flex; flex-direction: column; gap: 15px;">
           <div>
@@ -262,7 +243,6 @@ canvas{display:block;}
               <option value="kvinde">Kvinde</option>
             </select>
           </div>
-          
           <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px;">
             <div>
               <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 5px;">Fødselsdato</label>
@@ -273,7 +253,6 @@ canvas{display:block;}
               <input type="number" id="onb-weight" class="note" style="margin-top:0;" placeholder="kg">
             </div>
           </div>
-          
           <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px;">
             <div>
               <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 5px;">Højde (cm)</label>
@@ -288,7 +267,6 @@ canvas{display:block;}
       </div>
       <button class="save-btn" style="margin-top:20px;" onclick="nextOnboardingStep(2)">Næste trin</button>
     </div>
-
     <div id="onboarding-step-2" style="display:none;">
       <h2 style="margin-bottom:10px; font-size: 24px;">Dit mål 🎯</h2>
       <div class="input-card" style="margin-top:20px;">
@@ -301,7 +279,6 @@ canvas{display:block;}
               <option value="tone">Tonet krop / Vedligehold</option>
             </select>
           </div>
-          
           <div>
             <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 5px;">Træningsdage pr. uge</label>
             <select id="onb-freq" class="note" style="margin-top:0;">
@@ -310,7 +287,6 @@ canvas{display:block;}
               <option value="5">5 dage (PPL + Split)</option>
             </select>
           </div>
-          
           <div>
             <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 5px;">Program varighed</label>
             <select id="onb-duration" class="note" style="margin-top:0;">
@@ -331,7 +307,6 @@ canvas{display:block;}
 <div class="screen" id="prog-screen"></div>
 <div class="screen" id="settings-screen"></div>
 <div class="screen" id="kost-screen"></div>
-
 <div class="bottom-nav">
   <button class="bnav-btn active" onclick="showScreen('dash')" id="bnav-dash"><span class="bnav-icon"><i data-lucide="layout-dashboard"></i></span><span class="bnav-label">Start</span></button>
   <button class="bnav-btn" onclick="showScreen('log')" id="bnav-log"><span class="bnav-icon"><i data-lucide="dumbbell"></i></span><span class="bnav-label">Træning</span></button>
@@ -340,16 +315,13 @@ canvas{display:block;}
   <button class="bnav-btn" onclick="showScreen('kost')" id="bnav-kost"><span class="bnav-icon"><i data-lucide="utensils"></i></span><span class="bnav-label">Makro</span></button>
   <button class="bnav-btn" onclick="showScreen('settings')" id="bnav-settings"><span class="bnav-icon"><i data-lucide="settings"></i></span><span class="bnav-label">Indstillinger</span></button>
 </div>
-
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>
 const SB_URL = 'https://dktmdmleeaenntwknhxe.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRrdG1kbWxlZWFlbm50d2tuaHhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3ODMyMDMsImV4cCI6MjA5MjM1OTIwM30.OCmLYJRztPb9yJI6flE7Qos5Wdsck_f0Dk7EmwAosRk';
 
-// Hent session fra localStorage
 let session = JSON.parse(localStorage.getItem('sb-session'));
-
 function getHeaders() {
     const s = JSON.parse(localStorage.getItem('sb-session'));
     const token = (s && s.access_token) ? s.access_token : SB_KEY;
@@ -359,13 +331,10 @@ function getHeaders() {
         'Authorization': `Bearer ${token}`
     };
 }
-
-// --- AUTH FUNKTIONER ---
 async function signIn(email, password) {
     vibe(20);
     const btn = document.querySelector('.login-btn');
     if(btn) btn.textContent = 'Logger ind...';
-    
     const r = await fetch(`${SB_URL}/auth/v1/token?grant_type=password`, {
         method: 'POST',
         headers: getHeaders(),
@@ -380,17 +349,13 @@ async function signIn(email, password) {
         if(btn) btn.textContent = 'Log ind';
     }
 }
-
 async function signUp(email, password) {
     vibe(20);
     console.log("Forsøger signUp med:", email);
-
-    // Vi definerer alt manuelt her for at udelukke fejl i getHeaders()
     const rawHeaders = new Headers();
     rawHeaders.append("Content-Type", "application/json");
     rawHeaders.append("apikey", SB_KEY);
     rawHeaders.append("Authorization", "Bearer " + SB_KEY);
-
     try {
         const response = await fetch(`${SB_URL}/auth/v1/signup`, {
             method: 'POST',
@@ -398,10 +363,8 @@ async function signUp(email, password) {
             body: JSON.stringify({ email, password }),
             redirect: 'follow'
         });
-
         const result = await response.json();
         console.log("Supabase svar:", result);
-
         if (response.ok && (result.id || result.user)) {
             alert('Bruger oprettet! Du kan nu logge ind.');
         } else {
@@ -414,14 +377,11 @@ async function signUp(email, password) {
         alert('Netværksfejl: ' + error.message);
     }
 }
-
 function signOut() {
     vibe(40);
     localStorage.removeItem('sb-session');
     location.reload();
 }
-
-// --- LOGIN SKÆRM ---
 if (!session) {
     document.body.innerHTML = `
     <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:20px; font-family:sans-serif; background:var(--bg); color:var(--text);">
@@ -434,12 +394,9 @@ if (!session) {
             <button onclick="signUp(document.getElementById('email').value, document.getElementById('password').value)" style="width:100%; background:none; border:none; color:var(--muted); font-size:13px; cursor:pointer; font-family:inherit;">Opret ny konto</button>
         </div>
     </div>`;
-    // Vi stopper resten af koden her, så navigationsbar osv. ikke vises
     window.stop(); 
     document.execCommand("Stop");
 }
-
-// Opdateret sb() funktion der bruger de nye headers
 async function sb(table, method, body, qs){
     const url = `${SB_URL}/rest/v1/${table}${qs ? '?' + qs : ''}`;
     const opts = { 
@@ -462,7 +419,6 @@ async function sb(table, method, body, qs){
         return { error: e };
     }
 }
-
 const DAYS=[
   {id:'d1',short:'Man',label:'Dag 1',title:'Upper styrke',bs:'background:var(--blue-bg);color:var(--blue-t);',bt:'Styrke',
    ex:[{n:'Bænkpres',t:'4×5',s:4,kg:77,r:5},{n:'Pull-ups',t:'4×5-6',s:4,kg:0,r:5,bw:1},{n:'Shoulder press',t:'3×5',s:3,kg:40,r:5},{n:'Barbell row',t:'3×6',s:3,kg:57,r:6},{n:'Dips',t:'3×6-8',s:3,kg:0,r:7,bw:1},{n:'Hammer curls',t:'2×10',s:2,kg:18,r:10},{n:'Triceps pushdown',t:'2×10',s:2,kg:25,r:10}]},
@@ -487,10 +443,7 @@ const REST_DAYS=[
   {id:'r1',short:'Ons',afterIdx:1,jsDay:3},
   {id:'r2',short:'Søn',afterIdx:4,jsDay:0},
 ];
-
-// --- INDSTILLINGER & DATA ---
 const DEFAULT_SETTINGS = { kcal: 2520, prot: 180, kh: 260, fat: 84, bw: 93, age: 30, rhr: 60 };
-
 function getSettings() {
     const stored = localStorage.getItem('user_settings');
     if (stored) return { ...DEFAULT_SETTINGS, ...JSON.parse(stored) };
@@ -499,12 +452,9 @@ function getSettings() {
 function saveSettings(s) {
     localStorage.setItem('user_settings', JSON.stringify(s));
 }
-
-// Cyklus helpers
 function cycleOf(globalWeek){return Math.floor((globalWeek-1)/8)+1;}
 function weekInCycle(globalWeek){return ((globalWeek-1)%8)+1;}
 function globalWeekOf(cycle,wic){return (cycle-1)*8+wic;}
-
 function getActualCurrentWeek(){
   const programStart=new Date('2026-04-20');
   const today=new Date();
@@ -512,24 +462,15 @@ function getActualCurrentWeek(){
   const daysSinceStart=Math.floor((today-programStart)/(1000*60*60*24));
   return Math.max(Math.floor(daysSinceStart/7),0)+1;
 }
-
 async function autoSelectWeek(){
   curWeek=getActualCurrentWeek();
-  
-  // Opdaterer teksten i toppen af skærmen med det samme appen åbner
   const cyc=cycleOf(curWeek),wic=weekInCycle(curWeek);
   document.getElementById('weekLabel').textContent=cyc>1?`C${cyc}·U${wic}`:`Uge ${wic}`;
-  
   await preloadWeek(curWeek);
 }
-
-// Per-cyklus program
 function programKey(cycle){return'program_c'+cycle;}
 function getDays(cycle) {
-  // 1. Tjek om vi har et gemt program fra onboarding i denne session
-  // (Vi gemmer programmet i localStorage under onboarding eller henter det ved init)
   const userProgram = localStorage.getItem('user_custom_program');
-  
   if (userProgram) {
     try {
       const customDays = JSON.parse(userProgram);
@@ -539,23 +480,14 @@ function getDays(cycle) {
       console.error("Fejl i indlæsning af brugerprogram", e);
     }
   }
-
-  // 2. Hvis uge > 8 og vi har en cyklus-opdatering, brug den
   if (cycle > 1) {
     const stored = localStorage.getItem(programKey(cycle));
     if (stored) return JSON.parse(stored);
   }
-
-  // 3. Fallback: Din standard (DAYS)
   return DAYS; 
 }
-
-// Hjælpefunktion til at formatere onboarding-øvelser til appens format
 function formatUserExercises(exercises) {
-  // Hvis øvelserne allerede er inddelt i et dag-objekt, returner dem bare
   if (exercises[0] && exercises[0].ex) return exercises;
-
-  // Ellers danner vi en standard "Dag 1" ud fra de flade øvelser fra onboarding
   return [
     { 
       id: 'custom_d1', 
@@ -572,19 +504,12 @@ function saveProgram(cycle,days){localStorage.setItem(programKey(cycle),JSON.str
 function hasProgram(cycle){return cycle<=1||!!localStorage.getItem(programKey(cycle));}
 const charts={};
 const WC={};
-
 function lsKey(w,id){return`wlog_w${w}_${id}`;}
 function bodyLsKey(w){return`wlog_body_w${w}`;}
-
-// --- HAPTIC FEEDBACK ---
 function vibe(ms = 30) {
     if (navigator.vibrate) { try { navigator.vibrate(ms); } catch(e){} }
 }
-
 function setSync(s){const d=document.getElementById('syncDot');if(d){d.className='sync-dot'+(s==='ok'?' ok':s==='err'?' err':'');}}
-
-
-
 // ── WORKOUT CACHE ──────────────────────────────────────────────
 function wcGet(w,id){
   if(WC[w]&&WC[w][id]!==undefined)return WC[w][id];
@@ -597,7 +522,6 @@ function wcSet(w,id,data){
   WC[w][id]=data;
   localStorage.setItem(lsKey(w,id),JSON.stringify(data));
 }
-
 async function preloadWeek(w){
   try{
     setSync('');
@@ -614,14 +538,12 @@ async function preloadWeek(w){
     setSync('ok');
   }catch(e){setSync('err');}
 }
-
 async function saveWorkout(w,id,data){
   wcSet(w,id,data);
   setSync('');
   try{await sb('workout_log','POST',{week:w,day_id:id,data});setSync('ok');}
   catch(e){setSync('err');}
 }
-
 // ── BODY CACHE ─────────────────────────────────────────────────
 const BC={};
 function bcGet(w){
@@ -664,7 +586,6 @@ async function loadAllBody(){
   const maxW = getActualCurrentWeek();
   const e=[];for(let w=1;w<=maxW+4;w++){const d=bcGet(w);if(d&&(d.weight||d.fat||d.muscle||d.waist))e.push({week:w,...d});}return e;
 }
-
 // ── HELPERS ────────────────────────────────────────────────────
 function isoToDa(s){if(!s)return'';const[y,m,d]=s.split('-');return`${d}/${m}/${y}`;}
 function defaultKg(ex, gw) { const w = weekInCycle(gw); if (ex.bw) return ''; if (w === 7) return +(ex.kg * 0.8).toFixed(1); if (w === 8) return +(ex.kg * 1.025).toFixed(1); if (w <= 2) return ex.kg; if (w <= 4) return ex.kg + 2.5; if (w <= 6) return ex.kg + 5; return ex.kg; }
@@ -678,7 +599,6 @@ function vibe(ms = 30) {
         try { navigator.vibrate(ms); } catch(e) {} 
     }
 }
-
 // ── TABS ───────────────────────────────────────────────────────
 function renderTabs(){
   const isCurrentWeek = (curWeek === getActualCurrentWeek());
@@ -686,7 +606,6 @@ function renderTabs(){
   const dayMap={1:0,2:1,4:2,5:3,6:4};
   const todayDayIdx = isCurrentWeek ? dayMap[jsDay] : -1;
   const todayRestId = isCurrentWeek ? (jsDay===3?'r1':jsDay===0?'r2':null) : null;
-
   const days=getDays(cycleOf(curWeek));
   document.getElementById('tabs').innerHTML=days.map((day,i)=>{
     const data=wcGet(curWeek,day.id);
@@ -699,7 +618,6 @@ function renderTabs(){
 
   const tabs=document.getElementById('tabs');
   const tabBtns=tabs.querySelectorAll('.tab');
-
   REST_DAYS.forEach(rd=>{
     const ref=tabBtns[rd.afterIdx];
     if(ref){
@@ -716,11 +634,9 @@ function renderTabs(){
   const cyc=cycleOf(curWeek),wic=weekInCycle(curWeek);
   document.getElementById('weekLabel').textContent=cyc>1?`C${cyc}·U${wic}`:`Uge ${wic}`;
 }
-
 // ── HVILE TIMER ────────────────────────────────────────────────
 let restTimerInt;
 let restTimerEnd = 0;
-
 function startTimer(sec = 90) {
     restTimerEnd = Date.now() + sec * 1000;
     document.getElementById('restTimer').classList.add('show');
@@ -728,19 +644,16 @@ function startTimer(sec = 90) {
     if(restTimerInt) clearInterval(restTimerInt);
     restTimerInt = setInterval(updateTimer, 1000);
 }
-
 function addTimerTime(sec) {
     vibe(30);
     restTimerEnd += sec * 1000;
     updateTimer();
 }
-
 function stopTimer() {
     vibe(30);
     clearInterval(restTimerInt);
     document.getElementById('restTimer').classList.remove('show');
 }
-
 function updateTimer() {
     const left = Math.ceil((restTimerEnd - Date.now()) / 1000);
     if(left <= 0) {
@@ -752,18 +665,15 @@ function updateTimer() {
     const s = left % 60;
     document.getElementById('timerText').textContent = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
-
 // ── LOG ────────────────────────────────────────────────────────
 function renderRestDay(){
   const rd=REST_DAYS.find(r=>r.id===curRest);
   if(!rd){curRest=null;return renderLog();}
-  
   const s = getSettings();
   const maxHr = 220 - (s.age || 30);
   const reserve = maxHr - (s.rhr || 60);
   const targetMin = Math.round((reserve * 0.60) + (s.rhr || 60));
   const targetMax = Math.round((reserve * 0.70) + (s.rhr || 60));
-
   const h=`<div class="day-intro">
     <span class="badge" style="background:var(--teal-bg);color:var(--teal-t);">Restitution</span>
     <div class="day-name">Restitutionsdag</div>
@@ -799,7 +709,6 @@ function renderRestDay(){
   document.getElementById('log-screen').innerHTML=h;
   renderTabs();
 }
-
 function renderLog(){
   const cyc=cycleOf(curWeek);
   if(cyc>1&&!hasProgram(cyc)){
@@ -811,9 +720,7 @@ function renderLog(){
   const d=days[curDay];
   let data=wcGet(curWeek,d.id);
   if(!data){data=makeInit(curDay,curWeek);wcSet(curWeek,d.id,data);}
-  
   const lwData = curWeek > 1 ? wcGet(curWeek - 1, d.id) : null;
-
   const v=vol(data,d),dn=done(data),tot=total(d),fin=data.finished;
   let h=`<div class="stats-row">
     <div class="stat"><div class="stat-l">Sæt klaret</div><div class="stat-v">${dn}/${tot}</div></div>
@@ -824,10 +731,8 @@ function renderLog(){
     <div class="day-name">${d.title}</div>
     <div class="day-sub">${d.label} · Cyklus ${cycleOf(curWeek)} · Uge ${weekInCycle(curWeek)}${weekInCycle(curWeek)===7?' — Deload':weekInCycle(curWeek)===8?' — PR-uge':''}</div>
   </div>`;
-
   d.ex.forEach((ex,ei)=>{
     const rl=ex.rl||'reps';
-    
     let ghostText = '';
     if(lwData && lwData.sets && lwData.sets[ei]) {
         let maxK = 0, bestR = 0, doneSets = 0;
@@ -843,10 +748,8 @@ function renderLog(){
             </div>`;
         }
     }
-
     h+=`<div class="ex-card"><div class="ex-head"><div class="ex-name">${ex.n}</div><div class="ex-target">${ex.t} reps</div>${ghostText}</div>
     <div class="sets-body"><div class="sets-lbl"><span>#</span><span>${ex.bw?'BW':'kg'}</span><span>${rl}</span><span></span></div>`;
-    
     for(let s=0;s<ex.s;s++){
       const key=`${ei}-${s}`;const chk=data.checks[key];
       const sd=(data.sets[ei]||[])[s]||{kg:defaultKg(ex,curWeek),r:ex.r};
@@ -857,20 +760,16 @@ function renderLog(){
     }
     h+=`<textarea class="note" rows="2" placeholder="Note..." onchange="setNote(${ei},this.value)">${data.notes[ei]||''}</textarea></div></div>`;
   });
-
   if(d.hiit)h+=`<div class="hiit-box">+ 12-3-30 / HIIT efter træning</div>`;
   h+=`<div class="fin-area">`;
   if(!fin){h+=`<div class="fin-date-row"><span class="fin-date-label">Træningsdato</span><input type="date" id="finDate" class="fin-date-input" value="${todayISO()}"></div><button class="fin-btn" onclick="toggleFin()">Marker som færdig</button>`;}
   else{h+=`<button class="fin-btn on" onclick="toggleFin()">Træning fuldført ✓</button><div class="fin-done-info">Logget: ${isoToDa(data.date)}</div>`;}
   h+=`</div>`;
-  
   document.getElementById('log-screen').innerHTML=h;
   if(window.lucide) lucide.createIcons();
   renderTabs();
 }
-
 function getData(){const days=getDays(cycleOf(curWeek));const d=days[curDay];let data=wcGet(curWeek,d.id);if(!data){data=makeInit(curDay,curWeek);wcSet(curWeek,d.id,data);}return{d,data};}
-
 async function setVal(ei,si,field,val){
   const{d,data}=getData();
   if(typeof val==='string')val=val.replace(',','.');
@@ -881,7 +780,6 @@ async function setVal(ei,si,field,val){
   if(sr)sr.innerHTML=`<div class="stat"><div class="stat-l">Sæt klaret</div><div class="stat-v">${dn}/${tot}</div></div><div class="stat"><div class="stat-l">Volumen</div><div class="stat-v">${v.toLocaleString()} kg</div></div>`;
 }
 async function setNote(ei,val){const{d,data}=getData();data.notes[ei]=val;await saveWorkout(curWeek,d.id,data);}
-
 async function toggleChk(key){
   vibe(40);
   const{d,data}=getData();
@@ -896,11 +794,9 @@ async function toggleChk(key){
   } else {
       stopTimer();
   }
-  
   await saveWorkout(curWeek,d.id,data);
   renderLog();
 }
-
 async function toggleFin(){
   vibe(80);
   const{d,data}=getData();
@@ -908,10 +804,8 @@ async function toggleFin(){
   else{data.finished=false;data.date=null;}
   await saveWorkout(curWeek,d.id,data);renderLog();
 }
-
 function switchDay(i){vibe(20); curDay=i;curRest=null;renderLog();}
 function switchRest(id){vibe(20); curRest=id;renderLog();}
-
 // ── BODY ───────────────────────────────────────────────────────
 function drawBodyChart(entries){
   const dk=window.matchMedia('(prefers-color-scheme:dark)').matches;
@@ -925,10 +819,8 @@ function drawBodyChart(entries){
   ];
   if(m.some(x=>x!==null))ds.push({label:'Muskler',data:m,borderColor:'#1d9e75',backgroundColor:'rgba(29,158,117,0.08)',tension:.4,pointRadius:4,pointBackgroundColor:'#1d9e75',yAxisID:'y'});
   if(wa.some(x=>x!==null))ds.push({label:'Livvidde',data:wa,borderColor:'#9b59b6',backgroundColor:'rgba(155,89,182,0.08)',tension:.4,pointRadius:4,pointBackgroundColor:'#9b59b6',yAxisID:'y'});
-
   charts.body=new Chart(ctx,{type:'line',data:{labels:entries.map(e=>`U${e.week}`),datasets:ds},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false}},scales:{x:{grid:{color:gc},ticks:{color:tc,font:{size:11}}},y:{position:'left',grid:{color:gc},ticks:{color:tc,font:{size:11}},title:{display:true,text:'kg/cm',color:tc,font:{size:10}}},y2:{position:'right',grid:{drawOnChartArea:false},ticks:{color:tc,font:{size:11}},title:{display:true,text:'%',color:tc,font:{size:10}}}}}});
 }
-
 async function renderBody(){
   const entries=await loadAllBody();
   const existing=await loadBodyRemote(curWeek)||{weight:'',fat:'',muscle:'',waist:''};
@@ -938,7 +830,6 @@ async function renderBody(){
   const mD=lat&&fst&&lat.week!==fst.week&&lat.muscle&&fst.muscle?(+lat.muscle-+fst.muscle).toFixed(1):null;
   const waD=lat&&fst&&lat.week!==fst.week&&lat.waist&&fst.waist?(+lat.waist-+fst.waist).toFixed(1):null;
   const sc=entries.length>=2;
-  
   let h=`<div class="section-title">Kropsmåling</div><div class="section-sub">Log data fra PureGym bodytracker & målebånd</div>`;
   if(entries.length>0)h+=`<div class="body-stats">
     <div class="bstat"><div class="bstat-l">Vægt</div><div class="bstat-v">${lat.weight||'—'} kg</div><div class="bstat-d">${dH(wD,true)}</div></div>
@@ -946,14 +837,12 @@ async function renderBody(){
     <div class="bstat"><div class="bstat-l">Muskler</div><div class="bstat-v">${lat.muscle||'—'} kg</div><div class="bstat-d">${dH(mD,false)}</div></div>
     <div class="bstat"><div class="bstat-l">Livvidde</div><div class="bstat-v">${lat.waist||'—'} cm</div><div class="bstat-d">${dH(waD,true)}</div></div>
   </div>`;
-  
   if(sc)h+=`<div class="chart-card"><div class="chart-head"><span class="chart-title">Kropskomposition</span><div class="chart-legend">
     <div class="legend-item"><div class="legend-dot" style="background:#378add"></div>Vægt</div>
     <div class="legend-item"><div class="legend-dot" style="background:#d85a30"></div>Fedt</div>
     <div class="legend-item"><div class="legend-dot" style="background:#1d9e75"></div>Muskler</div>
     <div class="legend-item"><div class="legend-dot" style="background:#9b59b6"></div>Livvidde</div>
   </div></div><div class="chart-wrap"><canvas id="bodyChart" style="height:180px;width:100%;"></canvas></div></div>`;
-  
   const s = getSettings();
   h+=`<div class="input-card"><div class="input-card-head">Uge ${curWeek} — indtast målinger</div><div class="input-card-body">
     <div class="input-row"><span class="input-label">Vægt</span><input type="text" inputmode="decimal" id="bW" value="${existing.weight||s.bw||''}" placeholder="93.0"><span class="input-unit">kg</span></div>
@@ -963,7 +852,7 @@ async function renderBody(){
   </div></div>
   <button class="save-btn" onclick="saveBodyEntry()">Gem måling for uge ${curWeek}</button>
   <button onclick="resetBodyEntry(${curWeek})" style="width:100%;padding:11px;border-radius:12px;border:1.5px solid var(--border);background:transparent;color:var(--muted);font-size:14px;font-weight:500;font-family:inherit;cursor:pointer;margin-bottom:14px;">Nulstil måling</button>`;
-  
+
   if(entries.length>0){
     h+=`<div class="hist-card"><div class="hist-head">Historik</div>`;
     [...entries].reverse().forEach((e,i,arr)=>{
@@ -984,13 +873,12 @@ async function renderBody(){
   document.getElementById('body-screen').innerHTML=h;
   if(sc)setTimeout(()=>drawBodyChart(entries),50);
 }
-
 async function saveBodyEntry(){
   vibe(60); 
   const nrm=v=>(v||'').replace(',','.');
   const newW = nrm(document.getElementById('bW').value);
   await saveBody(curWeek,{weight:newW,fat:nrm(document.getElementById('bF').value),muscle:nrm(document.getElementById('bM').value),waist:nrm(document.getElementById('bWaist').value),date:new Date().toLocaleDateString('da-DK')});
-  
+
   if(newW) {
       const s = getSettings();
       s.bw = +newW;
@@ -1012,7 +900,6 @@ function analyzeCycle(cycle){
   const startW=globalWeekOf(cycle,1);
   const peakWeeks=[5,6].map(wic=>startW+wic-1);
   const allWeeks=[1,2,3,4,5,6,7,8].map(wic=>startW+wic-1);
-
   const results=[];
   let totalSetsLogged=0,totalSetsCompleted=0,daysFinished=0;
   allWeeks.forEach(w=>{
@@ -1021,12 +908,10 @@ function analyzeCycle(cycle){
       if(dat&&dat.finished)daysFinished++;
     });
   });
-
   days.forEach(day=>{
     day.ex.forEach((ex,ei)=>{
       let setsCompleted=0,totalSets=0,kgSum=0,kgCount=0,repSum=0,repCount=0;
       let peakSetsCompleted=0,peakTotalSets=0,peakKgSum=0,peakKgCount=0,peakRepSum=0,peakRepCount=0;
-
       allWeeks.forEach(w=>{
         const dat=wcGet(w,day.id);if(!dat)return;
         const sets=dat.sets[ei]||[];
@@ -1046,12 +931,10 @@ function analyzeCycle(cycle){
       });
       totalSetsLogged+=totalSets;
       totalSetsCompleted+=setsCompleted;
-
       const compRate=totalSets?setsCompleted/totalSets:0;
       const peakComp=peakTotalSets?peakSetsCompleted/peakTotalSets:compRate;
       const peakAvgKg=peakKgCount?peakKgSum/peakKgCount:(kgCount?kgSum/kgCount:ex.kg);
       const peakAvgReps=peakRepCount?peakRepSum/peakRepCount:(repCount?repSum/repCount:ex.r);
-
       let newKg=ex.kg,reason='Ingen data — beholder vægt';
       if(ex.bw){newKg=0;reason='Bodyweight';}
       else if(totalSets===0){newKg=ex.kg;reason='Ingen logget data — beholder vægt';}
@@ -1068,15 +951,12 @@ function analyzeCycle(cycle){
         newKg=r25(Math.max(ex.kg-2.5,0));
         reason=`Sænk vægt — kun ${Math.round(peakComp*100)}% sæt klaret.`;
       }
-
       results.push({dayId:day.id,exIdx:ei,name:ex.n,oldKg:ex.kg,newKg,reason,
         completionRate:compRate,peakComp,peakAvgKg,peakAvgReps,bw:!!ex.bw});
     });
   });
-
   return{cycle,daysFinished,totalSetsLogged,totalSetsCompleted,overallCompletion:totalSetsLogged?totalSetsCompleted/totalSetsLogged:0,perExercise:results};
 }
-
 function generateProgram(cycle,analysis,overrides){
   const baseDays=getDays(cycle);
   const newDays=JSON.parse(JSON.stringify(baseDays));
@@ -1090,7 +970,6 @@ function generateProgram(cycle,analysis,overrides){
   });
   return newDays;
 }
-
 let cycleReviewOverrides={};
 async function renderCycleReview(){
   const newCycle=cycleOf(curWeek);
@@ -1098,7 +977,6 @@ async function renderCycleReview(){
   if(prevCycle<1){return false;}
   await preloadCycle(prevCycle);
   const a=analyzeCycle(prevCycle);
-
   const days=getDays(prevCycle);
   let daysHtml='';
   days.forEach(day=>{
@@ -1121,7 +999,6 @@ async function renderCycleReview(){
     });
     daysHtml+=`</div></div>`;
   });
-
   const compPct=Math.round(a.overallCompletion*100);
   const h=`<div class="day-intro">
     <span class="badge" style="background:var(--teal-bg);color:var(--teal-t);">Ny cyklus</span>
@@ -1135,13 +1012,11 @@ async function renderCycleReview(){
   <button class="fin-btn on" style="margin-bottom:8px;" onclick="commitCycleReview()">Start cyklus ${newCycle} ▶</button>
   <button class="fin-btn" onclick="skipCycleReview()" style="margin-bottom:8px;">Spring over (brug forrige cyklus' vægte)</button>
   <div class="fin-done-info" style="color:var(--muted);">Du kan altid ændre vægte direkte i hver træning</div>`;
-
   document.getElementById('log-screen').innerHTML=h;
   document.getElementById('tabs').innerHTML='';
   document.getElementById('weekLabel').textContent=`C${newCycle} start`;
   return true;
 }
-
 function setReviewOverride(key,val){cycleReviewOverrides[key]=(val||'').replace(',','.');}
 async function commitCycleReview(){
   const newCycle=cycleOf(curWeek);
@@ -1162,7 +1037,6 @@ async function skipCycleReview(){
   renderTabs();
   renderLog();
 }
-
 // ── STYRKE (FREMGANG) & 1RM ──────────────────────────────────
 async function renderProg() {
     let h = `<div class="section-title">Fremgang</div><div class="section-sub">Styrke-estimat (1RM) baseret på dine tungeste sæt</div>`;
@@ -1179,11 +1053,9 @@ async function renderProg() {
                 } catch (e) {}
             }
             if (!data || !data.finished) continue;
-
             const sets = data.sets[lift.ei] || [];
             let max1RM = 0;
             let bestKg = 0;
-
             sets.forEach((s, idx) => {
                 if (data.checks[`${lift.ei}-${idx}`]) {
                     const kg = +s.kg || 0;
@@ -1196,7 +1068,6 @@ async function renderProg() {
             });
             if (max1RM > 0) entries.push({ week: w, rm: Math.round(max1RM), kg: bestKg });
         }
-
         const cid = `chart_1rm_${li}`;
         h += `<div class="lift-card"><div class="lift-title">${lift.name}</div>`;
         
@@ -1204,7 +1075,6 @@ async function renderProg() {
             h += `<div class="chart-wrap" style="padding:10px 14px;"><canvas id="${cid}" style="height:140px; width:100%;"></canvas></div>`;
             cids.push({ cid, entries });
         }
-        
         h += `<div class="lift-rows">` + 
              (entries.length ? entries.map(e => `
                 <div class="lift-row">
@@ -1214,7 +1084,6 @@ async function renderProg() {
              `</div></div>`;
     }
     document.getElementById('prog-screen').innerHTML = h;
-    
     setTimeout(() => {
         const dk = window.matchMedia('(prefers-color-scheme:dark)').matches;
         cids.forEach(c => {
@@ -1255,22 +1124,17 @@ async function renderProg() {
         });
     }, 50);
 }
-
-
 // ── INDSTILLINGER & EKSPORT ──────────────────────────────────
 async function renderSettings(){
   const s = getSettings();
-  
   // Cardio Calculation (Karvonen formel for max fedttab @ 60-70%)
   const maxHr = 220 - (s.age || 30);
   const reserve = maxHr - (s.rhr || 60);
   const targetMin = Math.round((reserve * 0.60) + (s.rhr || 60));
   const targetMax = Math.round((reserve * 0.70) + (s.rhr || 60));
-
   let h = `
     <div class="section-title">Indstillinger</div>
     <div class="section-sub">Dine personlige mål og data</div>
-
     <div class="input-card">
         <div class="input-card-head">Makro Mål</div>
         <div class="input-card-body">
@@ -1280,7 +1144,6 @@ async function renderSettings(){
             <div class="input-row"><span class="input-label">Fedt</span><input type="number" id="setFat" value="${s.fat}"><span class="input-unit">g</span></div>
         </div>
     </div>
-
     <div class="input-card">
         <div class="input-card-head">Krop & Cardio</div>
         <div class="input-card-body">
@@ -1289,7 +1152,6 @@ async function renderSettings(){
             <div class="input-row"><span class="input-label">Hvilepuls</span><input type="number" id="setRhr" value="${s.rhr}"><span class="input-unit">bpm</span></div>
         </div>
     </div>
-
     <div class="hiit-box" style="background:var(--blue-bg);color:var(--blue-t); display:flex; align-items:center; gap:12px; margin-bottom:14px;">
         <i data-lucide="activity" style="width:24px;height:24px;flex-shrink:0;"></i>
         <div>
@@ -1298,11 +1160,9 @@ async function renderSettings(){
             <div style="font-size:20px; margin-top:2px;">~${targetMin} - ${targetMax} bpm</div>
         </div>
     </div>
-
     <button class="save-btn" onclick="saveSettingsForm()">Gem Indstillinger</button>
     <div class="section-title" style="margin-top:32px;">Konto</div>
     <div class="section-sub">Logget ind som: <b>${session.user.email}</b></div>
-    
     <button class="clear-btn" style="background:var(--red-bg); color:var(--red-t); margin-bottom:24px;" onclick="signOut()">
       Log ud af appen
     </button>
@@ -1312,10 +1172,8 @@ async function renderSettings(){
     <button class="copy-btn" onclick="copyCSV()">Kopiér til udklipsholder</button>
     <button class="clear-btn" onclick="clearAll()">Slet lokal cache</button>
   `;
-  
   document.getElementById('settings-screen').innerHTML = h;
   if(window.lucide) lucide.createIcons();
-
   setTimeout(async () => {
       let csv='Uge,Dato,Kategori,Øvelse,Sæt,Kg,Reps\n';let has=false;
       for(let w=1;w<=8;w++){
@@ -1338,7 +1196,6 @@ async function renderSettings(){
       document.getElementById('exportBox').textContent = has ? csv : 'Ingen data endnu.';
   }, 100);
 }
-
 function saveSettingsForm() {
     vibe(50);
     const s = {
@@ -1351,18 +1208,15 @@ function saveSettingsForm() {
         rhr: +document.getElementById('setRhr').value,
     };
     saveSettings(s);
-    
     const btn = document.querySelector('.save-btn');
     btn.textContent = 'Gemt ✓';
     btn.style.background = 'var(--green-bg)';
     btn.style.color = 'var(--green-t)';
     btn.style.borderColor = 'var(--green-b)';
-    
     setTimeout(() => {
         renderSettings(); 
     }, 1000);
 }
-
 function copyCSV(){vibe(30); navigator.clipboard.writeText(window._csv||'').then(()=>{const b=document.querySelector('.copy-btn');if(b){b.textContent='Kopieret ✓';setTimeout(()=>{b.textContent='Kopiér til udklipsholder';},2000);}});}
 function clearAll(){
   vibe(40);
@@ -1371,24 +1225,19 @@ function clearAll(){
   Object.keys(WC).forEach(k=>delete WC[k]);Object.keys(BC).forEach(k=>delete BC[k]);
   init();
 }
-
 async function showScreen(name){
   vibe(20);
   curScreen=name;
-  
   ['dash', 'log', 'body', 'prog', 'settings', 'kost', 'onboarding'].forEach(s => {
     const sc=document.getElementById(s+'-screen'); 
     if(sc) sc.style.display=(s===name?'block':'none');
     const bn=document.getElementById('bnav-'+s); 
     if(bn) bn.classList.toggle('active',s===name);
   });
-  
   document.getElementById('tabs').style.display = (name === 'log') ? 'flex' : 'none';
   document.getElementById('navRight').style.display = (name === 'onboarding' || name === 'settings') ? 'none' : 'flex';
-  
   const titles={dash:'Overblik',log:'Træningslog',body:'Målinger',prog:'Fremgang',settings:'Indstillinger',kost:'Makrolog',onboarding:'Velkommen'};
   document.getElementById('navTitle').textContent=titles[name] || 'App';
-
   // Disse linjer SKAL være herinde:
   if(name==='dash') await renderDash();
   if(name==='log') renderLog();
@@ -1396,36 +1245,29 @@ async function showScreen(name){
   if(name==='prog') await renderProg();
   if(name==='settings') await renderSettings();
   if(name==='kost'){await loadKostRemoteRange(7);renderKost();}
-} // Denne parentes lukker funktionen korrekt
-
+} 
 async function changeWeek(dir){
   const n=curWeek+dir;if(n<1)return;
   curWeek=n;
   const cyc=cycleOf(curWeek),wic=weekInCycle(curWeek);
   document.getElementById('weekLabel').textContent=cyc>1?`C${cyc}·U${wic}`:`Uge ${wic}`;
   document.getElementById('tabs').innerHTML='<div style="padding:8px 0 11px;color:var(--muted);font-size:13px;">Henter...</div>';
-  
   if(curScreen==='log') document.getElementById('log-screen').innerHTML='<div class="loading"><div class="spinner"></div>Henter data...</div>';
   else if(curScreen==='dash') document.getElementById('dash-screen').innerHTML='<div class="loading"><div class="spinner"></div>Henter overblik...</div>';
-
   await preloadWeek(curWeek);
   renderTabs();
-  
   if(curScreen === 'log') renderLog();
   else if(curScreen === 'dash') await renderDash();
 }
-
 // ── DASHBOARD ──────────────────────────────────────────────────
 async function renderDash() {
   const cyc = cycleOf(curWeek);
   const wic = weekInCycle(curWeek);
   const days = getDays(cyc);
-  
   let daysDone = 0;
   let totalVol = 0;
   let totalSetsDone = 0;
   let totalSets = 0;
-  
   days.forEach(d => {
     const dat = wcGet(curWeek, d.id);
     if(dat && dat.finished) daysDone++;
@@ -1435,9 +1277,7 @@ async function renderDash() {
         totalSetsDone += done(dat);
     }
   });
-  
   const pctDone = Math.round((daysDone / days.length) * 100) || 0;
-  
   const s = getSettings();
   const kData = loadKost(curKostDate);
   const kcal = +(kData.kcal || 0);
@@ -1446,19 +1286,16 @@ async function renderDash() {
   const prot = +(kData.prot || 0);
   const pTarget = s.prot;
   const TARGET_KCAL = s.kcal;
-  
   const bodyEntries = await loadAllBody();
   const latestBody = bodyEntries.length ? bodyEntries[bodyEntries.length - 1] : null;
   const firstBody = bodyEntries.length ? bodyEntries[0] : null;
   const weightDiff = latestBody && firstBody && latestBody.week !== firstBody.week ? (+latestBody.weight - +firstBody.weight).toFixed(1) : null;
-  
   let h = `
     <div class="day-intro">
         <span class="badge" style="background:var(--blue-bg);color:var(--blue-t);">Cyklus ${cyc} · Uge ${wic}</span>
         <div class="day-name">Dit Overblik</div>
         <div class="day-sub">Dine vigtigste tal samlet ét sted.</div>
     </div>
-    
     <div class="ex-card dash-card" onclick="showScreen('log')">
         <div class="ex-head" style="display:flex; justify-content:space-between; align-items:center;">
             <div class="ex-name" style="display:flex; align-items:center; gap:6px;"><i data-lucide="dumbbell" style="width:18px;height:18px;"></i> Ugens Træning</div>
@@ -1474,7 +1311,6 @@ async function renderDash() {
             </div>
         </div>
     </div>
-    
     <div class="ex-card dash-card" onclick="showScreen('kost')">
         <div class="ex-head" style="display:flex; justify-content:space-between; align-items:center;">
             <div class="ex-name" style="display:flex; align-items:center; gap:6px;"><i data-lucide="utensils" style="width:18px;height:18px;"></i> Dagens Makro</div>
@@ -1494,7 +1330,6 @@ async function renderDash() {
         </div>
     </div>
   `;
-  
   if(latestBody) {
       h += `
     <div class="ex-card dash-card" onclick="showScreen('body')">
@@ -1512,11 +1347,9 @@ async function renderDash() {
     </div>
       `;
   }
-  
   document.getElementById('dash-screen').innerHTML = h;
   if(window.lucide) lucide.createIcons();
 }
-
 function autoSelectDay(){
   const jsDay=new Date().getDay();
   if(jsDay===3){curRest='r1';return;}
@@ -1524,14 +1357,11 @@ function autoSelectDay(){
   curDay={1:0,2:1,4:2,5:3,6:4}[jsDay];
   curRest=null;
 }
-
 // ── KOST / MAKRO ──────────────────────────────────────────────
 let curKostDate=todayISO();
-
 function kostKey(date){return'kost_'+date;}
 function loadKost(date){const r=localStorage.getItem(kostKey(date));return r?JSON.parse(r):{kcal:'',prot:'',kh:'',fat:'',burned:''};} 
 function saveKostLocal(date,data){localStorage.setItem(kostKey(date),JSON.stringify(data));}
-
 async function saveKostRemote(date,data){
   setSync('');
   try{
@@ -1540,7 +1370,6 @@ async function saveKostRemote(date,data){
     setSync('ok');
   }catch(e){setSync('err');}
 }
-
 async function loadKostRemoteRange(days){
   try{
     const dates=[];
@@ -1561,13 +1390,11 @@ async function loadKostRemoteRange(days){
     });
   }catch(e){}
 }
-
 function kostDayLabel(iso) {
   const days = ['Søn', 'Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør'];
   const d = new Date(iso + 'T12:00:00'); 
   return days[d.getDay()] + ' ' + iso.split('-').slice(1).reverse().join('/');
 }
-
 function ring(pct,color,val,unit,label,sub){
   const r=34,circ=2*Math.PI*r,dash=Math.min(pct,1)*circ;
   return '<div class="kost-ring-card">'+
@@ -1582,31 +1409,25 @@ function ring(pct,color,val,unit,label,sub){
     '<span class="ring-label">'+label+'</span>'+
     '<span class="ring-sub">'+sub+'</span>'+
     '</div>';}
-
 function renderKost(){
   const s = getSettings();
   const TARGET_KCAL = s.kcal;
   const protTarget = s.prot;
   const TARGET_KH = s.kh;
   const TARGET_FAT = s.fat;
-
   const data=loadKost(curKostDate);
   const kcal=+data.kcal||0,prot=+data.prot||0,kh=+data.kh||0,fat=+data.fat||0,burned=+data.burned||0;
   const net=kcal-burned;
   const balance=net-TARGET_KCAL;
-  
   const isDeficit=balance<0,isSurplus=balance>0;
   const balClass=isDeficit?'deficit':isSurplus?'surplus':'neutral';
   const balSign=balance>0?'+':'';
-
   const protPct=protTarget>0?Math.round(prot/protTarget*100):0;
   const protOk=prot>=protTarget;
   const protClass=protOk?'deficit':'surplus'; 
   const protText=protOk?'Proteinm\u00e5l n\u00e5et \u2713':'Proteinm\u00e5l ikke n\u00e5et';
-
   const balText=isDeficit?'Kalorieunderskud \u2713 — fedttab p\u00e5 rette spor':
     isSurplus?'Kalorieoverskud — overstiger m\u00e5l':'Balanceret — p\u00e5 vedligeholdelse';
-
   const weekRows=[];
   let weekTotalKcal=0,weekTotalProt=0,weekTotalBalance=0,weekDays=0;
   for(let i=6;i>=0;i--){
@@ -1633,7 +1454,6 @@ function renderKost(){
       '<span class="wkr-prot">'+wprot+'g</span>'+
       '</div></div>');
   }
-
   let h='<div class="section-title">Makrolog</div>'+
     '<div class="section-sub">M\u00e5l: '+TARGET_KCAL+' kcal \u00b7 '+protTarget+'g protein \u00b7 '+TARGET_KH+'g kh \u00b7 '+TARGET_FAT+'g fedt</div>'+
     '<div class="kost-date-nav">'+
@@ -1641,7 +1461,6 @@ function renderKost(){
     '<span class="kost-date-label">'+kostDayLabel(curKostDate)+'</span>'+
     '<button class="icon-btn" onclick="kostChangeDay(1)">\u25ba</button>'+
     '</div>';
-
   h+='<div class="balance-card '+balClass+'">'+
     '<div>'+
     '<div class="balance-label '+balClass+'">'+balText+'</div>'+
@@ -1649,7 +1468,6 @@ function renderKost(){
     '</div>'+
     '<div class="balance-val '+balClass+'">'+balSign+balance+'</div>'+
     '</div>';
-
   h+='<div class="balance-card '+protClass+'" style="margin-bottom:14px;">'+
     '<div>'+
     '<div class="balance-label '+protClass+'">'+protText+'</div>'+
@@ -1657,7 +1475,6 @@ function renderKost(){
     '</div>'+
     '<div class="balance-val '+protClass+'">'+prot+'g</div>'+
     '</div>';
-
   if(kcal>0||prot>0){
     h+='<div class="kost-rings">'+
       ring(kcal/TARGET_KCAL,'#378add',kcal,'kcal','Kalorier','m\u00e5l '+TARGET_KCAL)+
@@ -1666,7 +1483,6 @@ function renderKost(){
       ring(fat/TARGET_FAT,'#d85a30',fat,'g','Fedt','m\u00e5l '+TARGET_FAT+'g')+
       '</div>';
   }
-
   h+='<div class="kost-input-card">'+
     '<div class="kost-input-head">Indtast for '+kostDayLabel(curKostDate)+'</div>'+
     '<div class="kost-grid">'+
@@ -1689,9 +1505,7 @@ function renderKost(){
     const totBalSign=weekTotalBalance>0?'+':'';
     const totBalClass=weekTotalBalance<0?'def':'sur';
     const avgProtOk=avgProt>=protTarget;
-
     h+='<div class="week-kost-card"><div class="week-kost-head">Sidste 7 dage</div>'+weekRows.join('')+'</div>';
-
     h+='<div class="week-kost-card" style="margin-top:0;">'+
       '<div class="week-kost-head">Ugeoversigt ('+weekDays+' dage logget)</div>'+
       '<div class="week-kost-row" style="background:var(--input-bg);">'+
@@ -1715,10 +1529,8 @@ function renderKost(){
       '</div>'+
     '</div>';
   }
-
   document.getElementById('kost-screen').innerHTML=h;
 }
-
 function kostChangeDay(dir){
   vibe(20);
   const d=new Date(curKostDate);d.setDate(d.getDate()+dir);
@@ -1728,7 +1540,6 @@ function kostChangeDay(dir){
   if(newDate>tomorrowISO)return;
   curKostDate=newDate;renderKost();
 }
-
 async function resetKostEntry(){
   vibe(40);
   if(!confirm('Nulstil kostdata for ' + kostDayLabel(curKostDate) + '?'))return;
@@ -1741,7 +1552,6 @@ async function resetKostEntry(){
   }catch(e){setSync('err');}
   renderKost();
 }
-
 async function saveKostEntry(){
   vibe(50);
   const data={
@@ -1762,7 +1572,6 @@ async function saveKostEntry(){
   btn.style.borderColor = 'var(--green-b)';
   setTimeout(()=>{ renderKost(); }, 1000);
 }
-
 function calculateAge(birthDateString) {
     if (!birthDateString) return 30; 
     const today = new Date();
@@ -1774,7 +1583,6 @@ function calculateAge(birthDateString) {
     }
     return age;
 }
-
 function renderLoginScreen() {
     document.body.innerHTML = `
     <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:20px; font-family:sans-serif; background:var(--bg); color:var(--text);">
@@ -1788,53 +1596,34 @@ function renderLoginScreen() {
         </div>
     </div>`;
 }
-
-// --- HER STARTER DIN EKSISTERENDE INIT ---
 async function init() {
   // 1. Tjek om brugeren er logget ind
   if (!session) {
     renderLoginScreen(); 
     return; // Stop her hvis ingen session
   }
-
   autoSelectDay();
-  
-  // 2. Hent brugerens profil fra Supabase
   const { data: profile } = await sb('user_programs', 'GET', null, `user_id=eq.${session.user.id}`);
-  
-  // 3. Tjek om profil findes og er komplet
-  if(!profile || profile.length === 0 || !profile[0].dob) {
+  if (!profile || profile.length === 0 || (!profile[0].dob && !profile[0].exercises)) {
     showScreen('onboarding');
   } else {
     const userP = profile[0];
-
-    // Gem øvelserne lokalt
+    const userDob = userP.dob || '1995-01-01';
     if (userP.exercises) {
         localStorage.setItem('user_custom_program', JSON.stringify(userP.exercises));
     }
-
-    const alder = calculateAge(userP.dob);
-    console.log("Appen kører for bruger med alder:", alder);
-
+    const alder = calculateAge(userDob);
+    console.log("Appen kører for eksisterende bruger. Alder estimeret til:", alder);
     document.getElementById('dash-screen').innerHTML = '<div class="loading"><div class="spinner"></div>Henter overblik...</div>';
-    
-    // Hent data i baggrunden
     await Promise.all([
       autoSelectWeek(),
       loadKostRemoteRange(7)
     ]);
-    
     await showScreen('dash');
   }
-  
-  // Her slutter selve logikken inde i funktionen
   if(window.lucide) lucide.createIcons();
-} // <--- Denne lukker 'async function init()'
-
-// 1. Kør funktionen for at starte appen (skal stå udenfor)
+} 
 init();
-
-// 2. Registrer Service Worker (skal stå udenfor)
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
