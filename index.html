@@ -206,6 +206,25 @@ canvas{display:block;}
 .timer-btn { background: rgba(255,255,255,0.2); border: none; color: var(--bg); border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight:700; font-size:12px; }
 .timer-btn:active { transform: scale(0.9); }
 .sticky-save-wrap { position: sticky; bottom: 20px; z-index: 10; padding-top: 10px; padding-bottom: 5px; }
+/* ONBOARDING FIX (mobil) */
+/* ONBOARDING FIX (mobil) */
+.onb-grid-2 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+}
+
+.onb-grid-2 > div {
+  min-width: 0;
+}
+
+.onb-grid-2 input,
+.onb-grid-2 select,
+.onb-grid-2 .note {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
 </style>
 </head>
 <body ontouchstart="">
@@ -243,7 +262,7 @@ canvas{display:block;}
               <option value="kvinde">Kvinde</option>
             </select>
           </div>
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="onb-grid-2">
             <div>
               <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 5px;">Fødselsdato</label>
               <input type="date" id="onb-dob" class="note" style="margin-top:0;">
@@ -253,7 +272,7 @@ canvas{display:block;}
               <input type="number" id="onb-weight" class="note" style="margin-top:0;" placeholder="kg">
             </div>
           </div>
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="onb-grid-2">
             <div>
               <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 5px;">Højde (cm)</label>
               <input type="number" id="onb-height" class="note" style="margin-top:0;" placeholder="cm">
@@ -544,7 +563,7 @@ async function preloadWeek(w){
       'workout_log',
       'GET',
       null,
-      `week=eq.${w}&order=day_id.asc,updated_at.desc`
+      `user_id=eq.${session.user.id}&week=eq.${w}&order=day_id.asc,updated_at.desc`
     );
 
     if (error) {
@@ -574,7 +593,7 @@ async function preloadWeek(w){
 async function saveWorkout(w,id,data){
   wcSet(w,id,data);
   setSync('');
-  try{await sb('workout_log','POST',{week:w,day_id:id,data});setSync('ok');}
+  try{await sb('workout_log','POST',{user_id: session.user.id, week:w, day_id:id, data});setSync('ok');}
   catch(e){setSync('err');}
 }
 // ── BODY CACHE ─────────────────────────────────────────────────
@@ -1484,8 +1503,18 @@ function saveKostLocal(date,data){localStorage.setItem(kostKey(date),JSON.string
 async function saveKostRemote(date,data){
   setSync('');
   try{
-    await sb('kost_log','DELETE',null,`date=eq.${date}`);
-    await sb('kost_log','POST',{date,kcal:data.kcal?+data.kcal:null,prot:data.prot?+data.prot:null,kh:data.kh?+data.kh:null,fat:data.fat?+data.fat:null,burned:data.burned?+data.burned:null});
+    await sb('kost_log','DELETE',null,`user_id=eq.${session.user.id}&date=eq.${date}`);
+    
+    await sb('kost_log','POST',{
+      user_id: session.user.id,
+      date,
+      kcal:data.kcal?+data.kcal:null,
+      prot:data.prot?+data.prot:null,
+      kh:data.kh?+data.kh:null,
+      fat:data.fat?+data.fat:null,
+      burned:data.burned?+data.burned:null
+    });
+
     setSync('ok');
   }catch(e){setSync('err');}
 }
@@ -1503,7 +1532,7 @@ async function loadKostRemoteRange(days){
       'kost_log',
       'GET',
       null,
-      'date=in.(' + dates.join(',') + ')&order=date.desc'
+      'user_id=eq.' + session.user.id + '&date=in.(' + dates.join(',') + ')&order=date.desc'
     );
 
     if(error) return;
@@ -1692,7 +1721,7 @@ async function resetKostEntry(){
   localStorage.removeItem(kostKey(curKostDate));
   setSync('');
   try{
-    const url=SB_URL+'/rest/v1/kost_log?date=eq.'+curKostDate;
+    const url=SB_URL+'/rest/v1/kost_log?user_id=eq.'+session.user.id+'&date=eq.'+curKostDate;
     await fetch(url, { method: 'DELETE', headers: getHeaders() });
     setSync('ok');
   }catch(e){setSync('err');}
