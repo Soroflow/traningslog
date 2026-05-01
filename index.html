@@ -442,7 +442,11 @@ const KEY_LIFTS=[
   {name:'Bænkpres',dayId:'d1',ei:0},{name:'Squat',dayId:'d2',ei:0},
   {name:'Deadlift',dayId:'d4',ei:0},{name:'Shoulder press',dayId:'d1',ei:2},{name:'Barbell row',dayId:'d1',ei:3}
 ];
-
+function todayISO(){
+  const d = new Date();
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().split('T')[0];
+}
 let curDay=0,curWeek=1,curScreen='log',curRest=null;
 
 const REST_DAYS=[
@@ -1135,8 +1139,18 @@ async function renderProg() {
             let data = wcGet(w, lift.dayId);
             if (!data) {
                 try {
-                    const rows = await sb('workout_log', 'GET', null, `week=eq.${w}&day_id=eq.${lift.dayId}&order=updated_at.desc&limit=1`);
-                    if (rows && rows.length) { data = rows[0].data; wcSet(w, lift.dayId, data); }
+                    const { data: rows, error } = await sb(
+  'workout_log',
+  'GET',
+  null,
+  `week=eq.${w}&day_id=eq.${lift.dayId}&order=updated_at.desc&limit=1`
+);
+
+if (!error && rows && rows.length) {
+  data = rows[0].data;
+  wcSet(w, lift.dayId, data);
+}
+                    
                 } catch (e) {}
             }
             if (!data || !data.finished) continue;
@@ -1266,7 +1280,21 @@ async function renderSettings(){
       for(let w=1;w<=8;w++){
         for(const d of DAYS){
           let data=wcGet(w,d.id);
-          if(!data){try{const rows=await sb('workout_log','GET',null,`week=eq.${w}&day_id=eq.${d.id}&order=updated_at.desc&limit=1`);if(rows&&rows.length){data=rows[0].data;wcSet(w,d.id,data);}}catch(e){}}
+          if(!data){
+  try{
+    const { data: rows, error } = await sb(
+      'workout_log',
+      'GET',
+      null,
+      `week=eq.${w}&day_id=eq.${d.id}&order=updated_at.desc&limit=1`
+    );
+
+    if(!error && rows && rows.length){
+      data = rows[0].data;
+      wcSet(w, d.id, data);
+    }
+  } catch(e){}
+}
           if(!data||!data.finished)continue;has=true;
           const dato=data.date?isoToDa(data.date):'';
           d.ex.forEach((ex,ei)=>{(data.sets[ei]||[]).forEach((s,si)=>{csv+=`${w},${dato},${d.title},${ex.n},${si+1},${s.kg||'BW'},${s.r}\n`;});});
@@ -1710,6 +1738,63 @@ function renderLoginScreen() {
         </div>
     </div>`;
 }
+function nextOnboardingStep(step){
+  if(step === 2){
+    document.getElementById('onboarding-step-1').style.display = 'none';
+    document.getElementById('onboarding-step-2').style.display = 'block';
+  }
+}
+
+async function completeOnboarding(){
+  const gender = document.getElementById('onb-gender').value;
+  const dob = document.getElementById('onb-dob').value;
+  const weight = +document.getElementById('onb-weight').value;
+  const height = +document.getElementById('onb-height').value;
+  const fat = +document.getElementById('onb-fat').value;
+  const goal = document.getElementById('onb-goal').value;
+  const freq = +document.getElementById('onb-freq').value;
+  const duration = +document.getElementById('onb-duration').value;
+
+  if(!dob || !weight || !height){
+    alert('Udfyld fødselsdato, vægt og højde.');
+    return;
+  }
+
+  const age = calculateAge(dob);
+  const s = getSettings();
+
+  s.bw = weight;
+  s.age = age;
+  s.prot = Math.round(weight * 1.8);
+
+  if(goal === 'lose') s.kcal = 2300;
+  if(goal === 'gain') s.kcal = 2800;
+  if(goal === 'tone') s.kcal = 2520;
+
+  saveSettings(s);
+
+  let program = DAYS;
+  if(freq === 3) program = DAYS.slice(0,3);
+  if(freq === 4) program = DAYS.slice(0,4);
+
+  localStorage.setItem('user_custom_program', JSON.stringify(program));
+
+  await sb('user_programs', 'POST', {
+    user_id: session.user.id,
+    gender,
+    dob,
+    weight,
+    height,
+    fat: fat || null,
+    goal,
+    freq,
+    duration,
+    exercises: program
+  });
+
+  await autoSelectWeek();
+  await showScreen('dash');
+}
 async function init() {
   if (!session) {
     renderLoginScreen(); 
@@ -1719,11 +1804,17 @@ async function init() {
   autoSelectDay();
   
   // 2. Hent brugerens profil fra Supabase
-  const { data: profile } = await sb('user_programs', 'GET', null, `user_id=eq.${session.user.id}`);
+  const { data: profile, error } = await sb('user_programs', 'GET', null, `user_id=eq.${session.user.id}`);
+
+  if (error) {
+  console.error("Profil fejl:", error);
+  renderLoginScreen();
+  return;
+}
   
   // 3. Tjek om brugeren skal i onboarding (hvis ingen profil eller ingen data findes)
   // Vi tjekker både for 'dob' og 'exercises' for at redde dine gamle data
-  if (!profile || profile.length === 0 || (!profile[0].dob && !profile[0].exercises)) {
+  if (!profile || profile.length === 0) {
     showScreen('onboarding');
   } else {
     // HER STARTER LOGIKKEN FOR EN EKSISTERENDE BRUGER
