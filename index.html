@@ -608,8 +608,16 @@ async function saveBody(w,data){
   BC[w]=data;localStorage.setItem(bodyLsKey(w),JSON.stringify(data));
   setSync('');
   try{
-    await sb('body_log','DELETE',null,`week=eq.${w}`);
-    await sb('body_log','POST',{week:w,weight:data.weight?parseFloat(data.weight):null,fat:data.fat?parseFloat(data.fat):null,muscle:data.muscle?parseFloat(data.muscle):null,waist:data.waist?parseFloat(data.waist):null,date:data.date});
+    await sb('body_log','DELETE',null,`user_id=eq.${session.user.id}&week=eq.${w}`);
+    await sb('body_log','POST',{
+  user_id: session.user.id, // 
+  week:w,
+  weight:data.weight?parseFloat(data.weight):null,
+  fat:data.fat?parseFloat(data.fat):null,
+  muscle:data.muscle?parseFloat(data.muscle):null,
+  waist:data.waist?parseFloat(data.waist):null,
+  date:data.date
+});
     setSync('ok');
   }catch(e){setSync('err');}
 }
@@ -619,7 +627,7 @@ async function resetBodyEntry(w){
   localStorage.removeItem(bodyLsKey(w));
   setSync('');
   try{
-    const url=SB_URL+'/rest/v1/body_log?week=eq.'+w;
+    const url=SB_URL+'/rest/v1/body_log?user_id=eq.'+session.user.id+'&week=eq.'+w;
     await fetch(url, { method: 'DELETE', headers: getHeaders() });
     setSync('ok');
   }catch(e){setSync('err');}
@@ -633,7 +641,7 @@ async function loadBodyRemote(w){
       'body_log',
       'GET',
       null,
-      `week=eq.${w}&limit=1`
+      `user_id=eq.${session.user.id}&week=eq.${w}&limit=1`
     );
 
     if(error) return null;
@@ -664,7 +672,7 @@ async function loadAllBody(){
       'body_log',
       'GET',
       null,
-      'order=week.asc'
+      `user_id=eq.${session.user.id}&order=week.asc`
     );
 
     if(!error && rows && rows.length){
@@ -1166,7 +1174,7 @@ async function renderProg() {
   'workout_log',
   'GET',
   null,
-  `week=eq.${w}&day_id=eq.${lift.dayId}&order=updated_at.desc&limit=1`
+  `user_id=eq.${session.user.id}&week=eq.${w}&day_id=eq.${lift.dayId}&order=updated_at.desc&limit=1`
 );
 
 if (!error && rows && rows.length) {
@@ -1309,7 +1317,7 @@ async function renderSettings(){
       'workout_log',
       'GET',
       null,
-      `week=eq.${w}&day_id=eq.${d.id}&order=updated_at.desc&limit=1`
+      `user_id=eq.${session.user.id}&week=eq.${w}&day_id=eq.${d.id}&order=updated_at.desc&limit=1`
     );
 
     if(!error && rows && rows.length){
