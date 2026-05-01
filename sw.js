@@ -1,6 +1,5 @@
-const CACHE_NAME = 'soroflow-v3.1';
+const CACHE_NAME = 'soroflow-v3.2';
 
-// Aktiverne der skal caches for offline brug
 const ASSETS = [
   './',
   './index.html',
@@ -8,48 +7,57 @@ const ASSETS = [
   'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js'
 ];
 
-// 1. Install: Opret cachen og hent alle assets
 self.addEventListener('install', e => {
-  // Tving den nye service worker til at blive aktiv med det samme
   self.skipWaiting();
+
   e.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      console.log('Caching assets');
-      return cache.addAll(ASSETS);
+      return cache.addAll(ASSETS).catch(err => {
+        console.warn('Cache addAll fejl:', err);
+      });
     })
   );
 });
 
-// 2. Activate: Ryd op i gamle caches fra tidligere versioner
 self.addEventListener('activate', e => {
   e.waitUntil(
-    caches.keys().then(keys => {
-      return Promise.all(
-        keys.filter(key => key !== CACHE_NAME)
-            .map(key => caches.delete(key))
-      );
-    })
+    caches.keys().then(keys =>
+      Promise.all(
+        keys
+          .filter(key => key !== CACHE_NAME)
+          .map(key => caches.delete(key))
+      )
+    ).then(() => self.clients.claim())
   );
 });
 
-// 3. Fetch: Stale-while-revalidate strategi
-// Leverer indhold fra cache med det samme, men opdaterer i baggrunden
 self.addEventListener('fetch', e => {
+  const url = new URL(e.request.url);
+
+  // Supabase må IKKE caches
+  if (url.hostname.includes('supabase.co')) {
+    e.respondWith(fetch(e.request));
+    return;
+  }
+
+  // Kun GET må caches
+  if (e.request.method !== 'GET') {
+    e.respondWith(fetch(e.request));
+    return;
+  }
+
   e.respondWith(
     caches.open(CACHE_NAME).then(cache => {
       return cache.match(e.request).then(cachedResponse => {
-        const fetchPromise = fetch(e.request).then(networkResponse => {
-          // Gem den nye version i cachen til næste gang
-          if (networkResponse.ok) {
-            cache.put(e.request, networkResponse.clone());
-          }
-          return networkResponse;
-        }).catch(() => {
-          // Hvis netværket fejler (offline), returneres den cachede version
-          return cachedResponse;
-        });
+        const fetchPromise = fetch(e.request)
+          .then(networkResponse => {
+            if (networkResponse && networkResponse.ok) {
+              cache.put(e.request, networkResponse.clone());
+            }
+            return networkResponse;
+          })
+          .catch(() => cachedResponse);
 
-        // Returner cachen med det samme hvis den findes, ellers vent på netværk
         return cachedResponse || fetchPromise;
       });
     })
