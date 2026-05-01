@@ -239,9 +239,89 @@ canvas{display:block;}
       <button class="icon-btn" onclick="changeWeek(1); vibe();">▶</button>
     </div>
   </div>
-  <div class="tabs" id="tabs"><div style="padding:8px 0 11px;color:var(--muted);font-size:13px;">Henter...</div></div>
-</div>
+  <div class="tabs" id="tabs">
+    <div style="padding:8px 0 11px;color:var(--muted);font-size:13px;">Henter...</div>
+  </div>
+</div> <!-- Denne lukker hele 'nav' sektionen korrekt -->
+<div id="onboarding-screen" class="screen" style="display:none; padding-top: 20px;">
+  <div class="onboarding-container" style="max-width: 400px; margin: 0 auto; padding: 0 15px;">
+    
+    <div id="onboarding-step-1">
+      <h2 style="margin-bottom:10px; font-size: 24px;">Velkommen! 👋</h2>
+      <p style="color:var(--muted); margin-bottom:24px; font-size: 14px;">Lad os skræddersy din træning efter din krop og dine mål.</p>
+      
+      <div class="input-card">
+        <div class="input-card-body" style="display: flex; flex-direction: column; gap: 15px;">
+          <div>
+            <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 5px;">Køn</label>
+            <select id="onb-gender" class="note" style="margin-top:0;">
+              <option value="mand">Mand</option>
+              <option value="kvinde">Kvinde</option>
+            </select>
+          </div>
+          
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div>
+              <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 5px;">Fødselsdato</label>
+              <input type="date" id="onb-dob" class="note" style="margin-top:0;">
+            </div>
+            <div>
+              <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 5px;">Vægt (kg)</label>
+              <input type="number" id="onb-weight" class="note" style="margin-top:0;" placeholder="kg">
+            </div>
+          </div>
+          
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div>
+              <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 5px;">Højde (cm)</label>
+              <input type="number" id="onb-height" class="note" style="margin-top:0;" placeholder="cm">
+            </div>
+            <div>
+              <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 5px;">Fedt % (valgfri)</label>
+              <input type="number" id="onb-fat" class="note" style="margin-top:0;" placeholder="%">
+            </div>
+          </div>
+        </div>
+      </div>
+      <button class="save-btn" style="margin-top:20px;" onclick="nextOnboardingStep(2)">Næste trin</button>
+    </div>
 
+    <div id="onboarding-step-2" style="display:none;">
+      <h2 style="margin-bottom:10px; font-size: 24px;">Dit mål 🎯</h2>
+      <div class="input-card" style="margin-top:20px;">
+        <div class="input-card-body" style="display: flex; flex-direction: column; gap: 15px;">
+          <div>
+            <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 5px;">Hvad er dit primære mål?</label>
+            <select id="onb-goal" class="note" style="margin-top:0;">
+              <option value="lose">Fedttab</option>
+              <option value="gain">Muskelopbygning</option>
+              <option value="tone">Tonet krop / Vedligehold</option>
+            </select>
+          </div>
+          
+          <div>
+            <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 5px;">Træningsdage pr. uge</label>
+            <select id="onb-freq" class="note" style="margin-top:0;">
+              <option value="3">3 dage (Fullbody)</option>
+              <option value="4">4 dage (2-split)</option>
+              <option value="5">5 dage (PPL + Split)</option>
+            </select>
+          </div>
+          
+          <div>
+            <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 5px;">Program varighed</label>
+            <select id="onb-duration" class="note" style="margin-top:0;">
+              <option value="4">4 uger</option>
+              <option value="6">6 uger</option>
+              <option value="8">8 uger</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <button class="save-btn" style="margin-top:20px;" onclick="completeOnboarding()">Generer mit program 🚀</button>
+    </div>
+  </div>
+</div>
 <div class="screen visible" id="dash-screen"><div class="loading"><div class="spinner"></div>Henter overblik...</div></div>
 <div class="screen" id="log-screen"><div class="loading"><div class="spinner"></div>Henter træningsdata...</div></div>
 <div class="screen" id="body-screen"></div>
@@ -359,11 +439,25 @@ if (!session) {
 // Opdateret sb() funktion der bruger de nye headers
 async function sb(table, method, body, qs){
     const url = `${SB_URL}/rest/v1/${table}${qs ? '?' + qs : ''}`;
-    const opts = { method, headers: getHeaders() };
+    const opts = { 
+        method, 
+        headers: { 
+            ...getHeaders(),
+            'Prefer': 'return=minimal' // Gør POST mere stabil
+        } 
+    };
     if (body) opts.body = JSON.stringify(body);
-    const r = await fetch(url, opts);
-    if (!r.ok) { setSync('err'); return method === 'GET' ? [] : false; }
-    return method === 'GET' ? r.json() : true;
+    try {
+        const r = await fetch(url, opts);
+        if (!r.ok) {
+            const errData = await r.json();
+            return { error: errData };
+        }
+        if (method === 'GET') return { data: await r.json() };
+        return { data: true };
+    } catch (e) {
+        return { error: e };
+    }
 }
 
 const DAYS=[
@@ -428,11 +522,45 @@ async function autoSelectWeek(){
 
 // Per-cyklus program
 function programKey(cycle){return'program_c'+cycle;}
-function getDays(cycle){
-  if(cycle<=1)return DAYS;
-  const stored=localStorage.getItem(programKey(cycle));
-  if(stored)return JSON.parse(stored);
+function getDays(cycle) {
+  // 1. Tjek om vi har et gemt program fra onboarding i denne session
+  // (Vi gemmer programmet i localStorage under onboarding eller henter det ved init)
+  const userProgram = localStorage.getItem('user_custom_program');
+  
+  if (userProgram) {
+    try {
+      const customDays = JSON.parse(userProgram);
+      // Vi mapper de flade øvelser fra databasen over i det format appen forventer
+      return formatUserExercises(customDays);
+    } catch (e) {
+      console.error("Fejl i indlæsning af brugerprogram", e);
+    }
+  }
+
+  // 2. Hvis uge > 8 og vi har en cyklus-opdatering, brug den
+  if (cycle > 1) {
+    const stored = localStorage.getItem(programKey(cycle));
+    if (stored) return JSON.parse(stored);
+  }
+
+  // 3. Fallback: Din standard (DAYS)
   return DAYS; 
+}
+
+// Hjælpefunktion til at formatere onboarding-øvelser til appens format
+function formatUserExercises(exercises) {
+  // Dette omdanner de flade øvelser fra databasen til appens dag-format
+  return [
+    { 
+      id: 'custom', 
+      short: 'Træn', 
+      label: 'Dag 1', 
+      title: 'Mit Program', 
+      bs: 'background:var(--blue-bg);color:var(--blue-t);', 
+      bt: 'Personlig', 
+      ex: exercises 
+    }
+  ];
 }
 function saveProgram(cycle,days){localStorage.setItem(programKey(cycle),JSON.stringify(days));}
 function hasProgram(cycle){return cycle<=1||!!localStorage.getItem(programKey(cycle));}
@@ -1241,23 +1369,28 @@ function clearAll(){
 async function showScreen(name){
   vibe(20);
   curScreen=name;
-  ['dash','log','body','prog','settings','kost'].forEach(s=>{
-    const sc=document.getElementById(s+'-screen'); if(sc) sc.classList.toggle('visible',s===name);
-    const bn=document.getElementById('bnav-'+s); if(bn) bn.classList.toggle('active',s===name);
+  
+  ['dash', 'log', 'body', 'prog', 'settings', 'kost', 'onboarding'].forEach(s => {
+    const sc=document.getElementById(s+'-screen'); 
+    if(sc) sc.style.display=(s===name?'block':'none');
+    const bn=document.getElementById('bnav-'+s); 
+    if(bn) bn.classList.toggle('active',s===name);
   });
-  document.getElementById('tabs').style.display=(name==='log')?'flex':'none';
-  document.getElementById('navRight').style.display=(name==='log'||name==='dash')?'flex':'none';
   
-  const titles={dash:'Overblik',log:'Træningslog',body:'Målinger',prog:'Fremgang',settings:'Indstillinger',kost:'Makrolog'};
-  document.getElementById('navTitle').textContent=titles[name];
+  document.getElementById('tabs').style.display = (name === 'log') ? 'flex' : 'none';
+  document.getElementById('navRight').style.display = (name === 'onboarding' || name === 'settings') ? 'none' : 'flex';
   
+  const titles={dash:'Overblik',log:'Træningslog',body:'Målinger',prog:'Fremgang',settings:'Indstillinger',kost:'Makrolog',onboarding:'Velkommen'};
+  document.getElementById('navTitle').textContent=titles[name] || 'App';
+
+  // Disse linjer SKAL være herinde:
   if(name==='dash') await renderDash();
   if(name==='log') renderLog();
   if(name==='body') await renderBody();
   if(name==='prog') await renderProg();
   if(name==='settings') await renderSettings();
   if(name==='kost'){await loadKostRemoteRange(7);renderKost();}
-}
+} // Denne parentes lukker funktionen korrekt
 
 async function changeWeek(dir){
   const n=curWeek+dir;if(n<1)return;
@@ -1645,10 +1778,126 @@ function todayISO(){
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
 }
+// --- ONBOARDING FUNKTIONER ---
+function nextOnboardingStep(step) {
+  vibe(40);
+  document.getElementById('onboarding-step-1').style.display = 'none';
+  document.getElementById('onboarding-step-2').style.display = 'block';
+}
 
+async function completeOnboarding() {
+  vibe(60);
+  
+  const goal = document.getElementById('onb-goal').value;
+  const freq = document.getElementById('onb-freq').value;
+  
+  // --- PROGRAM ALGORITME START ---
+  let generatedExercises = [];
+  
+  if (freq === "3") {
+    // Standard Fullbody skabelon
+    generatedExercises = [
+      { n: 'Squat', t: '3x8', s: 3, kg: 40, r: 8 },
+      { n: 'Bænkpres', t: '3x8', s: 3, kg: 40, r: 8 },
+      { n: 'Barbell Row', t: '3x8', s: 3, kg: 30, r: 8 },
+      { n: 'Shoulder Press', t: '3x10', s: 3, kg: 20, r: 10 },
+      { n: 'Lat Pulldown', t: '3x10', s: 3, kg: 35, r: 10 }
+    ];
+  } else if (freq === "4") {
+    // Standard 2-split skabelon (vi starter dem med Upper som dag A)
+    generatedExercises = [
+      { n: 'Bænkpres', t: '3x8', s: 3, kg: 40, r: 8 },
+      { n: 'Pull-ups / Lat Pulldown', t: '3x10', s: 3, kg: 35, r: 10 },
+      { n: 'Incline DB Press', t: '3x10', s: 3, kg: 16, r: 10 },
+      { n: 'Cable Row', t: '3x12', s: 3, kg: 30, r: 12 },
+      { n: 'Lateral Raises', t: '3x15', s: 3, kg: 6, r: 15 }
+    ];
+  } else {
+    // 5-dages avanceres lidt mere
+    generatedExercises = [
+      { n: 'Dødløft', t: '3x5', s: 3, kg: 60, r: 5 },
+      { n: 'Bænkpres', t: '4x6', s: 4, kg: 50, r: 6 },
+      { n: 'Bulgarian Split Squat', t: '3x10', s: 3, kg: 12, r: 10 },
+      { n: 'Face Pulls', t: '3x15', s: 3, kg: 15, r: 15 }
+    ];
+  }
+  // --- PROGRAM ALGORITME SLUT ---
+
+  const profileData = {
+    user_id: session.user.id,
+    gender: document.getElementById('onb-gender').value,
+    dob: document.getElementById('onb-dob').value, // Gemmer datoen (f.eks. 1995-05-20)
+    weight: +document.getElementById('onb-weight').value,
+    height: +document.getElementById('onb-height').value,
+    goal: goal,
+    frequency: freq,
+    duration: document.getElementById('onb-duration').value,
+    start_date: todayISO(),
+    exercises: generatedExercises // Nu gemmer vi de genererede øvelser!
+  };
+
+  const { error } = await sb('user_programs', 'POST', profileData);
+  
+  if(!error) {
+    alert("Profil oprettet! Dit " + freq + "-dages program er klar.");
+    location.reload();
+  } else {
+    alert("Fejl: " + error.message);
+  }
+}
+
+function calculateAge(birthDateString) {
+    if (!birthDateString) return 30; 
+    const today = new Date();
+    const birthDate = new Date(birthDateString);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+    }
+    return age;
+}
 // Start appen (kun én gang!)
+async function init(){
+  autoSelectDay();
+  
+  // 1. Hent brugerens profil fra Supabase
+  const { data: profile } = await sb('user_programs', 'GET', null, `user_id=eq.${session.user.id}`);
+  
+  // 2. Tjek om profil findes OG om den har den nye 'dob' (fødselsdato) data
+  if(!profile || profile.length === 0 || !profile[0].dob) {
+    // Hvis ingen profil, eller hvis det er en "gammel" profil uden fødselsdato:
+    showScreen('onboarding');
+  } else {
+    // Hvis profil findes og er up-to-date:
+    const userP = profile[0];
+
+    // Gem øvelserne lokalt så appen kan bruge dem med det samme
+    if (userP.exercises) {
+        localStorage.setItem('user_custom_program', JSON.stringify(userP.exercises));
+    }
+
+    // Beregn og gem alder i sessionen eller settings hvis nødvendigt
+    const alder = calculateAge(userP.dob);
+    console.log("Appen kører for bruger med alder:", alder);
+
+    document.getElementById('dash-screen').innerHTML='<div class="loading"><div class="spinner"></div>Henter overblik...</div>';
+    
+    await Promise.all([
+      autoSelectWeek(),
+      loadKostRemoteRange(7)
+    ]);
+    
+    await showScreen('dash');
+  }
+  
+  if(window.lucide) lucide.createIcons();
+}
+
+// Start appen
 init();
-// Registrer Service Worker for at gøre appen offline-klar
+
+// Registrer Service Worker
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').catch(err => console.log("SW fejl", err));
