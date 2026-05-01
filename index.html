@@ -532,12 +532,17 @@ async function loadAllBody(){
 
 // ── HELPERS ────────────────────────────────────────────────────
 function isoToDa(s){if(!s)return'';const[y,m,d]=s.split('-');return`${d}/${m}/${y}`;}
-function defaultKg(ex,gw){if(ex.bw)return'';const w=weekInCycle(gw);if(w===7)return+(ex.kg*.85).toFixed(1);if(w<=2)return ex.kg;if(w<=4)return ex.kg+2.5;if(w<=6)return ex.kg+5;return ex.kg+5;}
+function defaultKg(ex, gw) { const w = weekInCycle(gw); if (ex.bw) return ''; if (w === 7) return +(ex.kg * 0.8).toFixed(1); if (w === 8) return +(ex.kg * 1.025).toFixed(1); if (w <= 2) return ex.kg; if (w <= 4) return ex.kg + 2.5; if (w <= 6) return ex.kg + 5; return ex.kg; }
 function makeInit(di,w){const days=getDays(cycleOf(w));const d=days[di];const r={sets:{},checks:{},notes:{},finished:false,date:null};d.ex.forEach((e,ei)=>{r.sets[ei]=Array.from({length:e.s},()=>({kg:defaultKg(e,w),r:e.r}));r.notes[ei]='';});return r;}
 function vol(data,d){let v=0;d.ex.forEach((e,ei)=>{(data.sets[ei]||[]).forEach(s=>{v+=(+s.kg||0)*(+s.r||0);});});return Math.round(v);}
 function done(data){return Object.values(data.checks).filter(Boolean).length;}
 function total(d){return d.ex.reduce((a,e)=>a+e.s,0);}
 function dH(val,inv){if(val==null)return'';const n=+val,s=n>0?'+':'',g=inv?n<0:n>0,c=n===0?'delta-neut':g?'delta-neg':'delta-pos';return`<span class="${c}">${s}${val}</span>`;}
+function vibe(ms = 30) {
+    if (navigator.vibrate) { 
+        try { navigator.vibrate(ms); } catch(e) {} 
+    }
+}
 
 // ── TABS ───────────────────────────────────────────────────────
 function renderTabs(){
@@ -762,7 +767,7 @@ async function toggleChk(key){
 }
 
 async function toggleFin(){
-  vibe(50);
+  vibe(80);
   const{d,data}=getData();
   if(!data.finished){const di=document.getElementById('finDate');data.finished=true;data.date=di?di.value:todayISO();}
   else{data.finished=false;data.date=null;}
@@ -846,7 +851,7 @@ async function renderBody(){
 }
 
 async function saveBodyEntry(){
-  vibe(50);
+  vibe(60); 
   const nrm=v=>(v||'').replace(',','.');
   const newW = nrm(document.getElementById('bW').value);
   await saveBody(curWeek,{weight:newW,fat:nrm(document.getElementById('bF').value),muscle:nrm(document.getElementById('bM').value),waist:nrm(document.getElementById('bWaist').value),date:new Date().toLocaleDateString('da-DK')});
@@ -1024,37 +1029,97 @@ async function skipCycleReview(){
 }
 
 // ── STYRKE (FREMGANG) & 1RM ──────────────────────────────────
-async function renderProg(){
-  let h=`<div class="section-title">Fremgang</div><div class="section-sub" style="margin-bottom:14px;">Baseret på dine færdige træninger</div>`;
-  const cids=[];
-  for(const[li,lift] of KEY_LIFTS.entries()){
-    const entries=[];
-    for(let w=1;w<=8;w++){
-      let data=wcGet(w,lift.dayId);
-      if(!data){try{const rows=await sb('workout_log','GET',null,`week=eq.${w}&day_id=eq.${lift.dayId}&order=updated_at.desc&limit=1`);if(rows&&rows.length){data=rows[0].data;wcSet(w,lift.dayId,data);}}catch(e){}}
-      if(!data||!data.finished)continue;
-      
-      const sets=(data.sets[lift.ei]||[]);
-      
-      let mk = 0;
-      let m1rm = 0;
-      let validVol = 0;
-      
-      sets.forEach((s, idx) => {
-          if(data.checks[`${lift.ei}-${idx}`]) {
-              const kg = +s.kg || 0;
-              const r = +s.r || 0;
-              validVol += (kg * r);
-              if(kg > mk) mk = kg;
-              
-              // Epley 1RM formula: Weight * (1 + Reps / 30)
-              const rm = kg * (1 + r / 30);
-              if(rm > m1rm) m1rm = rm;
-          }
-      });
-      
-      if(mk>0)entries.push({week:w, kg:mk, vol:Math.round(validVol), max1rm:Math.round(m1rm), date:data.date?isoToDa(data.date):''});
+async function renderProg() {
+    let h = `<div class="section-title">Fremgang</div><div class="section-sub">Styrke-estimat (1RM) baseret på dine tungeste sæt</div>`;
+    const cids = [];
+
+    for (const [li, lift] of KEY_LIFTS.entries()) {
+        const entries = [];
+        for (let w = 1; w <= 8; w++) {
+            let data = wcGet(w, lift.dayId);
+            if (!data) {
+                try {
+                    const rows = await sb('workout_log', 'GET', null, `week=eq.${w}&day_id=eq.${lift.dayId}&order=updated_at.desc&limit=1`);
+                    if (rows && rows.length) { data = rows[0].data; wcSet(w, lift.dayId, data); }
+                } catch (e) {}
+            }
+            if (!data || !data.finished) continue;
+
+            const sets = data.sets[lift.ei] || [];
+            let max1RM = 0;
+            let bestKg = 0;
+
+            sets.forEach((s, idx) => {
+                if (data.checks[`${lift.ei}-${idx}`]) {
+                    const kg = +s.kg || 0;
+                    const r = +s.r || 0;
+                    if (kg > 0 && r > 0) {
+                        const rm = kg * (1 + r / 30); // Epley Formula
+                        if (rm > max1RM) { max1RM = rm; bestKg = kg; }
+                    }
+                }
+            });
+            if (max1RM > 0) entries.push({ week: w, rm: Math.round(max1RM), kg: bestKg });
+        }
+
+        const cid = `chart_1rm_${li}`;
+        h += `<div class="lift-card"><div class="lift-title">${lift.name}</div>`;
+        
+        if (entries.length >= 2) {
+            h += `<div class="chart-wrap" style="padding:10px 14px;"><canvas id="${cid}" style="height:140px; width:100%;"></canvas></div>`;
+            cids.push({ cid, entries });
+        }
+        
+        h += `<div class="lift-rows">` + 
+             (entries.length ? entries.map(e => `
+                <div class="lift-row">
+                    <span class="lift-date">Uge ${e.week}</span>
+                    <span class="lift-val">${e.kg} kg <span style="font-size:11px; color:var(--hint);"> (1RM: ${e.rm} kg)</span></span>
+                </div>`).join('') : '<div class="no-data">Ingen data logget endnu</div>') + 
+             `</div></div>`;
     }
+    document.getElementById('prog-screen').innerHTML = h;
+    
+    setTimeout(() => {
+        const dk = window.matchMedia('(prefers-color-scheme:dark)').matches;
+        cids.forEach(c => {
+            const ctx = document.getElementById(c.cid);
+            if (!ctx) return;
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: c.entries.map(e => `U${e.week}`),
+                    datasets: [{
+                        label: '1RM Estimat',
+                        data: c.entries.map(e => e.rm),
+                        borderColor: '#378add',
+                        backgroundColor: dk ? 'rgba(55, 138, 221, 0.1)' : 'rgba(55, 138, 221, 0.05)',
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#378add'
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { 
+                        y: { 
+                            beginAtZero: false, 
+                            grid: { color: dk ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' },
+                            ticks: { color: dk ? '#7a7670' : '#888580' }
+                        },
+                        x: { 
+                            grid: { display: false },
+                            ticks: { color: dk ? '#7a7670' : '#888580' }
+                        }
+                    }
+                }
+            });
+        });
+    }, 50);
+}
     const mk=entries.length?Math.max(...entries.map(e=>e.kg)):0;
     const cid=`lc_${li}`;const sc=entries.length>=2;
     h+=`<div class="lift-card"><div class="lift-title">${lift.name}${mk?` — max ${mk} kg`:''}</div>`;
@@ -1634,6 +1699,12 @@ function todayISO(){
 
 // Start appen (kun én gang!)
 init();
+// Registrer Service Worker for at gøre appen offline-klar
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(err => console.log("SW fejl", err));
+    });
+}
 </script>
 </body>
 </html>
