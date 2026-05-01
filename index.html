@@ -1604,14 +1604,19 @@ async function init() {
 
   autoSelectDay();
   
+  // 2. Hent brugerens profil fra Supabase
   const { data: profile } = await sb('user_programs', 'GET', null, `user_id=eq.${session.user.id}`);
   
+  // 3. Tjek om brugeren skal i onboarding (hvis ingen profil eller ingen data findes)
+  // Vi tjekker både for 'dob' og 'exercises' for at redde dine gamle data
   if (!profile || profile.length === 0 || (!profile[0].dob && !profile[0].exercises)) {
     showScreen('onboarding');
   } else {
+    // HER STARTER LOGIKKEN FOR EN EKSISTERENDE BRUGER
     const userP = profile[0];
-    const userDob = userP.dob || '1995-01-01'; // Fallback
+    const userDob = userP.dob || '1995-01-01'; // Fallback hvis dato mangler
 
+    // Gem programmet lokalt hvis det findes i databasen
     if (userP.exercises) {
         localStorage.setItem('user_custom_program', JSON.stringify(userP.exercises));
     }
@@ -1619,21 +1624,26 @@ async function init() {
     const alder = calculateAge(userDob);
     console.log("Appen kører for eksisterende bruger. Alder:", alder);
 
+    // Vis loading mens vi henter resten
     document.getElementById('dash-screen').innerHTML = '<div class="loading"><div class="spinner"></div>Henter overblik...</div>';
     
+    // Hent uge-data og kost-data samtidigt
     await Promise.all([
       autoSelectWeek(),
       loadKostRemoteRange(7)
     ]);
     
+    // Skift til dashboard
     await showScreen('dash');
   }
   
   if(window.lucide) lucide.createIcons();
 } 
 
+// Kør selve opstarten (Skal stå udenfor funktionen)
 init();
 
+// Registrer Service Worker til offline brug
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
