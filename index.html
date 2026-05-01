@@ -382,42 +382,48 @@ function signOut() {
     localStorage.removeItem('sb-session');
     location.reload();
 }
-if (!session) {
-    document.body.innerHTML = `
-    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:20px; font-family:sans-serif; background:var(--bg); color:var(--text);">
-        <div style="background:var(--card); padding:30px; border-radius:20px; border:1px solid var(--border); width:100%; max-width:340px; box-shadow:var(--shadow);">
-            <h2 style="margin-bottom:8px;">Velkommen</h2>
-            <p style="color:var(--muted); font-size:14px; margin-bottom:24px;">Log ind for at se din træning</p>
-            <input type="email" id="email" placeholder="Email" style="width:100%; padding:12px; margin-bottom:12px; border-radius:10px; border:1px solid var(--border); background:var(--input-bg); color:var(--text); font-family:inherit;">
-            <input type="password" id="password" placeholder="Adgangskode" style="width:100%; padding:12px; margin-bottom:20px; border-radius:10px; border:1px solid var(--border); background:var(--input-bg); color:var(--text); font-family:inherit;">
-            <button class="login-btn" onclick="signIn(document.getElementById('email').value, document.getElementById('password').value)" style="width:100%; padding:14px; border-radius:12px; background:var(--text); color:var(--bg); border:none; font-weight:700; cursor:pointer; margin-bottom:12px; font-family:inherit;">Log ind</button>
-            <button onclick="signUp(document.getElementById('email').value, document.getElementById('password').value)" style="width:100%; background:none; border:none; color:var(--muted); font-size:13px; cursor:pointer; font-family:inherit;">Opret ny konto</button>
-        </div>
-    </div>`;
-    window.stop(); 
-    document.execCommand("Stop");
-}
+
 async function sb(table, method, body, qs){
-    const url = `${SB_URL}/rest/v1/${table}${qs ? '?' + qs : ''}`;
-    const opts = { 
-        method, 
-        headers: { 
-            ...getHeaders(),
-            'Prefer': method === 'POST' ? 'return=representation' : 'return=minimal'
-        } 
-    };
-    if (body) opts.body = JSON.stringify(body);
-    try {
-        const r = await fetch(url, opts);
-        if (!r.ok) {
-            const errData = await r.json();
-            return { error: errData };
-        }
-        if (method === 'GET') return { data: await r.json() };
-        return { data: true };
-    } catch (e) {
-        return { error: e };
+  const url = `${SB_URL}/rest/v1/${table}${qs ? '?' + qs : ''}`;
+
+  const opts = { 
+    method, 
+    headers: { 
+      ...getHeaders(),
+      'Prefer': method === 'POST' ? 'return=representation' : 'return=minimal'
+    } 
+  };
+
+  if (body) opts.body = JSON.stringify(body);
+
+  try {
+    const r = await fetch(url, opts);
+
+    if (r.status === 401 || r.status === 403) {
+      localStorage.removeItem('sb-session');
+      session = null;
+      renderLoginScreen();
+      return { data: null, error: 'Session udløbet' };
     }
+
+    if (!r.ok) {
+      let errData = {};
+      try { errData = await r.json(); } catch(e) {}
+      console.error('Supabase fejl:', errData);
+      return { data: null, error: errData };
+    }
+
+    if (method === 'GET' || method === 'POST') {
+      const data = await r.json();
+      return { data, error: null };
+    }
+
+    return { data: true, error: null };
+
+  } catch (e) {
+    console.error('Netværksfejl:', e);
+    return { data: null, error: e };
+  }
 }
 const DAYS=[
   {id:'d1',short:'Man',label:'Dag 1',title:'Upper styrke',bs:'background:var(--blue-bg);color:var(--blue-t);',bt:'Styrke',
@@ -525,18 +531,37 @@ function wcSet(w,id,data){
 async function preloadWeek(w){
   try{
     setSync('');
-    const rows=await sb('workout_log','GET',null,`week=eq.${w}&order=day_id.asc,updated_at.desc`);
-    if(!WC[w])WC[w]={};
-    const seen=new Set();
-    (rows||[]).forEach(r=>{
+
+    const { data: rows, error } = await sb(
+      'workout_log',
+      'GET',
+      null,
+      `week=eq.${w}&order=day_id.asc,updated_at.desc`
+    );
+
+    if (error) {
+      setSync('err');
+      return;
+    }
+
+    if(!WC[w]) WC[w] = {};
+
+    const seen = new Set();
+
+    (rows || []).forEach(r => {
       if(!seen.has(r.day_id)){
         seen.add(r.day_id);
-        WC[w][r.day_id]=r.data;
-        localStorage.setItem(lsKey(w,r.day_id),JSON.stringify(r.data));
+        WC[w][r.day_id] = r.data;
+        localStorage.setItem(lsKey(w,r.day_id), JSON.stringify(r.data));
       }
     });
+
     setSync('ok');
-  }catch(e){setSync('err');}
+
+  } catch(e){
+    console.error(e);
+    setSync('err');
+  }
 }
 async function saveWorkout(w,id,data){
   wcSet(w,id,data);
@@ -574,17 +599,79 @@ async function resetBodyEntry(w){
   renderBody();
 }
 async function loadBodyRemote(w){
-  if(BC[w])return BC[w];
-  try{const rows=await sb('body_log','GET',null,`week=eq.${w}&limit=1`);if(rows&&rows.length){const d={weight:rows[0].weight,fat:rows[0].fat,muscle:rows[0].muscle,waist:rows[0].waist,date:rows[0].date};BC[w]=d;localStorage.setItem(bodyLsKey(w),JSON.stringify(d));return d;}}catch(e){}
+  if(BC[w]) return BC[w];
+
+  try{
+    const { data: rows, error } = await sb(
+      'body_log',
+      'GET',
+      null,
+      `week=eq.${w}&limit=1`
+    );
+
+    if(error) return null;
+
+    if(rows && rows.length){
+      const d = {
+        weight: rows[0].weight,
+        fat: rows[0].fat,
+        muscle: rows[0].muscle,
+        waist: rows[0].waist,
+        date: rows[0].date
+      };
+
+      BC[w] = d;
+      localStorage.setItem(bodyLsKey(w), JSON.stringify(d));
+      return d;
+    }
+
+  } catch(e){
+    console.error(e);
+  }
+
   return null;
 }
 async function loadAllBody(){
   try{
-    const rows=await sb('body_log','GET',null,'order=week.asc');
-    if(rows&&rows.length){rows.forEach(r=>{const d={weight:r.weight,fat:r.fat,muscle:r.muscle,waist:r.waist,date:r.date};BC[r.week]=d;localStorage.setItem(bodyLsKey(r.week),JSON.stringify(d));});return rows.map(r=>({week:r.week,...BC[r.week]}));}
-  }catch(e){}
+    const { data: rows, error } = await sb(
+      'body_log',
+      'GET',
+      null,
+      'order=week.asc'
+    );
+
+    if(!error && rows && rows.length){
+      rows.forEach(r => {
+        const d = {
+          weight: r.weight,
+          fat: r.fat,
+          muscle: r.muscle,
+          waist: r.waist,
+          date: r.date
+        };
+
+        BC[r.week] = d;
+        localStorage.setItem(bodyLsKey(r.week), JSON.stringify(d));
+      });
+
+      return rows.map(r => ({ week: r.week, ...BC[r.week] }));
+    }
+
+  } catch(e){
+    console.error(e);
+  }
+
   const maxW = getActualCurrentWeek();
-  const e=[];for(let w=1;w<=maxW+4;w++){const d=bcGet(w);if(d&&(d.weight||d.fat||d.muscle||d.waist))e.push({week:w,...d});}return e;
+  const e = [];
+
+  for(let w = 1; w <= maxW + 4; w++){
+    const d = bcGet(w);
+    if(d && (d.weight || d.fat || d.muscle || d.waist)){
+      e.push({ week: w, ...d });
+    }
+  }
+
+  return e;
 }
 // ── HELPERS ────────────────────────────────────────────────────
 function isoToDa(s){if(!s)return'';const[y,m,d]=s.split('-');return`${d}/${m}/${y}`;}
@@ -1372,23 +1459,50 @@ async function saveKostRemote(date,data){
 }
 async function loadKostRemoteRange(days){
   try{
-    const dates=[];
-    for(let i=0;i<days;i++){const d=new Date();d.setDate(d.getDate()-i);dates.push(d.toISOString().split('T')[0]);}
-    const rows=await sb('kost_log','GET',null,'date=in.('+dates.join(',')+')'+'&order=date.desc');
-    const remoteSet=new Set();
-    (rows||[]).forEach(r=>{
-      if(r.kcal||r.prot||r.kh||r.fat||r.burned){
+    const dates = [];
+
+    for(let i = 0; i < days; i++){
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      dates.push(d.toISOString().split('T')[0]);
+    }
+
+    const { data: rows, error } = await sb(
+      'kost_log',
+      'GET',
+      null,
+      'date=in.(' + dates.join(',') + ')&order=date.desc'
+    );
+
+    if(error) return;
+
+    const remoteSet = new Set();
+
+    (rows || []).forEach(r => {
+      if(r.kcal || r.prot || r.kh || r.fat || r.burned){
         remoteSet.add(r.date);
-        const d={kcal:r.kcal,prot:r.prot,kh:r.kh,fat:r.fat,burned:r.burned};
-        localStorage.setItem(kostKey(r.date),JSON.stringify(d));
+
+        const d = {
+          kcal: r.kcal,
+          prot: r.prot,
+          kh: r.kh,
+          fat: r.fat,
+          burned: r.burned
+        };
+
+        localStorage.setItem(kostKey(r.date), JSON.stringify(d));
       }
     });
-    dates.forEach(date=>{
+
+    dates.forEach(date => {
       if(!remoteSet.has(date)){
         localStorage.removeItem(kostKey(date));
       }
     });
-  }catch(e){}
+
+  } catch(e){
+    console.error(e);
+  }
 }
 function kostDayLabel(iso) {
   const days = ['Søn', 'Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør'];
