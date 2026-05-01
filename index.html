@@ -466,11 +466,15 @@ function cycleOf(globalWeek){return Math.floor((globalWeek-1)/8)+1;}
 function weekInCycle(globalWeek){return ((globalWeek-1)%8)+1;}
 function globalWeekOf(cycle,wic){return (cycle-1)*8+wic;}
 function getActualCurrentWeek(){
-  const programStart=new Date('2026-04-20');
-  const today=new Date();
+  const stored = localStorage.getItem('program_start_date');
+  const programStart = stored ? new Date(stored + 'T00:00:00') : new Date('2026-04-20T00:00:00');
+
+  const today = new Date();
   today.setHours(0,0,0,0);
-  const daysSinceStart=Math.floor((today-programStart)/(1000*60*60*24));
-  return Math.max(Math.floor(daysSinceStart/7),0)+1;
+  programStart.setHours(0,0,0,0);
+
+  const daysSinceStart = Math.floor((today - programStart) / (1000*60*60*24));
+  return Math.max(Math.floor(daysSinceStart / 7), 0) + 1;
 }
 async function autoSelectWeek(){
   curWeek=getActualCurrentWeek();
@@ -1744,7 +1748,92 @@ function nextOnboardingStep(step){
     document.getElementById('onboarding-step-2').style.display = 'block';
   }
 }
+function generateTrainingProgram(profile) {
+  const { goal, freq, weight, height, fat, age, gender } = profile;
 
+  const bmi = weight / Math.pow(height / 100, 2);
+  const fatPct = fat || null;
+
+  const highFat = fatPct ? fatPct >= 25 : bmi >= 28;
+  const lowExperienceSafe = age >= 40 || highFat;
+
+  let program = JSON.parse(JSON.stringify(DAYS));
+
+  // FEDTTAB
+  if (goal === 'lose') {
+    if (freq === 3) program = JSON.parse(JSON.stringify(DAYS.slice(0, 3)));
+    if (freq === 4) program = JSON.parse(JSON.stringify(DAYS.slice(0, 4)));
+    if (freq === 5) program = JSON.parse(JSON.stringify(DAYS));
+
+    program.forEach(day => {
+      day.bt = highFat ? 'Fedttab' : day.bt;
+      day.bs = 'background:var(--green-bg);color:var(--green-t);';
+      if (day.hiit) day.hiit = highFat ? 0 : 1;
+
+      day.ex.forEach(ex => {
+        if (!ex.bw && lowExperienceSafe) {
+          ex.kg = Math.round(ex.kg * 0.85);
+        }
+        if (ex.t.includes('4×5')) {
+          ex.t = '3×8-10';
+          ex.s = 3;
+          ex.r = 9;
+        }
+      });
+    });
+
+    return program;
+  }
+
+  // MUSKELOPBYGNING
+  if (goal === 'gain') {
+    program = JSON.parse(JSON.stringify(DAYS));
+
+    program.forEach(day => {
+      day.bt = 'Muskel';
+      day.bs = 'background:var(--blue-bg);color:var(--blue-t);';
+
+      day.ex.forEach(ex => {
+        if (!ex.bw) {
+          ex.kg = Math.round(ex.kg * 0.95);
+        }
+        if (ex.t.includes('4×5')) {
+          ex.t = '4×6-8';
+          ex.r = 7;
+        }
+      });
+    });
+
+    return program;
+  }
+
+  // TONET / VEDLIGEHOLD
+  if (goal === 'tone') {
+    if (freq === 3) program = JSON.parse(JSON.stringify(DAYS.slice(0, 3)));
+    if (freq === 4) program = JSON.parse(JSON.stringify(DAYS.slice(0, 4)));
+    if (freq === 5) program = JSON.parse(JSON.stringify(DAYS));
+
+    program.forEach(day => {
+      day.bt = 'Tonet';
+      day.bs = 'background:var(--purple-bg);color:var(--purple-t);';
+
+      day.ex.forEach(ex => {
+        if (!ex.bw) {
+          ex.kg = Math.round(ex.kg * 0.90);
+        }
+        if (ex.t.includes('4×5')) {
+          ex.t = '3×10';
+          ex.s = 3;
+          ex.r = 10;
+        }
+      });
+    });
+
+    return program;
+  }
+
+  return program;
+}
 async function completeOnboarding(){
   const gender = document.getElementById('onb-gender').value;
   const dob = document.getElementById('onb-dob').value;
@@ -1767,20 +1856,45 @@ async function completeOnboarding(){
   s.age = age;
   s.prot = Math.round(weight * 1.8);
 
-  if(goal === 'lose') s.kcal = 2300;
-  if(goal === 'gain') s.kcal = 2800;
-  if(goal === 'tone') s.kcal = 2520;
+  const bmr = gender === 'mand'
+  ? (10 * weight) + (6.25 * height) - (5 * age) + 5
+  : (10 * weight) + (6.25 * height) - (5 * age) - 161;
 
-  saveSettings(s);
+const activity = freq === 3 ? 1.45 : freq === 4 ? 1.55 : 1.65;
+const maintenance = Math.round(bmr * activity);
 
-  let program = DAYS;
-  if(freq === 3) program = DAYS.slice(0,3);
-  if(freq === 4) program = DAYS.slice(0,4);
+if (goal === 'lose') s.kcal = maintenance - 500;
+if (goal === 'gain') s.kcal = maintenance + 250;
+if (goal === 'tone') s.kcal = maintenance;
 
-  localStorage.setItem('user_custom_program', JSON.stringify(program));
+s.prot = Math.round(weight * 1.8);
+s.kh = Math.round((s.kcal * 0.40) / 4);
+s.fat = Math.round((s.kcal * 0.30) / 9);
+
+const startDate = todayISO();
+localStorage.setItem('program_start_date', startDate);
+
+saveSettings(s);
+
+  const profile = {
+  gender,
+  dob,
+  weight,
+  height,
+  fat,
+  goal,
+  freq,
+  duration,
+  age
+};
+
+let program = generateTrainingProgram(profile);
+
+localStorage.setItem('user_custom_program', JSON.stringify(program));
 
   await sb('user_programs', 'POST', {
     user_id: session.user.id,
+    start_date: startDate,
     gender,
     dob,
     weight,
@@ -1820,6 +1934,10 @@ async function init() {
     // HER STARTER LOGIKKEN FOR EN EKSISTERENDE BRUGER
     const userP = profile[0];
     const userDob = userP.dob || '1995-01-01'; // Fallback hvis dato mangler
+
+    if (userP.start_date) {
+      localStorage.setItem('program_start_date', userP.start_date);
+    }
 
     // Gem programmet lokalt hvis det findes i databasen
     if (userP.exercises) {
