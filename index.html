@@ -361,8 +361,9 @@ async function signIn(email, password) {
     });
     const data = await r.json();
     if (data.access_token) {
-        localStorage.setItem('sb-session', JSON.stringify(data));
-        location.reload();
+    localStorage.clear(); // rydder gammel brugers lokale data
+    localStorage.setItem('sb-session', JSON.stringify(data));
+    location.reload();
     } else {
         alert('Fejl: ' + (data.error_description || 'Tjek email/adgangskode'));
         if(btn) btn.textContent = 'Log ind';
@@ -398,7 +399,7 @@ async function signUp(email, password) {
 }
 function signOut() {
     vibe(40);
-    localStorage.removeItem('sb-session');
+    localStorage.clear();   // 🔴 ryd ALT (vigtigt)
     location.reload();
 }
 
@@ -419,10 +420,10 @@ async function sb(table, method, body, qs){
     const r = await fetch(url, opts);
 
     if (r.status === 401 || r.status === 403) {
-      localStorage.removeItem('sb-session');
-      session = null;
-      renderLoginScreen();
-      return { data: null, error: 'Session udløbet' };
+  localStorage.clear();
+  session = null;
+  renderLoginScreen();
+  return { data: null, error: 'Session udløbet' };
     }
 
     if (!r.ok) {
