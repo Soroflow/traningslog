@@ -511,7 +511,7 @@ async function resetBodyEntry(w){
   setSync('');
   try{
     const url=SB_URL+'/rest/v1/body_log?week=eq.'+w;
-    await fetch(url,{method:'DELETE',headers:{...HDR}});
+    await fetch(url, { method: 'DELETE', headers: getHeaders() });
     setSync('ok');
   }catch(e){setSync('err');}
   renderBody();
@@ -1648,7 +1648,7 @@ async function resetKostEntry(){
   setSync('');
   try{
     const url=SB_URL+'/rest/v1/kost_log?date=eq.'+curKostDate;
-    await fetch(url,{method:'DELETE',headers:{...HDR}});
+    await fetch(url, { method: 'DELETE', headers: getHeaders() });
     setSync('ok');
   }catch(e){setSync('err');}
   renderKost();
