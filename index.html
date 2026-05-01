@@ -1597,33 +1597,43 @@ function renderLoginScreen() {
     </div>`;
 }
 async function init() {
-  // 1. Tjek om brugeren er logget ind
   if (!session) {
     renderLoginScreen(); 
-    return; // Stop her hvis ingen session
+    return;
   }
+
   autoSelectDay();
+  
   const { data: profile } = await sb('user_programs', 'GET', null, `user_id=eq.${session.user.id}`);
+  
   if (!profile || profile.length === 0 || (!profile[0].dob && !profile[0].exercises)) {
     showScreen('onboarding');
   } else {
     const userP = profile[0];
-    const userDob = userP.dob || '1995-01-01';
+    const userDob = userP.dob || '1995-01-01'; // Fallback
+
     if (userP.exercises) {
         localStorage.setItem('user_custom_program', JSON.stringify(userP.exercises));
     }
+
     const alder = calculateAge(userDob);
-    console.log("Appen kører for eksisterende bruger. Alder estimeret til:", alder);
+    console.log("Appen kører for eksisterende bruger. Alder:", alder);
+
     document.getElementById('dash-screen').innerHTML = '<div class="loading"><div class="spinner"></div>Henter overblik...</div>';
+    
     await Promise.all([
       autoSelectWeek(),
       loadKostRemoteRange(7)
     ]);
+    
     await showScreen('dash');
   }
+  
   if(window.lucide) lucide.createIcons();
 } 
+
 init();
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
