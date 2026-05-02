@@ -13,8 +13,6 @@ A simple and secure training log app for tracking workouts and progress.
 - JavaScript
 - Service Worker (PWA)
 
-## Live demo
-👉 https://YOUR-URL-HERE
 
 ## Purpose
 Built as a lightweight, privacy-focused fitness tracking tool.
