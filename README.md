@@ -1,4 +1,4 @@
-# Trainingslog
+# Training Log ✔️
 
 A simple and secure training log app for tracking workouts and progress.
 
