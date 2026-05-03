@@ -2789,8 +2789,11 @@ async function completeOnboarding(){
   const program = generateTrainingProgram(profile, overrides);
   localStorage.setItem('user_custom_program', JSON.stringify(program));
 
+  // KRITISK: hvis denne fejler er brugeren stuck i onboarding-loop ved næste login.
+  // Vi venter på resultatet og advarer brugeren hvis det fejler.
+  let upsertOk = false;
   try {
-    await sbUpsert('user_programs', {
+    const result = await sbUpsert('user_programs', {
       user_id: session.user.id,
       start_date: startDate,
       gender: profile.gender,
@@ -2805,7 +2808,18 @@ async function completeOnboarding(){
       exercises: program,
       settings: settings
     }, 'user_id');
-  } catch(e){ console.error('Profil-synk fejlede:', e); }
+    upsertOk = !result.error;
+    if(result.error){
+      console.error('Profil-synk fejlede:', result.error);
+    }
+  } catch(e){
+    console.error('Profil-synk exception:', e);
+  }
+  if(!upsertOk){
+    alert('Vi kunne ikke gemme din profil i skyen. Tjek din internetforbindelse og prøv igen — eller skriv til support hvis problemet fortsætter.\n\nDine indstillinger er gemt lokalt indtil videre.');
+    // Vi fortsætter til dashboard så brugeren kan bruge appen lokalt,
+    // men næste init() vil prøve at re-synke profilen.
+  }
 
   // Auto-opret første kropsmåling for uge 1 fra onboarding-data.
   // Bruger har allerede indtastet vægt og evt. fedt% — ingen grund til at spørge igen.
@@ -2824,6 +2838,45 @@ async function completeOnboarding(){
   await autoSelectWeek();
   await showScreen('dash');
 }
+// Logik for eksisterende bruger — kaldes fra init() OG fra recovery-flowet
+async function runExistingUserFlow(userP){
+  const userDob = userP.dob || '1995-01-01';
+
+  if (userP.start_date) {
+    localStorage.setItem('program_start_date', userP.start_date);
+  }
+  if (userP.exercises) {
+    localStorage.setItem('user_custom_program', JSON.stringify(userP.exercises));
+  }
+  if (userP.settings) {
+    localStorage.setItem('user_settings', JSON.stringify(userP.settings));
+  }
+  localStorage.setItem('user_profile', JSON.stringify({
+    gender: userP.gender,
+    dob: userP.dob,
+    weight: userP.weight,
+    height: userP.height,
+    fat: userP.fat,
+    goal: userP.goal,
+    freq: userP.freq,
+    duration: userP.duration,
+    experience: userP.experience || 'beginner',
+    age: calculateAge(userP.dob || '1995-01-01')
+  }));
+
+  const alder = calculateAge(userDob);
+  console.log("Appen kører for bruger. Alder:", alder);
+
+  document.getElementById('dash-screen').innerHTML = '<div class="loading"><div class="spinner"></div>Henter overblik...</div>';
+
+  await Promise.all([
+    autoSelectWeek(),
+    loadKostRemoteRange(7)
+  ]);
+
+  await showScreen('dash');
+}
+
 async function init() {
   if (!session) {
     renderLoginScreen(); 
@@ -2847,54 +2900,50 @@ async function init() {
   // 3. Tjek om brugeren skal i onboarding (hvis ingen profil eller ingen data findes)
   // Vi tjekker både for 'dob' og 'exercises' for at redde dine gamle data
   if (!profile || profile.length === 0) {
+    // Recovery: hvis localStorage har profil-data men Supabase ikke har en row,
+    // betyder det at en tidligere onboarding fejlede med at gemme i skyen.
+    // Forsøg at re-synke FØR vi smider brugeren tilbage i onboarding.
+    const localProfile = localStorage.getItem('user_profile');
+    const localProgram = localStorage.getItem('user_custom_program');
+    if(localProfile && localProgram){
+      console.log('Recovery: lokal profil findes men ikke i Supabase. Re-synker...');
+      try {
+        const lp = JSON.parse(localProfile);
+        const program = JSON.parse(localProgram);
+        const startDate = localStorage.getItem('program_start_date') || todayISO();
+        const settings = JSON.parse(localStorage.getItem('user_settings') || 'null');
+        const result = await sbUpsert('user_programs', {
+          user_id: session.user.id,
+          start_date: startDate,
+          gender: lp.gender || 'mand',
+          dob: lp.dob || '1995-01-01',
+          weight: lp.weight || 80,
+          height: lp.height || 180,
+          fat: lp.fat || null,
+          goal: lp.goal || 'tone',
+          freq: lp.freq || 5,
+          duration: lp.duration || 8,
+          experience: lp.experience || 'beginner',
+          exercises: program,
+          settings: settings
+        }, 'user_id');
+        if(!result.error){
+          console.log('Recovery succes — profil re-synket.');
+          // Re-load profile efter recovery, så else-branchen kører
+          const { data: refetched } = await sb('user_programs', 'GET', null, `user_id=eq.${session.user.id}`);
+          if(refetched && refetched.length > 0){
+            await runExistingUserFlow(refetched[0]);
+            return;
+          }
+        }
+        console.warn('Recovery fejlede — viser onboarding alligevel.', result.error);
+      } catch(e){
+        console.error('Recovery fejlede:', e);
+      }
+    }
     showScreen('onboarding');
   } else {
-    // HER STARTER LOGIKKEN FOR EN EKSISTERENDE BRUGER
-    const userP = profile[0];
-    const userDob = userP.dob || '1995-01-01'; // Fallback hvis dato mangler
-
-    if (userP.start_date) {
-      localStorage.setItem('program_start_date', userP.start_date);
-    }
-
-    // Gem programmet lokalt hvis det findes i databasen
-    if (userP.exercises) {
-        localStorage.setItem('user_custom_program', JSON.stringify(userP.exercises));
-    }
-
-    // Gem settings fra Supabase i localStorage (overlever logout/login)
-    if (userP.settings) {
-        localStorage.setItem('user_settings', JSON.stringify(userP.settings));
-    }
-
-    // Gem profilen lokalt så "regenerér"-knappen virker uden DB-tur
-    localStorage.setItem('user_profile', JSON.stringify({
-        gender: userP.gender,
-        dob: userP.dob,
-        weight: userP.weight,
-        height: userP.height,
-        fat: userP.fat,
-        goal: userP.goal,
-        freq: userP.freq,
-        duration: userP.duration,
-        experience: userP.experience || 'beginner',
-        age: calculateAge(userP.dob || '1995-01-01')
-    }));
-
-    const alder = calculateAge(userDob);
-    console.log("Appen kører for eksisterende bruger. Alder:", alder);
-
-    // Vis loading mens vi henter resten
-    document.getElementById('dash-screen').innerHTML = '<div class="loading"><div class="spinner"></div>Henter overblik...</div>';
-    
-    // Hent uge-data og kost-data samtidigt
-    await Promise.all([
-      autoSelectWeek(),
-      loadKostRemoteRange(7)
-    ]);
-    
-    // Skift til dashboard
-    await showScreen('dash');
+    await runExistingUserFlow(profile[0]);
   }
   
   if(window.lucide) lucide.createIcons();
