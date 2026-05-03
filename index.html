@@ -457,10 +457,24 @@ async function sb(table, method, body, qs){
     const r = await fetch(url, opts);
 
     if (r.status === 401 || r.status === 403) {
-  localStorage.clear();
-  session = null;
-  renderLoginScreen();
-  return { data: null, error: 'Session udløbet' };
+      // Prøv at refreshe access_token via refresh_token før vi smider brugeren ud.
+      const refreshed = await tryRefreshSession();
+      if (refreshed) {
+        // Prøv samme request igen med ny token.
+        const retry = await fetch(url, { ...opts, headers: { ...getHeaders(), 'Prefer': opts.headers['Prefer'] } });
+        if (retry.ok) {
+          if (method === 'GET' || method === 'POST') {
+            const data = await retry.json();
+            return { data, error: null };
+          }
+          return { data: true, error: null };
+        }
+      }
+      // Refresh fejlede — kun session-token slettes, alt andet bevares.
+      localStorage.removeItem('sb-session');
+      session = null;
+      renderLoginScreen();
+      return { data: null, error: 'Session udløbet' };
     }
 
     if (!r.ok) {
@@ -496,7 +510,11 @@ async function sbUpsert(table, body, conflictCols){
   };
   const r = await fetch(url, opts);
   if(r.status === 401 || r.status === 403){
-    clearUserDataLocal();
+    const refreshed = await tryRefreshSession();
+    if(refreshed){
+      const retry = await fetch(url, opts);
+      if(retry.ok) return { data: true, error: null };
+    }
     localStorage.removeItem('sb-session');
     session = null;
     renderLoginScreen();
@@ -509,6 +527,51 @@ async function sbUpsert(table, body, conflictCols){
     return { data: null, error: err };
   }
   return { data: true, error: null };
+}
+
+// ── SESSION REFRESH ────────────────────────────────────────────
+// Forsøg at opfriske access_token vha. refresh_token.
+// Returnerer true hvis det lykkedes, false hvis brugeren skal logge ind igen.
+let _refreshInFlight = null;
+async function tryRefreshSession(){
+  if(_refreshInFlight) return _refreshInFlight;
+  _refreshInFlight = (async () => {
+    try {
+      const stored = JSON.parse(localStorage.getItem('sb-session') || 'null');
+      if(!stored || !stored.refresh_token) return false;
+      const r = await fetch(`${SB_URL}/auth/v1/token?grant_type=refresh_token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SB_KEY },
+        body: JSON.stringify({ refresh_token: stored.refresh_token })
+      });
+      if(!r.ok) return false;
+      const data = await r.json();
+      if(!data.access_token) return false;
+      localStorage.setItem('sb-session', JSON.stringify(data));
+      session = data;
+      console.log('Session opfrisket');
+      return true;
+    } catch(e){
+      console.error('Refresh fejlede:', e);
+      return false;
+    } finally {
+      _refreshInFlight = null;
+    }
+  })();
+  return _refreshInFlight;
+}
+
+// Skema: opfrisk tokenet 2 min før det udløber, så brugeren aldrig oplever et 401.
+function scheduleTokenRefresh(){
+  const stored = JSON.parse(localStorage.getItem('sb-session') || 'null');
+  if(!stored || !stored.expires_at) return;
+  const expiresAtMs = stored.expires_at * 1000;
+  const refreshAt = expiresAtMs - 2 * 60 * 1000; // 2 min før udløb
+  const wait = Math.max(refreshAt - Date.now(), 5000); // mindst 5 sek
+  setTimeout(async () => {
+    const ok = await tryRefreshSession();
+    if(ok) scheduleTokenRefresh();
+  }, wait);
 }
 
 const DAYS=[
@@ -2238,6 +2301,9 @@ async function init() {
     renderLoginScreen(); 
     return;
   }
+
+  // Start auto-refresh så access_token aldrig udløber under brug
+  scheduleTokenRefresh();
 
   autoSelectDay();
   
