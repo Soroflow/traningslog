@@ -2678,6 +2678,20 @@ async function completeOnboarding(){
     }, 'user_id');
   } catch(e){ console.error('Profil-synk fejlede:', e); }
 
+  // Auto-opret første kropsmåling for uge 1 fra onboarding-data.
+  // Bruger har allerede indtastet vægt og evt. fedt% — ingen grund til at spørge igen.
+  if(profile.weight){
+    try {
+      await saveBody(1, {
+        weight: profile.weight,
+        fat: profile.fat || '',
+        muscle: '',
+        waist: '',
+        date: new Date().toLocaleDateString('da-DK')
+      });
+    } catch(e){ console.error('Kunne ikke gemme startmålinger:', e); }
+  }
+
   await autoSelectWeek();
   await showScreen('dash');
 }
