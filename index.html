@@ -1645,8 +1645,7 @@ async function renderSettings(){
             <div style="font-size:20px; margin-top:2px;">~${targetMin} - ${targetMax} bpm</div>
         </div>
     </div>
-    <button class="save-btn" onclick="saveSettingsForm()">Gem Indstillinger</button>
-    <div style="margin-top:18px; padding:14px; background:var(--card); border:1px solid var(--border); border-radius:13px;">
+    <div style="margin-bottom:14px; padding:14px; background:var(--card); border:1px solid var(--border); border-radius:13px;">
         <div style="font-weight:600; font-size:14px; margin-bottom:6px;">Profil & Program</div>
         <div style="font-size:12px; color:var(--muted); margin-bottom:12px;">Justér din erfaring og genberegn dit program eller makro.</div>
         <div style="margin-bottom:12px;">
@@ -1671,6 +1670,7 @@ async function renderSettings(){
         <button class="copy-btn" style="margin-bottom:8px;" onclick="recalcMacrosFromProfile()">Genberegn makro</button>
         <button class="copy-btn" style="margin-bottom:0; background:var(--amber-bg); color:var(--amber-t);" onclick="regenerateProgramFromProfile()">Regenerér træningsprogram</button>
     </div>
+    <button class="save-btn" onclick="saveSettingsForm()">Gem Indstillinger</button>
     <div class="section-title" style="margin-top:32px;">Konto</div>
     <div class="section-sub">Logget ind som: <b>${session.user.email}</b></div>
     <button class="clear-btn" style="background:var(--red-bg); color:var(--red-t); margin-bottom:24px;" onclick="signOut()">
