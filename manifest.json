@@ -1,0 +1,47 @@
+{
+  "name": "Træningslog",
+  "short_name": "Træning",
+  "description": "Personlig trænings- og makrolog med periodisering, kropsmålinger og fremgangsdiagrammer.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f7f6f3",
+  "theme_color": "#f7f6f3",
+  "lang": "da",
+  "categories": ["health", "fitness", "lifestyle"],
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/10545/10545153.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/192/10545/10545153.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/10545/10545153.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Træning i dag",
+      "short_name": "Træning",
+      "url": "./index.html#log",
+      "icons": [{ "src": "https://cdn-icons-png.flaticon.com/192/10545/10545153.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Log makro",
+      "short_name": "Makro",
+      "url": "./index.html#kost",
+      "icons": [{ "src": "https://cdn-icons-png.flaticon.com/192/10545/10545153.png", "sizes": "192x192" }]
+    }
+  ]
+}

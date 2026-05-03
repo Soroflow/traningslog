@@ -6,9 +6,12 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Træningslog">
-<meta name="theme-color" content="#f7f6f3">
+<meta name="theme-color" content="#f7f6f3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#181715" media="(prefers-color-scheme: dark)">
 <title>Træningslog</title>
+<link rel="manifest" href="./manifest.json">
 <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/10545/10545153.png">
+<link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/10545/10545153.png">
 <style>
 :root{--bg:#f7f6f3;--card:#fff;--border:#e8e6e1;--text:#1a1917;--muted:#888580;--hint:#c0bcb6;--input-bg:#f2f0ec;--green-bg:#eaf3de;--green-t:#3b6d11;--green-b:#97c459;--blue-bg:#e6f1fb;--blue-t:#0c447c;--amber-bg:#faeeda;--amber-t:#633806;--purple-bg:#eeedfe;--purple-t:#3c3489;--red-bg:#fcebeb;--red-t:#a32d2d;--teal-bg:#e1f5ee;--teal-t:#085041;--shadow:0 6px 14px rgba(0,0,0,0.06);--shadow-act:0 1px 4px rgba(0,0,0,0.04);}
 @media(prefers-color-scheme:dark){:root{--bg:#181715;--card:#222018;--border:#2e2c28;--text:#f0ede8;--muted:#7a7670;--hint:#4a4844;--input-bg:#2a2825;--green-bg:#162808;--green-t:#97c459;--green-b:#3b6d11;--blue-bg:#08182e;--blue-t:#85b7eb;--amber-bg:#221505;--amber-t:#fac775;--purple-bg:#141230;--purple-t:#afa9ec;--red-bg:#200a0a;--red-t:#f09595;--teal-bg:#042e1e;--teal-t:#5dcaa5;--shadow:0 6px 14px rgba(0,0,0,0.25);--shadow-act:0 1px 4px rgba(0,0,0,0.4);}}
@@ -353,54 +356,88 @@ function getHeaders() {
 async function signIn(email, password) {
     vibe(20);
     const btn = document.querySelector('.login-btn');
-    if(btn) btn.textContent = 'Logger ind...';
-    const r = await fetch(`${SB_URL}/auth/v1/token?grant_type=password`, {
-        method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify({ email, password })
-    });
-    const data = await r.json();
-    if (data.access_token) {
-    localStorage.clear(); // rydder gammel brugers lokale data
-    localStorage.setItem('sb-session', JSON.stringify(data));
-    location.reload();
-    } else {
-        alert('Fejl: ' + (data.error_description || 'Tjek email/adgangskode'));
-        if(btn) btn.textContent = 'Log ind';
+    const oldText = btn ? btn.textContent : 'Log ind';
+    if(btn){ btn.textContent = 'Logger ind...'; btn.disabled = true; }
+    try {
+        const r = await fetch(`${SB_URL}/auth/v1/token?grant_type=password`, {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify({ email, password })
+        });
+        const data = await r.json();
+        if (data.access_token) {
+            clearUserDataLocal();
+            localStorage.setItem('sb-session', JSON.stringify(data));
+            location.reload();
+        } else {
+            showAuthError('Fejl: ' + (data.error_description || data.msg || 'Tjek email/adgangskode'));
+            if(btn){ btn.textContent = oldText; btn.disabled = false; }
+        }
+    } catch(e){
+        showAuthError('Netværksfejl: ' + e.message);
+        if(btn){ btn.textContent = oldText; btn.disabled = false; }
     }
 }
 async function signUp(email, password) {
     vibe(20);
-    console.log("Forsøger signUp med:", email);
-    const rawHeaders = new Headers();
-    rawHeaders.append("Content-Type", "application/json");
-    rawHeaders.append("apikey", SB_KEY);
-    rawHeaders.append("Authorization", "Bearer " + SB_KEY);
+    const btn = document.querySelector('.login-btn');
+    const oldText = btn ? btn.textContent : 'Opret konto';
+    if(btn){ btn.textContent = 'Opretter...'; btn.disabled = true; }
     try {
         const response = await fetch(`${SB_URL}/auth/v1/signup`, {
             method: 'POST',
-            headers: rawHeaders,
-            body: JSON.stringify({ email, password }),
-            redirect: 'follow'
+            headers: { 'Content-Type': 'application/json', 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY },
+            body: JSON.stringify({ email, password })
         });
         const result = await response.json();
-        console.log("Supabase svar:", result);
         if (response.ok && (result.id || result.user)) {
-            alert('Bruger oprettet! Du kan nu logge ind.');
+            // Hvis Supabase returnerer access_token direkte (auto-confirm slået til)
+            if(result.access_token){
+                clearUserDataLocal();
+                localStorage.setItem('sb-session', JSON.stringify(result));
+                location.reload();
+                return;
+            }
+            // Ellers: bekræftelses-mail blev sendt
+            const el = document.getElementById('authError');
+            if(el){
+                el.style.background = 'var(--green-bg)';
+                el.style.color = 'var(--green-t)';
+                el.textContent = 'Konto oprettet! Tjek din mail for at bekræfte, og log derefter ind.';
+                el.style.display = 'block';
+            }
+            _authMode = 'signin';
+            if(btn){ btn.textContent = 'Log ind'; btn.disabled = false; }
         } else {
-            // Hvis det fejler, viser vi præcis hvad Supabase siger
-            const errorMsg = result.msg || result.message || result.error_description || JSON.stringify(result);
-            alert('Fejl fra Supabase: ' + errorMsg);
+            const errorMsg = result.msg || result.message || result.error_description || 'Ukendt fejl';
+            showAuthError('Fejl: ' + errorMsg);
+            if(btn){ btn.textContent = oldText; btn.disabled = false; }
         }
     } catch (error) {
-        console.error('Fejl:', error);
-        alert('Netværksfejl: ' + error.message);
+        showAuthError('Netværksfejl: ' + error.message);
+        if(btn){ btn.textContent = oldText; btn.disabled = false; }
     }
 }
 function signOut() {
     vibe(40);
-    localStorage.clear();   // 🔴 ryd ALT (vigtigt)
+    clearUserDataLocal();
+    localStorage.removeItem('sb-session');
     location.reload();
+}
+// Rydder kun bruger-specifik cache — ikke device-præferencer.
+function clearUserDataLocal(){
+    const KEEP = new Set(); // tilføj nøgler her hvis vi får device-præferencer
+    const PREFIX_DROP = ['wlog_', 'kost_', 'sb-session'];
+    const EXACT_DROP = ['user_settings', 'user_custom_program', 'program_start_date'];
+    const toDrop = [];
+    for(let i=0; i<localStorage.length; i++){
+        const k = localStorage.key(i);
+        if(!k || KEEP.has(k)) continue;
+        if(EXACT_DROP.includes(k)) { toDrop.push(k); continue; }
+        if(PREFIX_DROP.some(pre => k.startsWith(pre))) toDrop.push(k);
+        if(/^program_c\d+$/.test(k)) toDrop.push(k);
+    }
+    toDrop.forEach(k => localStorage.removeItem(k));
 }
 
 async function sb(table, method, body, qs){
@@ -445,6 +482,35 @@ async function sb(table, method, body, qs){
     return { data: null, error: e };
   }
 }
+
+// Atomar UPSERT via PostgREST — kræver unique constraint på conflictCols.
+async function sbUpsert(table, body, conflictCols){
+  const url = `${SB_URL}/rest/v1/${table}?on_conflict=${encodeURIComponent(conflictCols)}`;
+  const opts = {
+    method: 'POST',
+    headers: {
+      ...getHeaders(),
+      'Prefer': 'resolution=merge-duplicates,return=minimal'
+    },
+    body: JSON.stringify(body)
+  };
+  const r = await fetch(url, opts);
+  if(r.status === 401 || r.status === 403){
+    clearUserDataLocal();
+    localStorage.removeItem('sb-session');
+    session = null;
+    renderLoginScreen();
+    return { data: null, error: 'Session udløbet' };
+  }
+  if(!r.ok){
+    let err = {};
+    try { err = await r.json(); } catch(e){}
+    console.error('Supabase upsert fejl:', err);
+    return { data: null, error: err };
+  }
+  return { data: true, error: null };
+}
+
 const DAYS=[
   {id:'d1',short:'Man',label:'Dag 1',title:'Upper styrke',bs:'background:var(--blue-bg);color:var(--blue-t);',bt:'Styrke',
    ex:[{n:'Bænkpres',t:'4×5',s:4,kg:77,r:5},{n:'Pull-ups',t:'4×5-6',s:4,kg:0,r:5,bw:1},{n:'Shoulder press',t:'3×5',s:3,kg:40,r:5},{n:'Barbell row',t:'3×6',s:3,kg:57,r:6},{n:'Dips',t:'3×6-8',s:3,kg:0,r:7,bw:1},{n:'Hammer curls',t:'2×10',s:2,kg:18,r:10},{n:'Triceps pushdown',t:'2×10',s:2,kg:25,r:10}]},
@@ -609,16 +675,15 @@ async function saveBody(w,data){
   BC[w]=data;localStorage.setItem(bodyLsKey(w),JSON.stringify(data));
   setSync('');
   try{
-    await sb('body_log','DELETE',null,`user_id=eq.${session.user.id}&week=eq.${w}`);
-    await sb('body_log','POST',{
-  user_id: session.user.id, // 
-  week:w,
-  weight:data.weight?parseFloat(data.weight):null,
-  fat:data.fat?parseFloat(data.fat):null,
-  muscle:data.muscle?parseFloat(data.muscle):null,
-  waist:data.waist?parseFloat(data.waist):null,
-  date:data.date
-});
+    await sbUpsert('body_log', {
+      user_id: session.user.id,
+      week: w,
+      weight: data.weight ? parseFloat(data.weight) : null,
+      fat: data.fat ? parseFloat(data.fat) : null,
+      muscle: data.muscle ? parseFloat(data.muscle) : null,
+      waist: data.waist ? parseFloat(data.waist) : null,
+      date: data.date
+    }, 'user_id,week');
     setSync('ok');
   }catch(e){setSync('err');}
 }
@@ -717,11 +782,6 @@ function vol(data,d){let v=0;d.ex.forEach((e,ei)=>{(data.sets[ei]||[]).forEach(s
 function done(data){return Object.values(data.checks).filter(Boolean).length;}
 function total(d){return d.ex.reduce((a,e)=>a+e.s,0);}
 function dH(val,inv){if(val==null)return'';const n=+val,s=n>0?'+':'',g=inv?n<0:n>0,c=n===0?'delta-neut':g?'delta-neg':'delta-pos';return`<span class="${c}">${s}${val}</span>`;}
-function vibe(ms = 30) {
-    if (navigator.vibrate) { 
-        try { navigator.vibrate(ms); } catch(e) {} 
-    }
-}
 // ── TABS ───────────────────────────────────────────────────────
 function renderTabs(){
   const isCurrentWeek = (curWeek === getActualCurrentWeek());
@@ -1162,7 +1222,7 @@ async function skipCycleReview(){
 }
 // ── STYRKE (FREMGANG) & 1RM ──────────────────────────────────
 async function renderProg() {
-    let h = `<div class="section-title">Fremgang</div><div class="section-sub">Styrke-estimat (1RM) baseret på dine tungeste sæt</div>`;
+    let h = `<div class="section-title">Fremgang</div><div class="section-sub">Styrke-estimat (1RM) baseret på dine tungeste sæt — ★ markerer nye personlige rekorder</div>`;
     const cids = [];
 
     for (const [li, lift] of KEY_LIFTS.entries()) {
@@ -1201,9 +1261,21 @@ if (!error && rows && rows.length) {
             });
             if (max1RM > 0) entries.push({ week: w, rm: Math.round(max1RM), kg: bestKg });
         }
+        // Beregn PRs: mark uger hvor 1RM-estimat eller bestKg slår tidligere maks
+        let runMaxRm = 0, runMaxKg = 0;
+        entries.forEach(e => {
+            e.isPR = false;
+            if(e.rm > runMaxRm){ e.isPR = true; runMaxRm = e.rm; }
+            if(e.kg > runMaxKg){ e.isKgPR = true; runMaxKg = e.kg; }
+        });
+        const allTimePR = entries.length ? entries.reduce((a,b)=> b.rm>a.rm?b:a, entries[0]) : null;
         const cid = `chart_1rm_${li}`;
-        h += `<div class="lift-card"><div class="lift-title">${lift.name}</div>`;
-        
+        const prTag = allTimePR
+          ? `<span class="pr-badge" style="margin-left:8px;">PR ${allTimePR.rm} kg</span>` 
+          : '';
+        h += `<div class="lift-card"><div class="lift-title" style="display:flex; align-items:center; justify-content:space-between;">
+            <span>${lift.name}</span>${prTag}
+        </div>`;
         if (entries.length >= 2) {
             h += `<div class="chart-wrap" style="padding:10px 14px;"><canvas id="${cid}" style="height:140px; width:100%;"></canvas></div>`;
             cids.push({ cid, entries });
@@ -1211,8 +1283,8 @@ if (!error && rows && rows.length) {
         h += `<div class="lift-rows">` + 
              (entries.length ? entries.map(e => `
                 <div class="lift-row">
-                    <span class="lift-date">Uge ${e.week}</span>
-                    <span class="lift-val">${e.kg} kg <span style="font-size:11px; color:var(--hint);"> (1RM: ${e.rm} kg)</span></span>
+                    <span class="lift-date">Uge ${e.week}${e.isPR ? ' <span class="pr-badge" style="margin-left:4px;">★ PR</span>' : ''}</span>
+                    <span class="lift-val">${e.kg} kg <span style="font-size:11px; color:var(--hint);">(1RM: ${e.rm} kg)</span></span>
                 </div>`).join('') : '<div class="no-data">Ingen data logget endnu</div>') + 
              `</div></div>`;
     }
@@ -1294,6 +1366,12 @@ async function renderSettings(){
         </div>
     </div>
     <button class="save-btn" onclick="saveSettingsForm()">Gem Indstillinger</button>
+    <div style="margin-top:18px; padding:14px; background:var(--card); border:1px solid var(--border); border-radius:13px;">
+        <div style="font-weight:600; font-size:14px; margin-bottom:6px;">Beregn fra profil</div>
+        <div style="font-size:12px; color:var(--muted); margin-bottom:12px;">Genberegn kalorier og makro ud fra dit profil-data (vægt/alder/mål/frekvens).</div>
+        <button class="copy-btn" style="margin-bottom:8px;" onclick="recalcMacrosFromProfile()">Genberegn makro</button>
+        <button class="copy-btn" style="margin-bottom:0; background:var(--amber-bg); color:var(--amber-t);" onclick="regenerateProgramFromProfile()">Regenerér træningsprogram</button>
+    </div>
     <div class="section-title" style="margin-top:32px;">Konto</div>
     <div class="section-sub">Logget ind som: <b>${session.user.email}</b></div>
     <button class="clear-btn" style="background:var(--red-bg); color:var(--red-t); margin-bottom:24px;" onclick="signOut()">
@@ -1309,8 +1387,10 @@ async function renderSettings(){
   if(window.lucide) lucide.createIcons();
   setTimeout(async () => {
       let csv='Uge,Dato,Kategori,Øvelse,Sæt,Kg,Reps\n';let has=false;
-      for(let w=1;w<=8;w++){
-        for(const d of DAYS){
+      const maxW = getActualCurrentWeek() + 4;
+      for(let w=1;w<=maxW;w++){
+        const cycDays = getDays(cycleOf(w));
+        for(const d of cycDays){
           let data=wcGet(w,d.id);
           if(!data){
   try{
@@ -1343,6 +1423,63 @@ async function renderSettings(){
       document.getElementById('exportBox').textContent = has ? csv : 'Ingen data endnu.';
   }, 100);
 }
+function loadProfile(){
+    const stored = localStorage.getItem('user_profile');
+    if(stored){ try { return JSON.parse(stored); } catch(e){} }
+    return null;
+}
+function recalcMacrosFromProfile(){
+    vibe(40);
+    const profile = loadProfile();
+    if(!profile){
+        alert('Ingen profil-data fundet. Kør onboarding igen, eller udfyld manuelt.');
+        return;
+    }
+    // Brug nuværende vægt fra settings hvis den er nyere end profilens
+    const cur = getSettings();
+    if(cur.bw && cur.bw !== profile.weight){
+        profile.weight = cur.bw;
+    }
+    const macros = computeMacros(profile);
+    cur.kcal = macros.kcal;
+    cur.prot = macros.prot;
+    cur.kh = macros.kh;
+    cur.fat = macros.fat;
+    saveSettings(cur);
+    // Opdater lokal profil med ny vægt
+    localStorage.setItem('user_profile', JSON.stringify(profile));
+    alert(`Makro opdateret:\n${macros.kcal} kcal · ${macros.prot}g protein · ${macros.kh}g kh · ${macros.fat}g fedt\n(BMR ${macros.bmr} · TDEE ${macros.tdee})`);
+    renderSettings();
+}
+async function regenerateProgramFromProfile(){
+    vibe(40);
+    const profile = loadProfile();
+    if(!profile){
+        alert('Ingen profil-data fundet. Kør onboarding igen.');
+        return;
+    }
+    if(!confirm('Generér nyt træningsprogram baseret på din profil? Dine logførte data bevares.'))return;
+    // Brug seneste vægt
+    const cur = getSettings();
+    if(cur.bw) profile.weight = cur.bw;
+    if(cur.age) profile.age = cur.age;
+    const program = generateTrainingProgram(profile);
+    localStorage.setItem('user_custom_program', JSON.stringify(program));
+    try {
+        await sbUpsert('user_programs', {
+            user_id: session.user.id,
+            start_date: localStorage.getItem('program_start_date') || todayISO(),
+            gender: profile.gender, dob: profile.dob,
+            weight: profile.weight, height: profile.height,
+            fat: profile.fat || null,
+            goal: profile.goal, freq: profile.freq, duration: profile.duration,
+            exercises: program
+        }, 'user_id');
+    } catch(e){ console.error('Profil-synk fejlede:', e); }
+    alert('Nyt program genereret!');
+    renderTabs();
+    showScreen('log');
+}
 function saveSettingsForm() {
     vibe(50);
     const s = {
@@ -1368,8 +1505,16 @@ function copyCSV(){vibe(30); navigator.clipboard.writeText(window._csv||'').then
 function clearAll(){
   vibe(40);
   if(!confirm('Slet lokal cache? Cloud-data i Supabase bevares.'))return;
-  for(let w=1;w<=8;w++){DAYS.forEach(d=>localStorage.removeItem(lsKey(w,d.id)));localStorage.removeItem(bodyLsKey(w));}
-  Object.keys(WC).forEach(k=>delete WC[k]);Object.keys(BC).forEach(k=>delete BC[k]);
+  // Ryd alt wlog_*, kost_* og body_* uanset hvilket program der er aktivt
+  const drop = [];
+  for(let i=0;i<localStorage.length;i++){
+    const k = localStorage.key(i);
+    if(!k) continue;
+    if(k.startsWith('wlog_') || k.startsWith('kost_')) drop.push(k);
+  }
+  drop.forEach(k => localStorage.removeItem(k));
+  Object.keys(WC).forEach(k=>delete WC[k]);
+  Object.keys(BC).forEach(k=>delete BC[k]);
   init();
 }
 async function showScreen(name){
@@ -1512,18 +1657,15 @@ function saveKostLocal(date,data){localStorage.setItem(kostKey(date),JSON.string
 async function saveKostRemote(date,data){
   setSync('');
   try{
-    await sb('kost_log','DELETE',null,`user_id=eq.${session.user.id}&date=eq.${date}`);
-    
-    await sb('kost_log','POST',{
+    await sbUpsert('kost_log', {
       user_id: session.user.id,
       date,
-      kcal:data.kcal?+data.kcal:null,
-      prot:data.prot?+data.prot:null,
-      kh:data.kh?+data.kh:null,
-      fat:data.fat?+data.fat:null,
-      burned:data.burned?+data.burned:null
-    });
-
+      kcal: data.kcal ? +data.kcal : null,
+      prot: data.prot ? +data.prot : null,
+      kh: data.kh ? +data.kh : null,
+      fat: data.fat ? +data.fat : null,
+      burned: data.burned ? +data.burned : null
+    }, 'user_id,date');
     setSync('ok');
   }catch(e){setSync('err');}
 }
@@ -1767,18 +1909,45 @@ function calculateAge(birthDateString) {
     }
     return age;
 }
+let _authMode = 'signin'; // 'signin' eller 'signup'
 function renderLoginScreen() {
     document.body.innerHTML = `
-    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:20px; font-family:sans-serif; background:var(--bg); color:var(--text);">
-        <div style="background:var(--card); padding:30px; border-radius:20px; border:1px solid var(--border); width:100%; max-width:340px; box-shadow:var(--shadow);">
-            <h2 style="margin-bottom:8px;">Velkommen</h2>
-            <p style="color:var(--muted); font-size:14px; margin-bottom:24px;">Log ind for at se din træning</p>
-            <input type="email" id="email" placeholder="Email" style="width:100%; padding:12px; margin-bottom:12px; border-radius:10px; border:1px solid var(--border); background:var(--input-bg); color:var(--text); font-family:inherit;">
-            <input type="password" id="password" placeholder="Adgangskode" style="width:100%; padding:12px; margin-bottom:20px; border-radius:10px; border:1px solid var(--border); background:var(--input-bg); color:var(--text); font-family:inherit;">
-            <button class="login-btn" onclick="signIn(document.getElementById('email').value, document.getElementById('password').value)" style="width:100%; padding:14px; border-radius:12px; background:var(--text); color:var(--bg); border:none; font-weight:700; cursor:pointer; margin-bottom:12px; font-family:inherit;">Log ind</button>
-            <button onclick="signUp(document.getElementById('email').value, document.getElementById('password').value)" style="width:100%; background:none; border:none; color:var(--muted); font-size:13px; cursor:pointer; font-family:inherit;">Opret ny konto</button>
+    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:20px; font-family:-apple-system,'SF Pro Text',sans-serif; background:var(--bg); color:var(--text);">
+        <div style="background:var(--card); padding:32px 28px; border-radius:20px; border:1px solid var(--border); width:100%; max-width:360px; box-shadow:var(--shadow);">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+                <i data-lucide="dumbbell" style="width:22px;height:22px;"></i>
+                <h2 style="margin:0; font-size:20px;">Træningslog</h2>
+            </div>
+            <p id="authSub" style="color:var(--muted); font-size:13px; margin-bottom:22px;">${_authMode === 'signin' ? 'Log ind for at se din træning' : 'Opret en ny konto'}</p>
+            <div id="authError" style="display:none; background:var(--red-bg); color:var(--red-t); padding:10px 12px; border-radius:10px; font-size:13px; margin-bottom:12px;"></div>
+            <input type="email" id="email" placeholder="Email" autocomplete="email" inputmode="email" style="width:100%; padding:12px; margin-bottom:10px; border-radius:10px; border:1px solid var(--border); background:var(--input-bg); color:var(--text); font-family:inherit; font-size:15px;">
+            <input type="password" id="password" placeholder="Adgangskode (min. 6 tegn)" autocomplete="${_authMode === 'signin' ? 'current-password' : 'new-password'}" style="width:100%; padding:12px; margin-bottom:18px; border-radius:10px; border:1px solid var(--border); background:var(--input-bg); color:var(--text); font-family:inherit; font-size:15px;">
+            <button class="login-btn" onclick="submitAuth()" style="width:100%; padding:14px; border-radius:12px; background:var(--text); color:var(--bg); border:none; font-weight:700; cursor:pointer; margin-bottom:14px; font-family:inherit; font-size:15px;">${_authMode === 'signin' ? 'Log ind' : 'Opret konto'}</button>
+            <div style="text-align:center; font-size:13px; color:var(--muted);">
+                ${_authMode === 'signin' ? 'Har du ikke en konto?' : 'Har du allerede en konto?'}
+                <button onclick="toggleAuthMode()" style="background:none; border:none; color:var(--blue-t); font-size:13px; cursor:pointer; font-family:inherit; font-weight:600; padding:0 4px; text-decoration:underline;">${_authMode === 'signin' ? 'Opret konto' : 'Log ind'}</button>
+            </div>
         </div>
     </div>`;
+    if(window.lucide) lucide.createIcons();
+}
+function toggleAuthMode(){
+    _authMode = (_authMode === 'signin') ? 'signup' : 'signin';
+    renderLoginScreen();
+}
+function showAuthError(msg){
+    const el = document.getElementById('authError');
+    if(!el) return alert(msg);
+    el.textContent = msg;
+    el.style.display = 'block';
+}
+function submitAuth(){
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    if(!email || !password){ showAuthError('Udfyld både email og adgangskode.'); return; }
+    if(password.length < 6){ showAuthError('Adgangskoden skal være mindst 6 tegn.'); return; }
+    if(_authMode === 'signin') signIn(email, password);
+    else signUp(email, password);
 }
 function nextOnboardingStep(step){
   if(step === 2){
@@ -1786,92 +1955,230 @@ function nextOnboardingStep(step){
     document.getElementById('onboarding-step-2').style.display = 'block';
   }
 }
+// Beregn realistiske startvægte ud fra kropsvægt, køn og erfaringsniveau.
+// "Niveau" estimeres ud fra alder + BMI/fedt% — konservativt, så ingen kommer galt af sted.
+function estimateStartingWeights(profile){
+  const { gender, weight, height, fat, age } = profile;
+  const bmi = weight / Math.pow(height/100, 2);
+  const isFemale = gender === 'kvinde';
+  // Konservativ "novice"-multiplikator pr. løft som % af kropsvægt
+  // (mænd; kvinder skaleres ned ~25% nedenfor)
+  let mult = {
+    bench: 0.55, squat: 0.75, deadlift: 0.95,
+    ohp: 0.40, row: 0.55, frontSquat: 0.55, rdl: 0.75
+  };
+  // Højere fedt% / BMI eller alder >= 40 → start endnu mere konservativt
+  const highFat = (fat ? fat >= 25 : bmi >= 28);
+  if(highFat || age >= 40){
+    Object.keys(mult).forEach(k => mult[k] *= 0.80);
+  }
+  // Ung og slank → lidt højere start
+  if(!highFat && age < 30 && bmi < 24){
+    Object.keys(mult).forEach(k => mult[k] *= 1.10);
+  }
+  if(isFemale){
+    Object.keys(mult).forEach(k => mult[k] *= 0.72);
+  }
+  const r25 = n => Math.max(0, Math.round(n*2)/2);
+  return {
+    bench: r25(weight * mult.bench),
+    squat: r25(weight * mult.squat),
+    deadlift: r25(weight * mult.deadlift),
+    ohp: r25(weight * mult.ohp),
+    row: r25(weight * mult.row),
+    frontSquat: r25(weight * mult.frontSquat),
+    rdl: r25(weight * mult.rdl)
+  };
+}
+
+// Ægte program-templates — ikke bare slicing af det hardcodede 5-dages program.
+function buildProgramTemplate(freq, w){
+  // w = beregnede startvægte (fra estimateStartingWeights)
+  // 3-dages fullbody (Mandag/Onsdag/Fredag mønster, men vi beholder "Man/Tir/Tor" labels for konsistens med tab-rækken)
+  if(freq === 3){
+    return [
+      {id:'d1',short:'Man',label:'Dag 1',title:'Fullbody A',bs:'background:var(--blue-bg);color:var(--blue-t);',bt:'Fullbody',
+       ex:[
+        {n:'Squat',t:'4×5',s:4,kg:w.squat,r:5},
+        {n:'Bænkpres',t:'4×6',s:4,kg:w.bench,r:6},
+        {n:'Barbell row',t:'3×8',s:3,kg:w.row,r:8},
+        {n:'Plank',t:'3×40 sek',s:3,kg:0,r:40,bw:1,rl:'sek'}
+      ]},
+      {id:'d2',short:'Ons',label:'Dag 2',title:'Fullbody B',bs:'background:var(--green-bg);color:var(--green-t);',bt:'Fullbody',
+       ex:[
+        {n:'Deadlift',t:'3×5',s:3,kg:w.deadlift,r:5},
+        {n:'Shoulder press',t:'4×6',s:4,kg:w.ohp,r:6},
+        {n:'Pull-ups',t:'3×max',s:3,kg:0,r:6,bw:1},
+        {n:'Hanging leg raises',t:'3×10',s:3,kg:0,r:10,bw:1}
+      ]},
+      {id:'d3',short:'Fre',label:'Dag 3',title:'Fullbody C',bs:'background:var(--purple-bg);color:var(--purple-t);',bt:'Fullbody',hiit:1,
+       ex:[
+        {n:'Front squat',t:'3×6',s:3,kg:w.frontSquat,r:6},
+        {n:'Incline DB press',t:'3×10',s:3,kg:Math.round(w.bench*0.35),r:10},
+        {n:'Romanian deadlift',t:'3×8',s:3,kg:w.rdl,r:8},
+        {n:'Lateral raises',t:'3×15',s:3,kg:Math.round(w.ohp*0.18),r:15},
+        {n:'Hammer curls',t:'2×12',s:2,kg:Math.round(w.ohp*0.25),r:12}
+      ]}
+    ];
+  }
+  // 4-dages upper/lower split
+  if(freq === 4){
+    return [
+      {id:'d1',short:'Man',label:'Dag 1',title:'Upper styrke',bs:'background:var(--blue-bg);color:var(--blue-t);',bt:'Styrke',
+       ex:[
+        {n:'Bænkpres',t:'4×5',s:4,kg:w.bench,r:5},
+        {n:'Barbell row',t:'4×6',s:4,kg:w.row,r:6},
+        {n:'Shoulder press',t:'3×6',s:3,kg:w.ohp,r:6},
+        {n:'Pull-ups',t:'3×max',s:3,kg:0,r:6,bw:1},
+        {n:'Triceps pushdown',t:'3×10',s:3,kg:Math.round(w.bench*0.30),r:10}
+      ]},
+      {id:'d2',short:'Tir',label:'Dag 2',title:'Lower styrke',bs:'background:var(--blue-bg);color:var(--blue-t);',bt:'Styrke',
+       ex:[
+        {n:'Squat',t:'4×5',s:4,kg:w.squat,r:5},
+        {n:'Romanian deadlift',t:'3×6',s:3,kg:w.rdl,r:6},
+        {n:'Lunges',t:'3×8/ben',s:3,kg:Math.round(w.squat*0.30),r:8},
+        {n:'Calf raises',t:'4×12',s:4,kg:Math.round(w.squat*0.85),r:12},
+        {n:'Plank',t:'3×40 sek',s:3,kg:0,r:40,bw:1,rl:'sek'}
+      ]},
+      {id:'d3',short:'Tor',label:'Dag 3',title:'Upper hypertrofi',bs:'background:var(--green-bg);color:var(--green-t);',bt:'Hypertrofi',
+       ex:[
+        {n:'Incline DB press',t:'3×10',s:3,kg:Math.round(w.bench*0.35),r:10},
+        {n:'Chin-ups',t:'3×6-8',s:3,kg:0,r:7,bw:1},
+        {n:'Lateral raises',t:'4×15',s:4,kg:Math.round(w.ohp*0.18),r:15},
+        {n:'Face pulls',t:'4×12',s:4,kg:Math.round(w.row*0.30),r:12},
+        {n:'Hammer curls',t:'2×12',s:2,kg:Math.round(w.ohp*0.25),r:12}
+      ]},
+      {id:'d4',short:'Fre',label:'Dag 4',title:'Lower power',bs:'background:var(--amber-bg);color:var(--amber-t);',bt:'Power',hiit:1,
+       ex:[
+        {n:'Deadlift',t:'4×4',s:4,kg:w.deadlift,r:4},
+        {n:'Front squat',t:'3×6',s:3,kg:w.frontSquat,r:6},
+        {n:'Bulgarian split squat',t:'3×8/ben',s:3,kg:Math.round(w.squat*0.25),r:8},
+        {n:'Leg curl',t:'3×12',s:3,kg:Math.round(w.squat*0.45),r:12},
+        {n:'Hanging leg raises',t:'3×10',s:3,kg:0,r:10,bw:1}
+      ]}
+    ];
+  }
+  // 5-dages PPL + split (det oprindelige program, men med beregnede vægte)
+  return [
+    {id:'d1',short:'Man',label:'Dag 1',title:'Upper styrke',bs:'background:var(--blue-bg);color:var(--blue-t);',bt:'Styrke',
+     ex:[
+      {n:'Bænkpres',t:'4×5',s:4,kg:w.bench,r:5},
+      {n:'Pull-ups',t:'4×5-6',s:4,kg:0,r:5,bw:1},
+      {n:'Shoulder press',t:'3×5',s:3,kg:w.ohp,r:5},
+      {n:'Barbell row',t:'3×6',s:3,kg:w.row,r:6},
+      {n:'Dips',t:'3×6-8',s:3,kg:0,r:7,bw:1},
+      {n:'Hammer curls',t:'2×10',s:2,kg:Math.round(w.ohp*0.25),r:10},
+      {n:'Triceps pushdown',t:'2×10',s:2,kg:Math.round(w.bench*0.30),r:10}
+    ]},
+    {id:'d2',short:'Tir',label:'Dag 2',title:'Lower styrke',bs:'background:var(--blue-bg);color:var(--blue-t);',bt:'Styrke',
+     ex:[
+      {n:'Squat',t:'4×5',s:4,kg:w.squat,r:5},
+      {n:'Romanian deadlift',t:'3×6',s:3,kg:w.rdl,r:6},
+      {n:'Lunges',t:'3×8/ben',s:3,kg:Math.round(w.squat*0.30),r:8},
+      {n:'Calf raises',t:'4×12',s:4,kg:Math.round(w.squat*0.85),r:12},
+      {n:'Plank',t:'3×40 sek',s:3,kg:0,r:40,bw:1,rl:'sek'}
+    ]},
+    {id:'d3',short:'Tor',label:'Dag 3',title:'Upper hypertrofi',bs:'background:var(--green-bg);color:var(--green-t);',bt:'Hypertrofi',
+     ex:[
+      {n:'Incline DB press',t:'3×10',s:3,kg:Math.round(w.bench*0.35),r:10},
+      {n:'Chin-ups',t:'3×6-8',s:3,kg:0,r:7,bw:1},
+      {n:'Lateral raises',t:'4×15',s:4,kg:Math.round(w.ohp*0.18),r:15},
+      {n:'Face pulls',t:'4×12',s:4,kg:Math.round(w.row*0.30),r:12},
+      {n:'Hanging leg raises',t:'3×10',s:3,kg:0,r:10,bw:1},
+      {n:'Supineret curl',t:'2×12',s:2,kg:Math.round(w.ohp*0.22),r:12},
+      {n:'Triceps overhead',t:'2×12',s:2,kg:Math.round(w.bench*0.27),r:12}
+    ]},
+    {id:'d4',short:'Fre',label:'Dag 4',title:'Lower power',bs:'background:var(--amber-bg);color:var(--amber-t);',bt:'Power',
+     ex:[
+      {n:'Deadlift',t:'4×4',s:4,kg:w.deadlift,r:4},
+      {n:'Front squat',t:'3×6',s:3,kg:w.frontSquat,r:6},
+      {n:'Bulgarian split squat',t:'3×8/ben',s:3,kg:Math.round(w.squat*0.25),r:8},
+      {n:'Leg curl',t:'3×12',s:3,kg:Math.round(w.squat*0.45),r:12},
+      {n:'Calf raises',t:'4×12',s:4,kg:Math.round(w.squat*0.85),r:12}
+    ]},
+    {id:'d5',short:'Lør',label:'Dag 5',title:'Full body pump',bs:'background:var(--purple-bg);color:var(--purple-t);',bt:'Pump',hiit:1,
+     ex:[
+      {n:'Pull-ups (langsomt)',t:'3×max',s:3,kg:0,r:8,bw:1},
+      {n:'DB shoulder press',t:'3×12',s:3,kg:Math.round(w.ohp*0.55),r:12},
+      {n:'Goblet squat',t:'3×15',s:3,kg:Math.round(w.squat*0.40),r:15},
+      {n:'Kabel rows',t:'3×15',s:3,kg:Math.round(w.row*0.85),r:15},
+      {n:'Ab wheel / cable crunch',t:'3×12',s:3,kg:0,r:12,bw:1}
+    ]}
+  ];
+}
+
 function generateTrainingProgram(profile) {
   const { goal, freq, weight, height, fat, age, gender } = profile;
+  const startW = estimateStartingWeights(profile);
 
-  const bmi = weight / Math.pow(height / 100, 2);
-  const fatPct = fat || null;
-
-  const highFat = fatPct ? fatPct >= 25 : bmi >= 28;
-  const lowExperienceSafe = age >= 40 || highFat;
-
-  let program = JSON.parse(JSON.stringify(DAYS));
-
-  // FEDTTAB
-  if (goal === 'lose') {
-    if (freq === 3) program = JSON.parse(JSON.stringify(DAYS.slice(0, 3)));
-    if (freq === 4) program = JSON.parse(JSON.stringify(DAYS.slice(0, 4)));
-    if (freq === 5) program = JSON.parse(JSON.stringify(DAYS));
-
+  // FEDTTAB: lavere vægt-mål, højere reps, ekstra kondition
+  if(goal === 'lose'){
+    Object.keys(startW).forEach(k => { startW[k] = Math.round(startW[k]*0.90 *2)/2; });
+    const program = buildProgramTemplate(freq, startW);
     program.forEach(day => {
-      day.bt = highFat ? 'Fedttab' : day.bt;
       day.bs = 'background:var(--green-bg);color:var(--green-t);';
-      if (day.hiit) day.hiit = highFat ? 0 : 1;
-
+      day.bt = 'Fedttab';
+      day.hiit = 1; // alle dage får cardio-tip
       day.ex.forEach(ex => {
-        if (!ex.bw && lowExperienceSafe) {
-          ex.kg = Math.round(ex.kg * 0.85);
-        }
-        if (ex.t.includes('4×5')) {
-          ex.t = '3×8-10';
-          ex.s = 3;
-          ex.r = 9;
-        }
+        if(/^4×5$/.test(ex.t) || /^4×6$/.test(ex.t)){ ex.t = '3×8-10'; ex.s = 3; ex.r = 9; }
+        else if(/^3×5$/.test(ex.t) || /^3×6$/.test(ex.t)){ ex.t = '3×10-12'; ex.r = 11; }
       });
     });
-
     return program;
   }
 
-  // MUSKELOPBYGNING
-  if (goal === 'gain') {
-    program = JSON.parse(JSON.stringify(DAYS));
-
+  // MUSKELOPBYGNING: behold vægte, fokus på 6-8 reps
+  if(goal === 'gain'){
+    const program = buildProgramTemplate(freq, startW);
     program.forEach(day => {
       day.bt = 'Muskel';
       day.bs = 'background:var(--blue-bg);color:var(--blue-t);';
-
       day.ex.forEach(ex => {
-        if (!ex.bw) {
-          ex.kg = Math.round(ex.kg * 0.95);
-        }
-        if (ex.t.includes('4×5')) {
-          ex.t = '4×6-8';
-          ex.r = 7;
-        }
+        if(/^4×5$/.test(ex.t)){ ex.t = '4×6-8'; ex.r = 7; }
       });
     });
-
     return program;
   }
 
-  // TONET / VEDLIGEHOLD
-  if (goal === 'tone') {
-    if (freq === 3) program = JSON.parse(JSON.stringify(DAYS.slice(0, 3)));
-    if (freq === 4) program = JSON.parse(JSON.stringify(DAYS.slice(0, 4)));
-    if (freq === 5) program = JSON.parse(JSON.stringify(DAYS));
-
-    program.forEach(day => {
-      day.bt = 'Tonet';
-      day.bs = 'background:var(--purple-bg);color:var(--purple-t);';
-
-      day.ex.forEach(ex => {
-        if (!ex.bw) {
-          ex.kg = Math.round(ex.kg * 0.90);
-        }
-        if (ex.t.includes('4×5')) {
-          ex.t = '3×10';
-          ex.s = 3;
-          ex.r = 10;
-        }
-      });
+  // VEDLIGEHOLD / TONET
+  const program = buildProgramTemplate(freq, startW);
+  program.forEach(day => {
+    day.bt = 'Tonet';
+    day.bs = 'background:var(--purple-bg);color:var(--purple-t);';
+    day.ex.forEach(ex => {
+      if(/^4×5$/.test(ex.t) || /^4×6$/.test(ex.t)){ ex.t = '3×10'; ex.s = 3; ex.r = 10; }
     });
-
-    return program;
-  }
-
+  });
   return program;
 }
+
+// ── MAKRO/TDEE BEREGNING ───────────────────────────────────
+// Mifflin-St Jeor BMR + aktivitetsfaktor + målbaseret justering.
+// Returnerer { kcal, prot, kh, fat, bmr, tdee }.
+function computeMacros(profile){
+  const { gender, weight, height, age, freq, goal } = profile;
+  const bmr = gender === 'mand'
+    ? (10 * weight) + (6.25 * height) - (5 * age) + 5
+    : (10 * weight) + (6.25 * height) - (5 * age) - 161;
+  const activity = freq <= 3 ? 1.45 : freq === 4 ? 1.55 : 1.65;
+  const tdee = Math.round(bmr * activity);
+
+  let kcal = tdee;
+  if(goal === 'lose') kcal = tdee - 500;
+  else if(goal === 'gain') kcal = tdee + 250;
+
+  // Protein: 1.8g/kg ved opbygning/vedligehold, 2.2g/kg ved fedttab (bevarer muskelmasse)
+  const protPerKg = goal === 'lose' ? 2.2 : 1.8;
+  const prot = Math.round(weight * protPerKg);
+  // Fedt: 0.8g/kg minimum (hormoner)
+  const fat = Math.max(Math.round(weight * 0.8), Math.round(kcal * 0.20 / 9));
+  // Resten KH
+  const kcalLeft = kcal - (prot * 4) - (fat * 9);
+  const kh = Math.max(50, Math.round(kcalLeft / 4));
+
+  return { kcal, prot, kh, fat, bmr: Math.round(bmr), tdee };
+}
+
 async function completeOnboarding(){
   const gender = document.getElementById('onb-gender').value;
   const dob = document.getElementById('onb-dob').value;
@@ -1888,61 +2195,40 @@ async function completeOnboarding(){
   }
 
   const age = calculateAge(dob);
-  const s = getSettings();
+  const profile = { gender, dob, weight, height, fat, goal, freq, duration, age };
 
-  s.bw = weight;
-  s.age = age;
-  s.prot = Math.round(weight * 1.8);
+  // Beregn makro fra profilen
+  const macros = computeMacros(profile);
+  const settings = getSettings();
+  settings.bw = weight;
+  settings.age = age;
+  settings.kcal = macros.kcal;
+  settings.prot = macros.prot;
+  settings.kh = macros.kh;
+  settings.fat = macros.fat;
+  saveSettings(settings);
 
-  const bmr = gender === 'mand'
-  ? (10 * weight) + (6.25 * height) - (5 * age) + 5
-  : (10 * weight) + (6.25 * height) - (5 * age) - 161;
+  // Gem profil i localStorage så vi kan re-beregne senere uden DB-tur
+  localStorage.setItem('user_profile', JSON.stringify(profile));
 
-const activity = freq === 3 ? 1.45 : freq === 4 ? 1.55 : 1.65;
-const maintenance = Math.round(bmr * activity);
+  const startDate = todayISO();
+  localStorage.setItem('program_start_date', startDate);
 
-if (goal === 'lose') s.kcal = maintenance - 500;
-if (goal === 'gain') s.kcal = maintenance + 250;
-if (goal === 'tone') s.kcal = maintenance;
+  // Generér program
+  const program = generateTrainingProgram(profile);
+  localStorage.setItem('user_custom_program', JSON.stringify(program));
 
-s.prot = Math.round(weight * 1.8);
-s.kh = Math.round((s.kcal * 0.40) / 4);
-s.fat = Math.round((s.kcal * 0.30) / 9);
-
-const startDate = todayISO();
-localStorage.setItem('program_start_date', startDate);
-
-saveSettings(s);
-
-  const profile = {
-  gender,
-  dob,
-  weight,
-  height,
-  fat,
-  goal,
-  freq,
-  duration,
-  age
-};
-
-let program = generateTrainingProgram(profile);
-
-localStorage.setItem('user_custom_program', JSON.stringify(program));
-
-  await sb('user_programs', 'POST', {
-    user_id: session.user.id,
-    start_date: startDate,
-    gender,
-    dob,
-    weight,
-    height,
-    fat: fat || null,
-    goal,
-    freq,
-    duration,
-    exercises: program
-  });
+  // Synk til Supabase (idempotent UPSERT)
+  try {
+    await sbUpsert('user_programs', {
+      user_id: session.user.id,
+      start_date: startDate,
+      gender, dob, weight, height,
+      fat: fat || null,
+      goal, freq, duration,
+      exercises: program
+    }, 'user_id');
+  } catch(e){ console.error('Profil-synk fejlede:', e); }
 
   await autoSelectWeek();
   await showScreen('dash');
@@ -1982,6 +2268,19 @@ async function init() {
         localStorage.setItem('user_custom_program', JSON.stringify(userP.exercises));
     }
 
+    // Gem profilen lokalt så "regenerér"-knappen virker uden DB-tur
+    localStorage.setItem('user_profile', JSON.stringify({
+        gender: userP.gender,
+        dob: userP.dob,
+        weight: userP.weight,
+        height: userP.height,
+        fat: userP.fat,
+        goal: userP.goal,
+        freq: userP.freq,
+        duration: userP.duration,
+        age: calculateAge(userP.dob || '1995-01-01')
+    }));
+
     const alder = calculateAge(userDob);
     console.log("Appen kører for eksisterende bruger. Alder:", alder);
 
@@ -2004,11 +2303,89 @@ async function init() {
 // Kør selve opstarten (Skal stå udenfor funktionen)
 init();
 
-// Registrer Service Worker til offline brug
+// ── PWA: Service Worker + Install prompt ──────────────────────
+let deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  // Vis kun banner én gang pr. session og kun hvis ikke installeret
+  if(window.matchMedia('(display-mode: standalone)').matches) return;
+  if(sessionStorage.getItem('install_dismissed')) return;
+  showInstallBanner();
+});
+window.addEventListener('appinstalled', () => {
+  deferredInstallPrompt = null;
+  hideInstallBanner();
+});
+function showInstallBanner(){
+  if(document.getElementById('installBanner')) return;
+  const b = document.createElement('div');
+  b.id = 'installBanner';
+  b.style.cssText = 'position:fixed; left:16px; right:16px; bottom:calc(96px + env(safe-area-inset-bottom,0px)); background:var(--card); border:1px solid var(--border); border-radius:14px; padding:12px 14px; box-shadow:var(--shadow); z-index:80; display:flex; align-items:center; gap:10px; font-family:inherit;';
+  b.innerHTML = `
+    <div style="flex:1;">
+      <div style="font-weight:600; font-size:14px;">Installér Træningslog</div>
+      <div style="font-size:12px; color:var(--muted);">Tilføj til hjemmeskærmen for hurtig adgang og offline brug.</div>
+    </div>
+    <button onclick="acceptInstall()" style="padding:8px 14px; border-radius:10px; background:var(--text); color:var(--bg); border:none; font-weight:600; font-size:13px; cursor:pointer; font-family:inherit;">Installér</button>
+    <button onclick="dismissInstall()" aria-label="Luk" style="padding:6px; background:transparent; border:none; color:var(--muted); cursor:pointer; font-size:16px; font-family:inherit;">×</button>
+  `;
+  document.body.appendChild(b);
+}
+function hideInstallBanner(){
+  const b = document.getElementById('installBanner');
+  if(b) b.remove();
+}
+async function acceptInstall(){
+  if(!deferredInstallPrompt) return hideInstallBanner();
+  deferredInstallPrompt.prompt();
+  await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt = null;
+  hideInstallBanner();
+}
+function dismissInstall(){
+  sessionStorage.setItem('install_dismissed', '1');
+  hideInstallBanner();
+}
+function showUpdateAvailable(reg){
+  if(document.getElementById('updateBanner')) return;
+  const b = document.createElement('div');
+  b.id = 'updateBanner';
+  b.style.cssText = 'position:fixed; left:16px; right:16px; top:calc(8px + env(safe-area-inset-top,0px)); background:var(--blue-bg); color:var(--blue-t); border:1px solid var(--blue-t); border-radius:12px; padding:10px 14px; z-index:90; display:flex; align-items:center; gap:10px; font-size:13px; font-family:inherit; box-shadow:var(--shadow);';
+  b.innerHTML = `
+    <span style="flex:1;">Ny version klar.</span>
+    <button id="updateBtn" style="padding:6px 12px; border-radius:8px; background:var(--blue-t); color:var(--blue-bg); border:none; font-weight:600; font-size:13px; cursor:pointer; font-family:inherit;">Opdatér</button>
+  `;
+  document.body.appendChild(b);
+  document.getElementById('updateBtn').onclick = () => {
+    if(reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+    location.reload();
+  };
+}
+
+// Registrér Service Worker
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js')
-      .catch(err => console.log("SW fejl", err));
+    navigator.serviceWorker.register('./sw.js').then(reg => {
+      // Når en ny SW er klar, vis banner
+      reg.addEventListener('updatefound', () => {
+        const sw = reg.installing;
+        if(!sw) return;
+        sw.addEventListener('statechange', () => {
+          if(sw.state === 'installed' && navigator.serviceWorker.controller){
+            showUpdateAvailable(reg);
+          }
+        });
+      });
+    }).catch(err => console.log("SW fejl", err));
+
+    // Auto-reload når den nye SW tager kontrol
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if(refreshing) return;
+      refreshing = true;
+      location.reload();
+    });
   });
 }
 </script>
