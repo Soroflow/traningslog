@@ -340,6 +340,17 @@ canvas{display:block;}
           <!-- Udfyldes dynamisk af previewProgram() -->
         </div>
       </div>
+      <div style="margin-top:14px; padding:14px; background:var(--card); border:1px solid var(--border); border-radius:13px;">
+        <div style="font-size:13px; font-weight:600; margin-bottom:10px;">Hvornår starter du?</div>
+        <label style="display:flex; align-items:flex-start; gap:10px; padding:8px 0; cursor:pointer; font-size:13px;">
+          <input type="radio" name="onb-startday" value="monday" id="onb-start-monday" checked style="margin-top:2px;">
+          <span><span style="font-weight:600;">Mandag <span id="onb-monday-label">den X</span></span><br><span style="color:var(--muted); font-size:12px;">Anbefalet — fuld uge 1 fra start</span></span>
+        </label>
+        <label style="display:flex; align-items:flex-start; gap:10px; padding:8px 0; cursor:pointer; font-size:13px;">
+          <input type="radio" name="onb-startday" value="today" id="onb-start-today" style="margin-top:2px;">
+          <span><span style="font-weight:600;">I dag</span><br><span style="color:var(--muted); font-size:12px;">Uge 1 bliver forkortet — du springer dage over der allerede er gået</span></span>
+        </label>
+      </div>
       <div style="display:flex;gap:8px;margin-top:14px;">
         <button class="save-btn" style="flex:1;background:transparent;color:var(--muted);" onclick="backToStep2()">← Tilbage</button>
         <button class="save-btn" style="flex:2;" onclick="completeOnboarding()">Start program 🚀</button>
@@ -658,6 +669,36 @@ function todayISO(){
   const d = new Date();
   d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
   return d.toISOString().split('T')[0];
+}
+
+// Returnerer ISO-datoen for næste mandag (eller i dag hvis det allerede er mandag).
+function getNextMondayISO(){
+  const d = new Date();
+  const dow = d.getDay(); // 0=Søn, 1=Man, ..., 6=Lør
+  let daysToAdd;
+  if(dow === 1) daysToAdd = 0;       // allerede mandag
+  else if(dow === 0) daysToAdd = 1;  // søndag → mandag i morgen
+  else daysToAdd = 8 - dow;          // tirs=2 → 6 dage, osv.
+  d.setDate(d.getDate() + daysToAdd);
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().split('T')[0];
+}
+
+// Antal dage indtil programmet officielt starter. 0 = i dag eller tidligere.
+function daysUntilStart(){
+  const stored = localStorage.getItem('program_start_date');
+  if(!stored) return 0;
+  const programStart = new Date(stored + 'T00:00:00');
+  const today = new Date(); today.setHours(0,0,0,0);
+  return Math.max(0, Math.ceil((programStart - today) / (1000*60*60*24)));
+}
+
+// Formatér en ISO-dato pænt på dansk: "mandag den 4. maj"
+function formatDanishDate(iso){
+  const d = new Date(iso + 'T00:00:00');
+  const days = ['søndag','mandag','tirsdag','onsdag','torsdag','fredag','lørdag'];
+  const months = ['januar','februar','marts','april','maj','juni','juli','august','september','oktober','november','december'];
+  return `${days[d.getDay()]} den ${d.getDate()}. ${months[d.getMonth()]}`;
 }
 let curDay=0,curWeek=1,curScreen='log',curRest=null;
 
@@ -1741,7 +1782,25 @@ async function renderDash() {
   const latestBody = bodyEntries.length ? bodyEntries[bodyEntries.length - 1] : null;
   const firstBody = bodyEntries.length ? bodyEntries[0] : null;
   const weightDiff = latestBody && firstBody && latestBody.week !== firstBody.week ? (+latestBody.weight - +firstBody.weight).toFixed(1) : null;
+  // Hvis programmet ikke er startet endnu, vis countdown
+  const daysLeft = daysUntilStart();
+  let countdownCard = '';
+  if(daysLeft > 0){
+    const startISO = localStorage.getItem('program_start_date');
+    const startLabel = startISO ? formatDanishDate(startISO) : '';
+    countdownCard = `
+      <div class="ex-card" style="background:var(--blue-bg); border-color:var(--blue-t); margin-bottom:14px;">
+        <div class="ex-head" style="padding:14px 16px; border-bottom:none;">
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+            <i data-lucide="calendar-clock" style="width:22px; height:22px; color:var(--blue-t);"></i>
+            <div style="font-size:16px; font-weight:700; color:var(--blue-t);">Programmet starter ${startLabel}</div>
+          </div>
+          <div style="font-size:14px; color:var(--blue-t); opacity:0.8;">${daysLeft === 1 ? '1 dag' : daysLeft + ' dage'} tilbage. Du kan kigge i Træning-fanen og se hvad der venter — eller justere vægte før du går i gang.</div>
+        </div>
+      </div>`;
+  }
   let h = `
+    ${countdownCard}
     <div class="day-intro">
         <span class="badge" style="background:var(--blue-bg);color:var(--blue-t);">Cyklus ${cyc} · Uge ${wic}</span>
         <div class="day-name">Dit Overblik</div>
@@ -2411,6 +2470,22 @@ function previewProgram(){
   `).join('');
   document.querySelector('#onb-review-list .input-card-body').innerHTML = rows;
 
+  // Udfyld "Mandag den X" med næste mandags faktiske dato
+  const nextMon = getNextMondayISO();
+  const label = document.getElementById('onb-monday-label');
+  if(label){
+    const d = new Date(nextMon + 'T00:00:00');
+    const months = ['januar','februar','marts','april','maj','juni','juli','august','september','oktober','november','december'];
+    // Hvis næste mandag er i dag, sig "i dag"
+    const today = new Date(); today.setHours(0,0,0,0);
+    const monDate = new Date(nextMon + 'T00:00:00'); monDate.setHours(0,0,0,0);
+    if(monDate.getTime() === today.getTime()){
+      label.textContent = '(i dag)';
+    } else {
+      label.textContent = `den ${d.getDate()}. ${months[d.getMonth()]}`;
+    }
+  }
+
   document.getElementById('onboarding-step-2').style.display = 'none';
   document.getElementById('onboarding-step-3').style.display = 'block';
 }
@@ -2444,7 +2519,11 @@ async function completeOnboarding(){
 
   localStorage.setItem('user_profile', JSON.stringify(profile));
 
-  const startDate = todayISO();
+  // Vælg startdato baseret på brugerens valg i step 3
+  const startChoice = document.querySelector('input[name="onb-startday"]:checked');
+  const startDate = (startChoice && startChoice.value === 'today')
+    ? todayISO()
+    : getNextMondayISO();
   localStorage.setItem('program_start_date', startDate);
 
   // Generér program — med brugerens overrides hvis de har justeret
