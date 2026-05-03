@@ -725,18 +725,33 @@ function getRestDaysForProgram(days){
     .map(w => ({ id: 'rest_' + w.short, short: w.short, jsDay: w.jsDay }));
 }
 
-// Beregn kalenderdatoen for en træningsdag i en given uge (relativt til programStart).
-// fx week=2, dayShort='Man' → datoen for uge 2's mandag.
-function dateForDayInWeek(globalWeek, dayShort){
+// Returnerer datoen for mandagen i uge 1 = første mandag på/efter programStart.
+// Dette gør at uger altid løber Man-Søn (dansk konvention) og datoer er kontinuerlige.
+function getWeek1MondayISO(){
   const stored = localStorage.getItem('program_start_date');
   if(!stored) return null;
   const start = new Date(stored + 'T00:00:00');
-  const targetWd = shortToWeekday(dayShort);
   const startWd = start.getDay();
-  // Dage til første forekomst af targetWd på eller efter programStart
-  const daysOffset = (targetWd - startWd + 7) % 7;
-  const d = new Date(start);
-  d.setDate(d.getDate() + daysOffset + (globalWeek - 1) * 7);
+  // Dage til første mandag (0 hvis allerede mandag)
+  const daysToMon = startWd === 1 ? 0 : (8 - startWd) % 7;
+  const week1Mon = new Date(start);
+  week1Mon.setDate(week1Mon.getDate() + daysToMon);
+  week1Mon.setMinutes(week1Mon.getMinutes() - week1Mon.getTimezoneOffset());
+  return week1Mon.toISOString().split('T')[0];
+}
+
+// Beregn kalenderdatoen for en træningsdag i en given uge.
+// Anchor på MANDAGEN i uge 1 (= første mandag på/efter programStart).
+// Garanterer at uge N's datoer altid løber kontinuerligt Man-Søn.
+function dateForDayInWeek(globalWeek, dayShort){
+  const week1MonISO = getWeek1MondayISO();
+  if(!week1MonISO) return null;
+  const week1Mon = new Date(week1MonISO + 'T00:00:00');
+  const targetWd = shortToWeekday(dayShort);
+  // Dage fra mandag i uge: Man=0, Tir=1, Ons=2, Tor=3, Fre=4, Lør=5, Søn=6
+  const daysFromMon = targetWd === 0 ? 6 : targetWd - 1;
+  const d = new Date(week1Mon);
+  d.setDate(d.getDate() + (globalWeek - 1) * 7 + daysFromMon);
   return d;
 }
 let curDay=0,curWeek=1,curScreen='log',curRest=null;
@@ -762,15 +777,18 @@ function cycleOf(globalWeek){return Math.floor((globalWeek-1)/8)+1;}
 function weekInCycle(globalWeek){return ((globalWeek-1)%8)+1;}
 function globalWeekOf(cycle,wic){return (cycle-1)*8+wic;}
 function getActualCurrentWeek(){
-  const stored = localStorage.getItem('program_start_date');
-  const programStart = stored ? new Date(stored + 'T00:00:00') : new Date('2026-04-20T00:00:00');
-
-  const today = new Date();
-  today.setHours(0,0,0,0);
-  programStart.setHours(0,0,0,0);
-
-  const daysSinceStart = Math.floor((today - programStart) / (1000*60*60*24));
-  return Math.max(Math.floor(daysSinceStart / 7), 0) + 1;
+  // Anchor på første mandag på/efter programStart, så uger løber Man-Søn.
+  const week1MonISO = getWeek1MondayISO();
+  let week1Mon;
+  if(week1MonISO){
+    week1Mon = new Date(week1MonISO + 'T00:00:00');
+  } else {
+    week1Mon = new Date('2026-04-20T00:00:00'); // fallback (var en mandag)
+  }
+  const today = new Date(); today.setHours(0,0,0,0);
+  week1Mon.setHours(0,0,0,0);
+  const daysSince = Math.floor((today - week1Mon) / (1000*60*60*24));
+  return Math.max(Math.floor(daysSince / 7), 0) + 1;
 }
 async function autoSelectWeek(){
   curWeek=getActualCurrentWeek();
@@ -1009,9 +1027,13 @@ function renderTabs(){
   const tabsContainer = document.getElementById('tabs');
   tabsContainer.innerHTML = '';
 
+  const todayDateStr = new Date().toDateString();
+
   WEEKDAY_ORDER.forEach(w => {
-    const isToday = isCurrentWeek && todayJs === w.jsDay;
     const date = dateForDayInWeek(curWeek, w.short);
+    // isToday matcher nu KUN hvis tabbets faktiske dato er i dag — ikke bare hvis ugedagen matcher.
+    // Det undgår at fx "Søn 10/5" highlightes som "i dag" på Søn 3/5.
+    const isToday = !!(date && date.toDateString() === todayDateStr);
     const dateLbl = date
       ? `<span style="font-size:9px;opacity:0.55;margin-left:4px;font-weight:400;">${date.getDate()}/${date.getMonth()+1}</span>`
       : '';
