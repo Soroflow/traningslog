@@ -310,13 +310,9 @@ canvas{display:block;}
               <option value="5">5 dage (PPL + Split)</option>
             </select>
           </div>
-          <div>
-            <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 5px;">Program varighed</label>
-            <select id="onb-duration" class="note" style="margin-top:0;">
-              <option value="4">4 uger</option>
-              <option value="6">6 uger</option>
-              <option value="8">8 uger</option>
-            </select>
+          <div style="background:var(--blue-bg); padding:12px 14px; border-radius:10px; border:1px solid var(--blue-t); font-size:12px; color:var(--blue-t); line-height:1.5;">
+            <div style="font-weight:700; margin-bottom:4px;">8-ugers træningscyklus</div>
+            Programmet kører i 8-ugers cykler med periodisering: uge 1-2 startvægte, uge 3-4 +2.5 kg, uge 5-6 peak (+5 kg), uge 7 deload, uge 8 PR-uge. Efter hver cyklus genberegner appen dine startvægte ud fra dine resultater.
           </div>
           <div>
             <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 5px;">Træningserfaring</label>
@@ -1598,6 +1594,22 @@ function wireExperienceDropdown(){
   });
 }
 
+function wireFreqDropdown(){
+  const sel = document.getElementById('setFreq');
+  if(!sel) return;
+  const profile = JSON.parse(localStorage.getItem('user_profile') || '{}');
+  sel.value = String(profile.freq || 5);
+  sel.addEventListener('change', () => {
+    const p = JSON.parse(localStorage.getItem('user_profile') || '{}');
+    p.freq = +sel.value;
+    localStorage.setItem('user_profile', JSON.stringify(p));
+    if(typeof sbPatch === 'function' && session && session.user){
+      sbPatch('user_programs', { freq: +sel.value }, 'user_id=eq.' + session.user.id)
+        .catch(e => console.error('Freq-sync fejlede:', e));
+    }
+  });
+}
+
 async function renderSettings(){
   const s = getSettings();
   // Cardio Calculation (Karvonen formel for max fedttab @ 60-70%)
@@ -1647,6 +1659,15 @@ async function renderSettings(){
             </select>
             <div style="font-size:11px;color:var(--hint);margin-top:4px;">Påvirker hvilke startvægte algoritmen foreslår ved næste regenerering.</div>
         </div>
+        <div style="margin-bottom:12px;">
+            <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 5px;">Træningsdage pr. uge</label>
+            <select id="setFreq" class="note" style="margin-top:0;">
+                <option value="3">3 dage (Fullbody Man/Ons/Fre)</option>
+                <option value="4">4 dage (Upper/Lower split)</option>
+                <option value="5">5 dage (PPL + accessories)</option>
+            </select>
+            <div style="font-size:11px;color:var(--hint);margin-top:4px;">Ændrer programstrukturen ved næste regenerering. Historisk træningsdata bevares.</div>
+        </div>
         <button class="copy-btn" style="margin-bottom:8px;" onclick="recalcMacrosFromProfile()">Genberegn makro</button>
         <button class="copy-btn" style="margin-bottom:0; background:var(--amber-bg); color:var(--amber-t);" onclick="regenerateProgramFromProfile()">Regenerér træningsprogram</button>
     </div>
@@ -1677,6 +1698,7 @@ async function renderSettings(){
   document.getElementById('settings-screen').innerHTML = h;
   if(window.lucide) lucide.createIcons();
   wireExperienceDropdown();
+  wireFreqDropdown();
   setTimeout(async () => {
       let csv='Uge,Dato,Kategori,Øvelse,Sæt,Kg,Reps\n';let has=false;
       const maxW = getActualCurrentWeek() + 4;
@@ -1750,7 +1772,18 @@ async function regenerateProgramFromProfile(){
         alert('Ingen profil-data fundet. Kør onboarding igen.');
         return;
     }
-    if(!confirm('Generér nyt træningsprogram baseret på din profil? Dine logførte data bevares.'))return;
+    // Tjek om freq er ændret i forhold til det aktuelle program
+    const currentProgram = JSON.parse(localStorage.getItem('user_custom_program') || '[]');
+    const currentFreq = Array.isArray(currentProgram) ? currentProgram.length : 0;
+    const newFreq = profile.freq;
+    let msg = 'Generér nyt træningsprogram baseret på din profil? Dine logførte data bevares.';
+    if(currentFreq && newFreq && currentFreq !== newFreq){
+        msg = `Du skifter fra ${currentFreq}-dages program til ${newFreq}-dages program. ` +
+              `Programstrukturen ændres fra denne uge fremad. ` +
+              `Historisk træningsdata bevares i databasen — træningsdage der ikke længere findes (fx d4/d5 ved skift fra 5 til 3 dage) er stadig der hvis du senere skifter tilbage. ` +
+              `Vil du fortsætte?`;
+    }
+    if(!confirm(msg)) return;
     // Brug seneste vægt
     const cur = getSettings();
     if(cur.bw) profile.weight = cur.bw;
@@ -1764,7 +1797,7 @@ async function regenerateProgramFromProfile(){
             gender: profile.gender, dob: profile.dob,
             weight: profile.weight, height: profile.height,
             fat: profile.fat || null,
-            goal: profile.goal, freq: profile.freq, duration: profile.duration,
+            goal: profile.goal, freq: profile.freq,
             experience: profile.experience || 'beginner',
             exercises: program
         }, 'user_id');
@@ -2689,7 +2722,6 @@ function readOnboardingProfile(){
   const fat = +document.getElementById('onb-fat').value;
   const goal = document.getElementById('onb-goal').value;
   const freq = +document.getElementById('onb-freq').value;
-  const duration = +document.getElementById('onb-duration').value;
   const experience = document.getElementById('onb-experience').value;
 
   if(!dob || !weight || !height){
@@ -2697,7 +2729,7 @@ function readOnboardingProfile(){
     return null;
   }
   const age = calculateAge(dob);
-  return { gender, dob, weight, height, fat, goal, freq, duration, age, experience };
+  return { gender, dob, weight, height, fat, goal, freq, age, experience };
 }
 
 // Kaldes når brugeren klikker "Beregn mit program" — beregner og viser step 3
@@ -2790,8 +2822,9 @@ async function completeOnboarding(){
   localStorage.setItem('user_custom_program', JSON.stringify(program));
 
   // KRITISK: hvis denne fejler er brugeren stuck i onboarding-loop ved næste login.
-  // Vi venter på resultatet og advarer brugeren hvis det fejler.
+  // Vi venter på resultatet og advarer brugeren hvis det fejler — med fuld fejl-detalje.
   let upsertOk = false;
+  let upsertError = null;
   try {
     const result = await sbUpsert('user_programs', {
       user_id: session.user.id,
@@ -2803,22 +2836,29 @@ async function completeOnboarding(){
       fat: profile.fat || null,
       goal: profile.goal,
       freq: profile.freq,
-      duration: profile.duration,
       experience: profile.experience,
       exercises: program,
       settings: settings
     }, 'user_id');
     upsertOk = !result.error;
     if(result.error){
+      upsertError = result.error;
       console.error('Profil-synk fejlede:', result.error);
     }
   } catch(e){
+    upsertError = e;
     console.error('Profil-synk exception:', e);
   }
   if(!upsertOk){
-    alert('Vi kunne ikke gemme din profil i skyen. Tjek din internetforbindelse og prøv igen — eller skriv til support hvis problemet fortsætter.\n\nDine indstillinger er gemt lokalt indtil videre.');
-    // Vi fortsætter til dashboard så brugeren kan bruge appen lokalt,
-    // men næste init() vil prøve at re-synke profilen.
+    // Vis FULDE fejl-detaljer så vi kan debugge
+    let errMsg = 'Vi kunne ikke gemme din profil i skyen.\n\n';
+    if(upsertError){
+      if(typeof upsertError === 'string') errMsg += 'Fejl: ' + upsertError;
+      else if(upsertError.message) errMsg += 'Fejl: ' + upsertError.message;
+      else errMsg += 'Fejl-detaljer:\n' + JSON.stringify(upsertError, null, 2);
+    }
+    errMsg += '\n\nKopier denne besked og send til support hvis problemet fortsætter.';
+    alert(errMsg);
   }
 
   // Auto-opret første kropsmåling for uge 1 fra onboarding-data.
@@ -2859,7 +2899,6 @@ async function runExistingUserFlow(userP){
     fat: userP.fat,
     goal: userP.goal,
     freq: userP.freq,
-    duration: userP.duration,
     experience: userP.experience || 'beginner',
     age: calculateAge(userP.dob || '1995-01-01')
   }));
@@ -2922,7 +2961,6 @@ async function init() {
           fat: lp.fat || null,
           goal: lp.goal || 'tone',
           freq: lp.freq || 5,
-          duration: lp.duration || 8,
           experience: lp.experience || 'beginner',
           exercises: program,
           settings: settings
