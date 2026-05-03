@@ -1660,6 +1660,19 @@ async function renderSettings(){
     <div class="export-box" id="exportBox">Genererer CSV...</div>
     <button class="copy-btn" onclick="copyCSV()">Kopiér til udklipsholder</button>
     <button class="clear-btn" onclick="clearAll()">Slet lokal cache</button>
+
+    <div style="margin-top:32px; padding:16px; background:var(--red-bg); border:1px solid var(--red-t); border-radius:13px;">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+        <i data-lucide="alert-triangle" style="width:20px; height:20px; color:var(--red-t);"></i>
+        <div style="font-weight:700; font-size:14px; color:var(--red-t);">Farezone</div>
+      </div>
+      <div style="font-size:12px; color:var(--red-t); opacity:0.9; margin-bottom:14px; line-height:1.5;">
+        Permanente handlinger der ikke kan fortrydes. Tænk dig om før du klikker.
+      </div>
+      <button class="clear-btn" style="background:var(--red-t); color:var(--red-bg); border-color:var(--red-t);" onclick="confirmDeleteAccount()">
+        Slet min konto permanent
+      </button>
+    </div>
   `;
   document.getElementById('settings-screen').innerHTML = h;
   if(window.lucide) lucide.createIcons();
@@ -1796,6 +1809,122 @@ function clearAll(){
   Object.keys(WC).forEach(k=>delete WC[k]);
   Object.keys(BC).forEach(k=>delete BC[k]);
   init();
+}
+
+// ── SLET KONTO ────────────────────────────────────────────────
+function confirmDeleteAccount(){
+  vibe(60);
+  if(document.getElementById('deleteConfirmModal')) return;
+  const modal = document.createElement('div');
+  modal.id = 'deleteConfirmModal';
+  modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px;';
+  modal.innerHTML = `
+    <div style="background:var(--card); border-radius:16px; max-width:400px; width:100%; padding:24px; box-shadow:0 20px 60px rgba(0,0,0,0.3); max-height:90vh; overflow-y:auto;">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+        <i data-lucide="alert-triangle" style="width:24px; height:24px; color:var(--red-t);"></i>
+        <h3 style="margin:0; font-size:18px; color:var(--red-t);">Slet din konto permanent?</h3>
+      </div>
+      <div style="background:var(--red-bg); border:1px solid var(--red-t); border-radius:10px; padding:12px 14px; margin-bottom:16px;">
+        <div style="font-size:13px; color:var(--red-t); font-weight:600; margin-bottom:6px;">Dette kan IKKE fortrydes.</div>
+        <div style="font-size:12px; color:var(--red-t); line-height:1.6;">
+          Når du sletter din konto, fjernes følgende permanent:<br>
+          • Al din træningslog<br>
+          • Alle kropsmålinger og historik<br>
+          • Alle makro-/kostlogs<br>
+          • Dit program og indstillinger<br>
+          • Din konto og email<br><br>
+          Du skal oprette en ny konto fra bunden hvis du vil bruge appen igen.
+        </div>
+      </div>
+      <label style="display:block; font-size:13px; font-weight:500; margin-bottom:6px; color:var(--text);">Skriv <span style="font-weight:700; color:var(--red-t);">SLET</span> for at bekræfte:</label>
+      <input type="text" id="deleteConfirmInput" autocomplete="off" autocapitalize="characters" placeholder="SLET" style="width:100%; padding:12px; border-radius:10px; border:1.5px solid var(--border); background:var(--input-bg); color:var(--text); font-family:inherit; font-size:15px; font-weight:600; text-align:center; letter-spacing:2px; margin-bottom:16px;">
+      <div id="deleteErrorMsg" style="display:none; font-size:12px; color:var(--red-t); margin-bottom:10px; text-align:center;"></div>
+      <div style="display:flex; gap:10px;">
+        <button onclick="cancelDelete()" style="flex:1; padding:12px; border-radius:10px; border:1.5px solid var(--border); background:transparent; color:var(--text); font-size:14px; font-weight:600; font-family:inherit; cursor:pointer;">
+          Annullér
+        </button>
+        <button id="executeDeleteBtn" onclick="executeDelete()" disabled style="flex:1; padding:12px; border-radius:10px; border:none; background:var(--red-t); color:var(--red-bg); font-size:14px; font-weight:700; font-family:inherit; cursor:pointer; opacity:0.4;">
+          Slet permanent
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  if(window.lucide) lucide.createIcons();
+
+  const input = document.getElementById('deleteConfirmInput');
+  const btn = document.getElementById('executeDeleteBtn');
+  input.focus();
+  input.addEventListener('input', () => {
+    const ok = input.value === 'SLET';
+    btn.disabled = !ok;
+    btn.style.opacity = ok ? '1' : '0.4';
+    btn.style.cursor = ok ? 'pointer' : 'not-allowed';
+  });
+  // ESC lukker
+  modal.addEventListener('keydown', (e) => { if(e.key === 'Escape') cancelDelete(); });
+}
+
+function cancelDelete(){
+  const modal = document.getElementById('deleteConfirmModal');
+  if(modal) modal.remove();
+}
+
+async function executeDelete(){
+  vibe(80);
+  const btn = document.getElementById('executeDeleteBtn');
+  const errEl = document.getElementById('deleteErrorMsg');
+  if(!btn) return;
+  btn.disabled = true;
+  btn.style.opacity = '0.6';
+  btn.textContent = 'Sletter...';
+  if(errEl) errEl.style.display = 'none';
+
+  try {
+    const stored = JSON.parse(localStorage.getItem('sb-session') || 'null');
+    if(!stored || !stored.access_token){
+      throw new Error('Ingen aktiv session — log ud og prøv igen.');
+    }
+
+    const r = await fetch(`${SB_URL}/functions/v1/delete-account`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${stored.access_token}`,
+        'Content-Type': 'application/json',
+        'apikey': SB_KEY
+      }
+    });
+
+    if(r.ok){
+      // Konto slettet — ryd alt lokalt og redirect til login
+      localStorage.clear();
+      sessionStorage.clear();
+      // Unregister service worker så cached state ikke følger med
+      if('serviceWorker' in navigator){
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map(r => r.unregister()));
+      }
+      alert('Din konto og alle dine data er slettet. Tak fordi du brugte Træningslog.');
+      location.reload();
+    } else {
+      let errMsg = 'Ukendt fejl';
+      try {
+        const errData = await r.json();
+        errMsg = errData.error || errData.message || `HTTP ${r.status}`;
+      } catch(e){}
+      throw new Error(errMsg);
+    }
+  } catch(e){
+    console.error('Delete account fejl:', e);
+    if(errEl){
+      errEl.textContent = 'Fejl: ' + e.message;
+      errEl.style.display = 'block';
+    } else {
+      alert('Fejl ved sletning: ' + e.message);
+    }
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    btn.textContent = 'Slet permanent';
+  }
 }
 async function showScreen(name){
   vibe(20);

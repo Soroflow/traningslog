@@ -4,7 +4,7 @@
 //   - Supabase API-kald:                       network-first med fallback til cache
 //   - Andet:                                   network-first
 
-const CACHE_VERSION = 'v12';
+const CACHE_VERSION = 'v13';
 const APP_CACHE = `traeningslog-app-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `traeningslog-runtime-${CACHE_VERSION}`;
 
