@@ -529,6 +529,44 @@ async function sbUpsert(table, body, conflictCols){
   return { data: true, error: null };
 }
 
+// PATCH (partial UPDATE) — opdaterer kun de kolonner der er i body.
+// Bruges til settings-sync så vi ikke overskriver andre kolonner i user_programs.
+async function sbPatch(table, body, qs){
+  setSync('');
+  const url = `${SB_URL}/rest/v1/${table}${qs ? '?' + qs : ''}`;
+  const opts = {
+    method: 'PATCH',
+    headers: { ...getHeaders(), 'Prefer': 'return=minimal' },
+    body: JSON.stringify(body)
+  };
+  try {
+    const r = await fetch(url, opts);
+    if(r.status === 401 || r.status === 403){
+      const refreshed = await tryRefreshSession();
+      if(refreshed){
+        const retry = await fetch(url, { ...opts, headers: { ...getHeaders(), 'Prefer': 'return=minimal' } });
+        if(retry.ok){ setSync('ok'); return { data: true, error: null }; }
+      }
+      localStorage.removeItem('sb-session');
+      session = null;
+      renderLoginScreen();
+      return { data: null, error: 'Session udløbet' };
+    }
+    if(!r.ok){
+      let err = {};
+      try { err = await r.json(); } catch(e){}
+      console.error('Supabase PATCH fejl:', err);
+      setSync('err');
+      return { data: null, error: err };
+    }
+    setSync('ok');
+    return { data: true, error: null };
+  } catch(e){
+    setSync('err');
+    return { data: null, error: e };
+  }
+}
+
 // ── SESSION REFRESH ────────────────────────────────────────────
 // Forsøg at opfriske access_token vha. refresh_token.
 // Returnerer true hvis det lykkedes, false hvis brugeren skal logge ind igen.
@@ -610,6 +648,11 @@ function getSettings() {
 }
 function saveSettings(s) {
     localStorage.setItem('user_settings', JSON.stringify(s));
+    // Best-effort cloud-sync — settings overlever logout/login og syncer på tværs af enheder.
+    if(session && session.user){
+        sbPatch('user_programs', { settings: s }, `user_id=eq.${session.user.id}`)
+            .catch(e => console.error('Settings cloud-sync fejlede:', e));
+    }
 }
 function cycleOf(globalWeek){return Math.floor((globalWeek-1)/8)+1;}
 function weekInCycle(globalWeek){return ((globalWeek-1)%8)+1;}
@@ -2289,7 +2332,8 @@ async function completeOnboarding(){
       gender, dob, weight, height,
       fat: fat || null,
       goal, freq, duration,
-      exercises: program
+      exercises: program,
+      settings: settings  // sync settings ved første onboarding
     }, 'user_id');
   } catch(e){ console.error('Profil-synk fejlede:', e); }
 
@@ -2332,6 +2376,11 @@ async function init() {
     // Gem programmet lokalt hvis det findes i databasen
     if (userP.exercises) {
         localStorage.setItem('user_custom_program', JSON.stringify(userP.exercises));
+    }
+
+    // Gem settings fra Supabase i localStorage (overlever logout/login)
+    if (userP.settings) {
+        localStorage.setItem('user_settings', JSON.stringify(userP.settings));
     }
 
     // Gem profilen lokalt så "regenerér"-knappen virker uden DB-tur
