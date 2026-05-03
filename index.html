@@ -318,9 +318,33 @@ canvas{display:block;}
               <option value="8">8 uger</option>
             </select>
           </div>
+          <div>
+            <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 5px;">Træningserfaring</label>
+            <select id="onb-experience" class="note" style="margin-top:0;">
+              <option value="never">Aldrig trænet før</option>
+              <option value="beginner" selected>Under 6 måneder</option>
+              <option value="intermediate">6 måneder – 2 år</option>
+              <option value="advanced">2+ år konsekvent</option>
+            </select>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px;">Påvirker startvægte. Du kan altid justere på næste skærm.</div>
+          </div>
         </div>
       </div>
-      <button class="save-btn" style="margin-top:20px;" onclick="completeOnboarding()">Generer mit program 🚀</button>
+      <button class="save-btn" style="margin-top:20px;" onclick="previewProgram()">Beregn mit program →</button>
+    </div>
+    <div id="onboarding-step-3" style="display:none;">
+      <h2 style="margin-bottom:10px; font-size: 24px;">Tilpas startvægte 🏋️</h2>
+      <p style="color:var(--muted); margin-bottom:20px; font-size: 14px;">Vi har estimeret dine vægte ud fra din profil. Juster hvis du har data der siger noget andet — fx et tidligere program eller en gym-test.</p>
+      <div id="onb-review-list" class="input-card">
+        <div class="input-card-body" style="display:flex;flex-direction:column;gap:10px;">
+          <!-- Udfyldes dynamisk af previewProgram() -->
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:14px;">
+        <button class="save-btn" style="flex:1;background:transparent;color:var(--muted);" onclick="backToStep2()">← Tilbage</button>
+        <button class="save-btn" style="flex:2;" onclick="completeOnboarding()">Start program 🚀</button>
+      </div>
+      <div style="font-size:11px;color:var(--hint);text-align:center;margin-top:10px;">Du kan altid ændre vægte direkte i hver træning bagefter</div>
     </div>
   </div>
 </div>
@@ -1437,6 +1461,22 @@ if (!error && rows && rows.length) {
     }, 50);
 }
 // ── INDSTILLINGER & EKSPORT ──────────────────────────────────
+function wireExperienceDropdown(){
+  const sel = document.getElementById('setExperience');
+  if(!sel) return;
+  const profile = JSON.parse(localStorage.getItem('user_profile') || '{}');
+  sel.value = profile.experience || 'beginner';
+  sel.addEventListener('change', () => {
+    const p = JSON.parse(localStorage.getItem('user_profile') || '{}');
+    p.experience = sel.value;
+    localStorage.setItem('user_profile', JSON.stringify(p));
+    if(typeof sbPatch === 'function' && session && session.user){
+      sbPatch('user_programs', { experience: sel.value }, 'user_id=eq.' + session.user.id)
+        .catch(e => console.error('Experience-sync fejlede:', e));
+    }
+  });
+}
+
 async function renderSettings(){
   const s = getSettings();
   // Cardio Calculation (Karvonen formel for max fedttab @ 60-70%)
@@ -1474,8 +1514,18 @@ async function renderSettings(){
     </div>
     <button class="save-btn" onclick="saveSettingsForm()">Gem Indstillinger</button>
     <div style="margin-top:18px; padding:14px; background:var(--card); border:1px solid var(--border); border-radius:13px;">
-        <div style="font-weight:600; font-size:14px; margin-bottom:6px;">Beregn fra profil</div>
-        <div style="font-size:12px; color:var(--muted); margin-bottom:12px;">Genberegn kalorier og makro ud fra dit profil-data (vægt/alder/mål/frekvens).</div>
+        <div style="font-weight:600; font-size:14px; margin-bottom:6px;">Profil & Program</div>
+        <div style="font-size:12px; color:var(--muted); margin-bottom:12px;">Justér din erfaring og genberegn dit program eller makro.</div>
+        <div style="margin-bottom:12px;">
+            <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 5px;">Træningserfaring</label>
+            <select id="setExperience" class="note" style="margin-top:0;">
+                <option value="never">Aldrig trænet før</option>
+                <option value="beginner">Under 6 måneder</option>
+                <option value="intermediate">6 måneder – 2 år</option>
+                <option value="advanced">2+ år konsekvent</option>
+            </select>
+            <div style="font-size:11px;color:var(--hint);margin-top:4px;">Påvirker hvilke startvægte algoritmen foreslår ved næste regenerering.</div>
+        </div>
         <button class="copy-btn" style="margin-bottom:8px;" onclick="recalcMacrosFromProfile()">Genberegn makro</button>
         <button class="copy-btn" style="margin-bottom:0; background:var(--amber-bg); color:var(--amber-t);" onclick="regenerateProgramFromProfile()">Regenerér træningsprogram</button>
     </div>
@@ -1492,6 +1542,7 @@ async function renderSettings(){
   `;
   document.getElementById('settings-screen').innerHTML = h;
   if(window.lucide) lucide.createIcons();
+  wireExperienceDropdown();
   setTimeout(async () => {
       let csv='Uge,Dato,Kategori,Øvelse,Sæt,Kg,Reps\n';let has=false;
       const maxW = getActualCurrentWeek() + 4;
@@ -1580,6 +1631,7 @@ async function regenerateProgramFromProfile(){
             weight: profile.weight, height: profile.height,
             fat: profile.fat || null,
             goal: profile.goal, freq: profile.freq, duration: profile.duration,
+            experience: profile.experience || 'beginner',
             exercises: program
         }, 'user_id');
     } catch(e){ console.error('Profil-synk fejlede:', e); }
@@ -2065,7 +2117,7 @@ function nextOnboardingStep(step){
 // Beregn realistiske startvægte ud fra kropsvægt, køn og erfaringsniveau.
 // "Niveau" estimeres ud fra alder + BMI/fedt% — konservativt, så ingen kommer galt af sted.
 function estimateStartingWeights(profile){
-  const { gender, weight, height, fat, age } = profile;
+  const { gender, weight, height, fat, age, experience } = profile;
   const bmi = weight / Math.pow(height/100, 2);
   const isFemale = gender === 'kvinde';
   // Konservativ "novice"-multiplikator pr. løft som % af kropsvægt
@@ -2086,6 +2138,14 @@ function estimateStartingWeights(profile){
   if(isFemale){
     Object.keys(mult).forEach(k => mult[k] *= 0.72);
   }
+  // Erfaringsniveau-multiplikator (overlejret de øvrige)
+  const expMult = ({
+    'never':        0.85,  // ekstra konservativt — leddene vænner sig først
+    'beginner':     1.00,  // standard novice-niveau
+    'intermediate': 1.25,  // 6 mnd – 2 år
+    'advanced':     1.50   // 2+ år konsekvent
+  })[experience] || 1.00;
+  Object.keys(mult).forEach(k => mult[k] *= expMult);
   const r25 = n => Math.max(0, Math.round(n*2)/2);
   return {
     bench: r25(weight * mult.bench),
@@ -2214,13 +2274,24 @@ function buildProgramTemplate(freq, w){
   ];
 }
 
-function generateTrainingProgram(profile) {
+function generateTrainingProgram(profile, weightOverrides) {
   const { goal, freq, weight, height, fat, age, gender } = profile;
   const startW = estimateStartingWeights(profile);
+  // Bruger-overrides erstatter algoritmens estimat for de specificerede løft.
+  // Anvendes EFTER goal-justering så brugerens tal er det reelle "starting point".
+  function applyOverrides(weights){
+    if(!weightOverrides) return weights;
+    Object.keys(weightOverrides).forEach(k => {
+      const v = weightOverrides[k];
+      if(v != null && v !== '' && !isNaN(+v)) weights[k] = +v;
+    });
+    return weights;
+  }
 
   // FEDTTAB: lavere vægt-mål, højere reps, ekstra kondition
   if(goal === 'lose'){
     Object.keys(startW).forEach(k => { startW[k] = Math.round(startW[k]*0.90 *2)/2; });
+    applyOverrides(startW);
     const program = buildProgramTemplate(freq, startW);
     program.forEach(day => {
       day.bs = 'background:var(--green-bg);color:var(--green-t);';
@@ -2236,6 +2307,7 @@ function generateTrainingProgram(profile) {
 
   // MUSKELOPBYGNING: behold vægte, fokus på 6-8 reps
   if(goal === 'gain'){
+    applyOverrides(startW);
     const program = buildProgramTemplate(freq, startW);
     program.forEach(day => {
       day.bt = 'Muskel';
@@ -2248,6 +2320,7 @@ function generateTrainingProgram(profile) {
   }
 
   // VEDLIGEHOLD / TONET
+  applyOverrides(startW);
   const program = buildProgramTemplate(freq, startW);
   program.forEach(day => {
     day.bt = 'Tonet';
@@ -2286,7 +2359,11 @@ function computeMacros(profile){
   return { kcal, prot, kh, fat, bmr: Math.round(bmr), tdee };
 }
 
-async function completeOnboarding(){
+// Holder onboarding-profilen så previewProgram → completeOnboarding kan dele state
+let _onboardingProfile = null;
+
+// Læs alle felter fra step 1 + 2 og valider. Returnerer profil-objekt eller null.
+function readOnboardingProfile(){
   const gender = document.getElementById('onb-gender').value;
   const dob = document.getElementById('onb-dob').value;
   const weight = +document.getElementById('onb-weight').value;
@@ -2295,46 +2372,100 @@ async function completeOnboarding(){
   const goal = document.getElementById('onb-goal').value;
   const freq = +document.getElementById('onb-freq').value;
   const duration = +document.getElementById('onb-duration').value;
+  const experience = document.getElementById('onb-experience').value;
 
   if(!dob || !weight || !height){
     alert('Udfyld fødselsdato, vægt og højde.');
-    return;
+    return null;
+  }
+  const age = calculateAge(dob);
+  return { gender, dob, weight, height, fat, goal, freq, duration, age, experience };
+}
+
+// Kaldes når brugeren klikker "Beregn mit program" — beregner og viser step 3
+function previewProgram(){
+  const profile = readOnboardingProfile();
+  if(!profile) return;
+  _onboardingProfile = profile;
+  const startW = estimateStartingWeights(profile);
+  // Vis goal-justeret tal i review-skærmen så brugeren ser "rigtige" startvægte
+  if(profile.goal === 'lose'){
+    Object.keys(startW).forEach(k => { startW[k] = Math.round(startW[k]*0.90 *2)/2; });
   }
 
-  const age = calculateAge(dob);
-  const profile = { gender, dob, weight, height, fat, goal, freq, duration, age };
+  const liftLabels = {
+    bench: 'Bænkpres',
+    squat: 'Squat',
+    deadlift: 'Dødløft',
+    ohp: 'Skulderpres',
+    row: 'Barbell row',
+    frontSquat: 'Front squat',
+    rdl: 'Romansk dødløft'
+  };
+  const rows = Object.keys(liftLabels).map(k => `
+    <div class="input-row">
+      <span class="input-label">${liftLabels[k]}</span>
+      <input type="number" inputmode="decimal" id="onb-w-${k}" value="${startW[k]}" step="0.5">
+      <span class="input-unit">kg</span>
+    </div>
+  `).join('');
+  document.querySelector('#onb-review-list .input-card-body').innerHTML = rows;
+
+  document.getElementById('onboarding-step-2').style.display = 'none';
+  document.getElementById('onboarding-step-3').style.display = 'block';
+}
+
+function backToStep2(){
+  document.getElementById('onboarding-step-3').style.display = 'none';
+  document.getElementById('onboarding-step-2').style.display = 'block';
+}
+
+async function completeOnboarding(){
+  const profile = _onboardingProfile || readOnboardingProfile();
+  if(!profile) return;
+
+  // Læs evt. justerede vægte fra step 3
+  const overrides = {};
+  ['bench','squat','deadlift','ohp','row','frontSquat','rdl'].forEach(k => {
+    const el = document.getElementById('onb-w-' + k);
+    if(el && el.value !== '') overrides[k] = +el.value;
+  });
 
   // Beregn makro fra profilen
   const macros = computeMacros(profile);
   const settings = getSettings();
-  settings.bw = weight;
-  settings.age = age;
+  settings.bw = profile.weight;
+  settings.age = profile.age;
   settings.kcal = macros.kcal;
   settings.prot = macros.prot;
   settings.kh = macros.kh;
   settings.fat = macros.fat;
   saveSettings(settings);
 
-  // Gem profil i localStorage så vi kan re-beregne senere uden DB-tur
   localStorage.setItem('user_profile', JSON.stringify(profile));
 
   const startDate = todayISO();
   localStorage.setItem('program_start_date', startDate);
 
-  // Generér program
-  const program = generateTrainingProgram(profile);
+  // Generér program — med brugerens overrides hvis de har justeret
+  const program = generateTrainingProgram(profile, overrides);
   localStorage.setItem('user_custom_program', JSON.stringify(program));
 
-  // Synk til Supabase (idempotent UPSERT)
   try {
     await sbUpsert('user_programs', {
       user_id: session.user.id,
       start_date: startDate,
-      gender, dob, weight, height,
-      fat: fat || null,
-      goal, freq, duration,
+      gender: profile.gender,
+      dob: profile.dob,
+      weight: profile.weight,
+      height: profile.height,
+      fat: profile.fat || null,
+      goal: profile.goal,
+      freq: profile.freq,
+      duration: profile.duration,
+      experience: profile.experience,
       exercises: program,
-      settings: settings  // sync settings ved første onboarding
+      settings: settings
     }, 'user_id');
   } catch(e){ console.error('Profil-synk fejlede:', e); }
 
@@ -2394,6 +2525,7 @@ async function init() {
         goal: userP.goal,
         freq: userP.freq,
         duration: userP.duration,
+        experience: userP.experience || 'beginner',
         age: calculateAge(userP.dob || '1995-01-01')
     }));
 
