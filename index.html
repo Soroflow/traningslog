@@ -700,12 +700,50 @@ function formatDanishDate(iso){
   const months = ['januar','februar','marts','april','maj','juni','juli','august','september','oktober','november','december'];
   return `${days[d.getDay()]} den ${d.getDate()}. ${months[d.getMonth()]}`;
 }
+
+// Ugedags-orden: Man=første, Søn=sidste (dansk konvention)
+const WEEKDAY_ORDER = [
+  { short: 'Man', jsDay: 1 },
+  { short: 'Tir', jsDay: 2 },
+  { short: 'Ons', jsDay: 3 },
+  { short: 'Tor', jsDay: 4 },
+  { short: 'Fre', jsDay: 5 },
+  { short: 'Lør', jsDay: 6 },
+  { short: 'Søn', jsDay: 0 }
+];
+
+function shortToWeekday(short){
+  const map = { 'Søn':0,'Man':1,'Tir':2,'Ons':3,'Tor':4,'Fre':5,'Lør':6 };
+  return short in map ? map[short] : 1;
+}
+
+// Find hviledage = ugedage der IKKE er træningsdage i programmet
+function getRestDaysForProgram(days){
+  const trainingShorts = new Set(days.map(d => d.short));
+  return WEEKDAY_ORDER
+    .filter(w => !trainingShorts.has(w.short))
+    .map(w => ({ id: 'rest_' + w.short, short: w.short, jsDay: w.jsDay }));
+}
+
+// Beregn kalenderdatoen for en træningsdag i en given uge (relativt til programStart).
+// fx week=2, dayShort='Man' → datoen for uge 2's mandag.
+function dateForDayInWeek(globalWeek, dayShort){
+  const stored = localStorage.getItem('program_start_date');
+  if(!stored) return null;
+  const start = new Date(stored + 'T00:00:00');
+  const targetWd = shortToWeekday(dayShort);
+  const startWd = start.getDay();
+  // Dage til første forekomst af targetWd på eller efter programStart
+  const daysOffset = (targetWd - startWd + 7) % 7;
+  const d = new Date(start);
+  d.setDate(d.getDate() + daysOffset + (globalWeek - 1) * 7);
+  return d;
+}
 let curDay=0,curWeek=1,curScreen='log',curRest=null;
 
-const REST_DAYS=[
-  {id:'r1',short:'Ons',afterIdx:1,jsDay:3},
-  {id:'r2',short:'Søn',afterIdx:4,jsDay:0},
-];
+// REST_DAYS er nu dynamisk pr. program — se getRestDaysForProgram(days)
+// Behold konstanten som en minimal placeholder for bagudkompatibilitet
+const REST_DAYS = [];
 const DEFAULT_SETTINGS = { kcal: 2520, prot: 180, kh: 260, fat: 84, bw: 93, age: 30, rhr: 60 };
 function getSettings() {
     const stored = localStorage.getItem('user_settings');
@@ -957,37 +995,52 @@ function dH(val,inv){if(val==null)return'';const n=+val,s=n>0?'+':'',g=inv?n<0:n
 // ── TABS ───────────────────────────────────────────────────────
 function renderTabs(){
   const isCurrentWeek = (curWeek === getActualCurrentWeek());
-  const jsDay=new Date().getDay();
-  const dayMap={1:0,2:1,4:2,5:3,6:4};
-  const todayDayIdx = isCurrentWeek ? dayMap[jsDay] : -1;
-  const todayRestId = isCurrentWeek ? (jsDay===3?'r1':jsDay===0?'r2':null) : null;
-  const days=getDays(cycleOf(curWeek));
-  document.getElementById('tabs').innerHTML=days.map((day,i)=>{
-    const data=wcGet(curWeek,day.id);
-    const fin=!!(data&&data.finished);
-    const isActive=i===curDay && !curRest;
-    const isToday=todayDayIdx===i;
-    let cls='tab'+(isActive?' active':'')+(fin?' fin':'')+(isToday&&!isActive?' today':'');
-    return`<button class="${cls}" onclick="switchDay(${i})">${day.short}</button>`;
-  }).join('');
+  const todayJs = new Date().getDay();
+  const days = getDays(cycleOf(curWeek));
+  const restDays = getRestDaysForProgram(days);
 
-  const tabs=document.getElementById('tabs');
-  const tabBtns=tabs.querySelectorAll('.tab');
-  REST_DAYS.forEach(rd=>{
-    const ref=tabBtns[rd.afterIdx];
-    if(ref){
-      const isActive=curRest===rd.id;
-      const isToday=todayRestId===rd.id;
-      const btn=document.createElement('button');
-      btn.className='tab-rest'+(isActive?' active':'')+(isToday&&!isActive?' tab-rest-today':'');
-      btn.textContent=rd.short;
-      btn.onclick=()=>{ vibe(20); switchRest(rd.id); }
-      ref.insertAdjacentElement('afterend',btn);
+  // Byg lookup: weekday → træningsdag eller hviledag
+  const trainingByShort = {};
+  days.forEach((d, i) => { trainingByShort[d.short] = { day: d, idx: i }; });
+  const restByShort = {};
+  restDays.forEach(r => { restByShort[r.short] = r; });
+
+  // Render tabs i fast ugedags-rækkefølge: Man → Søn
+  const tabsContainer = document.getElementById('tabs');
+  tabsContainer.innerHTML = '';
+
+  WEEKDAY_ORDER.forEach(w => {
+    const isToday = isCurrentWeek && todayJs === w.jsDay;
+    const date = dateForDayInWeek(curWeek, w.short);
+    const dateLbl = date
+      ? `<span style="font-size:9px;opacity:0.55;margin-left:4px;font-weight:400;">${date.getDate()}/${date.getMonth()+1}</span>`
+      : '';
+
+    if(trainingByShort[w.short]){
+      const { day, idx } = trainingByShort[w.short];
+      const data = wcGet(curWeek, day.id);
+      const fin = !!(data && data.finished);
+      const isActive = idx === curDay && !curRest;
+      const cls = 'tab' + (isActive ? ' active' : '') + (fin ? ' fin' : '') + (isToday && !isActive ? ' today' : '');
+      const btn = document.createElement('button');
+      btn.className = cls;
+      btn.innerHTML = `${w.short}${dateLbl}`;
+      btn.onclick = () => switchDay(idx);
+      tabsContainer.appendChild(btn);
+    } else if(restByShort[w.short]){
+      const r = restByShort[w.short];
+      const isActive = curRest === r.id;
+      const cls = 'tab-rest' + (isActive ? ' active' : '') + (isToday && !isActive ? ' tab-rest-today' : '');
+      const btn = document.createElement('button');
+      btn.className = cls;
+      btn.innerHTML = `${w.short}${dateLbl}`;
+      btn.onclick = () => { vibe(20); switchRest(r.id); };
+      tabsContainer.appendChild(btn);
     }
   });
 
-  const cyc=cycleOf(curWeek),wic=weekInCycle(curWeek);
-  document.getElementById('weekLabel').textContent=cyc>1?`C${cyc}·U${wic}`:`Uge ${wic}`;
+  const cyc = cycleOf(curWeek), wic = weekInCycle(curWeek);
+  document.getElementById('weekLabel').textContent = cyc>1 ? `C${cyc}·U${wic}` : `Uge ${wic}`;
 }
 // ── HVILE TIMER ────────────────────────────────────────────────
 let restTimerInt;
@@ -1022,7 +1075,16 @@ function updateTimer() {
 }
 // ── LOG ────────────────────────────────────────────────────────
 function renderRestDay(){
-  const rd=REST_DAYS.find(r=>r.id===curRest);
+  // Find rest day metadata enten via dynamiske rest days for nuværende program,
+  // eller via legacy 'r1'/'r2' identifikatorer for bagudkompatibilitet.
+  const days = getDays(cycleOf(curWeek));
+  const restDays = getRestDaysForProgram(days);
+  let rd = restDays.find(r => r.id === curRest);
+  if(!rd){
+    // Bagudkompatibilitet: 'r1' = Ons, 'r2' = Søn
+    if(curRest === 'r1') rd = { id: 'r1', short: 'Ons', jsDay: 3 };
+    else if(curRest === 'r2') rd = { id: 'r2', short: 'Søn', jsDay: 0 };
+  }
   if(!rd){curRest=null;return renderLog();}
   const s = getSettings();
   const maxHr = 220 - (s.age || 30);
@@ -1798,6 +1860,40 @@ async function renderDash() {
           <div style="font-size:14px; color:var(--blue-t); opacity:0.8;">${daysLeft === 1 ? '1 dag' : daysLeft + ' dage'} tilbage. Du kan kigge i Træning-fanen og se hvad der venter — eller justere vægte før du går i gang.</div>
         </div>
       </div>`;
+  } else {
+    // Programmet er aktivt. Tjek om i dag er hviledag i dette program.
+    const todayJs = new Date().getDay();
+    const trainingDays = getDays(cycleOf(curWeek));
+    const isTodayTraining = trainingDays.some(d => shortToWeekday(d.short) === todayJs);
+    if(!isTodayTraining){
+      // Find næste træningsdag
+      const trainingWds = trainingDays.map(d => shortToWeekday(d.short)).sort((a,b)=>a-b);
+      // Hvis ingen træning resten af denne uge, find første træningsdag i næste uge
+      let nextWd = trainingWds.find(wd => wd > todayJs);
+      let daysAhead;
+      if(nextWd != null){
+        daysAhead = nextWd - todayJs;
+      } else {
+        nextWd = trainingWds[0];
+        daysAhead = (7 - todayJs) + nextWd;
+      }
+      const nextDate = new Date();
+      nextDate.setDate(nextDate.getDate() + daysAhead);
+      const dayNames = ['søndag','mandag','tirsdag','onsdag','torsdag','fredag','lørdag'];
+      const months = ['januar','februar','marts','april','maj','juni','juli','august','september','oktober','november','december'];
+      const nextLabel = `${dayNames[nextDate.getDay()]} den ${nextDate.getDate()}. ${months[nextDate.getMonth()]}`;
+      const todayLabel = dayNames[todayJs];
+      countdownCard = `
+        <div class="ex-card" style="background:var(--teal-bg); border-color:var(--teal-t); margin-bottom:14px;">
+          <div class="ex-head" style="padding:14px 16px; border-bottom:none;">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+              <i data-lucide="moon" style="width:22px; height:22px; color:var(--teal-t);"></i>
+              <div style="font-size:16px; font-weight:700; color:var(--teal-t);">I dag (${todayLabel}) er hviledag</div>
+            </div>
+            <div style="font-size:14px; color:var(--teal-t); opacity:0.85;">Næste træning er ${nextLabel}${daysAhead === 1 ? ' (i morgen)' : ' (om ' + daysAhead + ' dage)'}. Brug dagen til restitution, søvn og mad.</div>
+          </div>
+        </div>`;
+    }
   }
   let h = `
     ${countdownCard}
@@ -1861,11 +1957,27 @@ async function renderDash() {
   if(window.lucide) lucide.createIcons();
 }
 function autoSelectDay(){
-  const jsDay=new Date().getDay();
-  if(jsDay===3){curRest='r1';return;}
-  if(jsDay===0){curRest='r2';return;}
-  curDay={1:0,2:1,4:2,5:3,6:4}[jsDay];
-  curRest=null;
+  const jsDay = new Date().getDay();
+  const days = getDays(cycleOf(curWeek));
+  const restDays = getRestDaysForProgram(days);
+
+  // Er i dag en hviledag i dette program?
+  const todayRest = restDays.find(r => r.jsDay === jsDay);
+  if(todayRest){
+    curRest = todayRest.id;
+    return;
+  }
+
+  // I dag er en træningsdag — find hvilken
+  const idx = days.findIndex(d => shortToWeekday(d.short) === jsDay);
+  if(idx >= 0){
+    curDay = idx;
+    curRest = null;
+  } else {
+    // Fallback (skulle aldrig ske)
+    curDay = 0;
+    curRest = null;
+  }
 }
 // ── KOST / MAKRO ──────────────────────────────────────────────
 let curKostDate=todayISO();
