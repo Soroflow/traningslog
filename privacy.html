@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#f7f6f3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#181715" media="(prefers-color-scheme: dark)">
+<title>Privatlivspolitik — Træningslog</title>
+<style>
+:root{
+  --bg:#f7f6f3; --card:#fff; --border:#e8e6e1; --text:#1a1917;
+  --muted:#888580; --blue-t:#0c447c; --blue-bg:#e6f1fb;
+  --green-t:#3b6d11; --green-bg:#eaf3de;
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#181715; --card:#222018; --border:#2e2c28; --text:#f0ede8;
+    --muted:#7a7670; --blue-t:#85b7eb; --blue-bg:#08182e;
+    --green-t:#97c459; --green-bg:#162808;
+  }
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{
+  font-family:-apple-system,'SF Pro Text',sans-serif;
+  background:var(--bg); color:var(--text); line-height:1.6;
+  padding:24px 16px 80px;
+}
+.container{max-width:720px; margin:0 auto;}
+.back{
+  display:inline-flex; align-items:center; gap:6px;
+  color:var(--blue-t); text-decoration:none; font-size:14px;
+  margin-bottom:24px; font-weight:500;
+}
+.back:hover{text-decoration:underline;}
+h1{font-size:28px; margin-bottom:6px;}
+.updated{font-size:13px; color:var(--muted); margin-bottom:32px;}
+h2{
+  font-size:18px; margin-top:32px; margin-bottom:10px;
+  padding-bottom:6px; border-bottom:1px solid var(--border);
+}
+p, li{font-size:15px; margin-bottom:10px; color:var(--text);}
+ul, ol{padding-left:22px; margin-bottom:14px;}
+li{margin-bottom:6px;}
+.intro{
+  background:var(--blue-bg); padding:14px 16px; border-radius:12px;
+  border:1px solid var(--blue-t); margin-bottom:24px;
+  font-size:14px; color:var(--blue-t);
+}
+.tldr{
+  background:var(--green-bg); padding:14px 16px; border-radius:12px;
+  border:1px solid var(--green-t); margin-bottom:24px;
+  font-size:14px; color:var(--green-t);
+}
+.tldr strong{font-weight:700;}
+a{color:var(--blue-t);}
+code{
+  background:var(--card); padding:1px 6px; border-radius:4px;
+  font-size:13px; border:1px solid var(--border);
+}
+.contact{
+  background:var(--card); padding:16px; border-radius:12px;
+  border:1px solid var(--border); margin-top:24px;
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<a href="./index.html" class="back">← Tilbage til appen</a>
+
+<h1>Privatlivspolitik</h1>
+<div class="updated">Senest opdateret: 3. maj 2026</div>
+
+<div class="tldr">
+  <strong>Kort fortalt:</strong> Vi gemmer dine træningsdata, kropsmålinger og kost-logs så appen virker for dig. Vi sælger eller deler ikke dine data med nogen. Du kan se, eksportere og slette al din data fra appen.
+</div>
+
+<h2>1. Hvem er dataansvarlig?</h2>
+<p>Træningslog er en privat træningsapp drevet af en enkelt udvikler. Hvis du har spørgsmål, vil rette en fejl, eller vil have dine data udleveret eller slettet, kan du kontakte:</p>
+<div class="contact">
+  <strong>Email:</strong> soltani.soroush@gmail.com<br>
+  <span style="font-size:13px; color:var(--muted);">Du får svar inden for 30 dage som GDPR foreskriver.</span>
+</div>
+
+<h2>2. Hvilke data indsamler vi?</h2>
+<p>Når du opretter en konto og bruger appen, gemmer vi:</p>
+<ul>
+  <li><strong>Konto-data:</strong> din email-adresse og en krypteret version af din adgangskode (vi kan ikke se din rigtige adgangskode)</li>
+  <li><strong>Profil-data:</strong> køn, fødselsdato, vægt, højde, fedtprocent, dit træningsmål (fedttab/opbygning/vedligehold), antal træningsdage pr. uge, og dit selvrapporterede erfaringsniveau</li>
+  <li><strong>Træningsdata:</strong> de øvelser du laver, antal sæt, reps, og kg du løfter, samt datoer</li>
+  <li><strong>Kropsmålinger:</strong> ugentlige målinger af vægt, fedtprocent, muskelmasse og livvidde (kun det du selv indtaster)</li>
+  <li><strong>Kost-logs:</strong> dagligt indtag af kalorier, protein, kulhydrat, fedt, og forbrændte kalorier</li>
+  <li><strong>Indstillinger:</strong> dine personlige makro-mål og hvilepuls</li>
+</ul>
+<p>Vi indsamler <em>ikke</em> dit navn, telefonnummer, adresse, IP-adresse, browser-fingerprint, eller andre identifikatorer ud over din email.</p>
+
+<h2>3. Hvorfor indsamler vi det?</h2>
+<p>Udelukkende for at appen kan levere dens kernefunktion: at hjælpe dig med at logge og følge din træning over tid. Konkret:</p>
+<ul>
+  <li>Profil-data bruges til at generere et personligt træningsprogram og beregne dine kalorier/makro-mål</li>
+  <li>Træningsdata bruges til at vise din fremgang, beregne 1RM-estimater, og foreslå nye startvægte ved hver cyklus</li>
+  <li>Kropsmålinger og kost-logs vises som grafer og statistik så du kan se din fremgang</li>
+</ul>
+<p>Vi bruger <strong>ikke</strong> dine data til markedsføring, analytics, profilering, eller videregivelse til tredjepart.</p>
+
+<h2>4. Hvor opbevares dine data?</h2>
+<ul>
+  <li><strong>I din browser</strong> (localStorage på din egen enhed) — for at appen virker hurtigt og offline</li>
+  <li><strong>Hos Supabase</strong> (vores database-leverandør) — krypterede forbindelser via HTTPS, hostet på AWS i EU. Læs Supabases privatlivspolitik på <a href="https://supabase.com/privacy" target="_blank">supabase.com/privacy</a></li>
+</ul>
+<p>Hver bruger kan kun tilgå sin egen data via Row-Level Security i databasen. Det er teknisk umuligt for én bruger at se en anden brugers data.</p>
+
+<h2>5. Cookies og lokal lagring</h2>
+<p>Vi bruger <strong>ikke</strong> marketing-, analyse-, eller tracking-cookies.</p>
+<p>Vi bruger <strong>localStorage</strong> (en lokal lagring i din browser, som ikke deles med andre websteder) til at gemme:</p>
+<ul>
+  <li>Din login-session, så du ikke skal logge ind hver gang</li>
+  <li>En kopi af dine træningsdata, så appen virker hurtigt og offline</li>
+  <li>Dine app-indstillinger</li>
+</ul>
+<p>Disse er strengt nødvendige for at appen kan fungere. De kan ikke fravælges, men du kan slette dem når som helst ved at logge ud eller slette din konto.</p>
+
+<h2>6. Hvor længe opbevarer vi dine data?</h2>
+<p>Indtil du selv sletter din konto. Du kan slette al din data permanent når som helst:</p>
+<ol>
+  <li>Log ind i appen</li>
+  <li>Gå til <strong>Indstillinger</strong></li>
+  <li>Scroll ned til <strong>Farezone</strong></li>
+  <li>Klik <strong>Slet min konto permanent</strong></li>
+  <li>Skriv <code>SLET</code> for at bekræfte</li>
+</ol>
+<p>Når du sletter din konto, fjernes alle dine data fra både din enhed og vores database. Sletningen er endelig og kan ikke fortrydes.</p>
+
+<h2>7. Dine rettigheder under GDPR</h2>
+<p>Du har ret til:</p>
+<ul>
+  <li><strong>Indsigt:</strong> Se al din data. Brug "Kopiér til udklipsholder" i Indstillinger — du får alle dine data som CSV.</li>
+  <li><strong>Rettelse:</strong> Ret dine data direkte i appen.</li>
+  <li><strong>Sletning:</strong> Slet din konto via Indstillinger → Farezone (se afsnit 6).</li>
+  <li><strong>Dataportabilitet:</strong> Eksportér dine data som CSV, du kan importere til andre systemer.</li>
+  <li><strong>Indsigelse:</strong> Hvis du mener vi behandler dine data ulovligt, kan du klage til <a href="https://www.datatilsynet.dk" target="_blank">Datatilsynet</a>.</li>
+</ul>
+
+<h2>8. Sikkerhed</h2>
+<p>Vi tager sikkerhed alvorligt:</p>
+<ul>
+  <li>Alle adgangskoder krypteres af Supabase Auth (vi gemmer aldrig kodeord i klartekst)</li>
+  <li>Al kommunikation mellem din browser og databasen sker via HTTPS</li>
+  <li>Database-adgang er beskyttet med Row-Level Security, så hver bruger kun ser egne data</li>
+  <li>Sletning af din konto er irreversibelt og fjerner alle data via cascade-sletning</li>
+</ul>
+
+<h2>9. Tredjeparter</h2>
+<p>Appen indlæser ikoner og biblioteker fra følgende CDN'er ved første åbning. Disse leverandører ser din IP-adresse og browser-info, men ikke dine træningsdata:</p>
+<ul>
+  <li><a href="https://unpkg.com" target="_blank">unpkg.com</a> — JavaScript-biblioteker (Lucide ikoner)</li>
+  <li><a href="https://cdnjs.cloudflare.com" target="_blank">cdnjs.cloudflare.com</a> — Chart.js (grafer)</li>
+  <li><a href="https://cdn-icons-png.flaticon.com" target="_blank">cdn-icons-png.flaticon.com</a> — App-ikon</li>
+</ul>
+<p>Hvis du installerer appen som PWA på din telefon, caches disse filer lokalt og indlæses ikke igen.</p>
+
+<h2>10. Børn under 16 år</h2>
+<p>Appen er ikke beregnet til personer under 16 år. Hvis du er under 16, skal du have samtykke fra en forælder eller værge før du opretter en konto.</p>
+
+<h2>11. Ændringer til denne politik</h2>
+<p>Hvis vi opdaterer politikken, ændres datoen øverst på denne side. Større ændringer vil blive annonceret i appen. Det er dit ansvar at læse den seneste version, men vi vil aldrig udvide hvad vi indsamler uden eksplicit samtykke.</p>
+
+<h2>12. Kontakt</h2>
+<p>Spørgsmål om denne politik eller dine data? Skriv til <a href="mailto:soltani.soroush@gmail.com">soltani.soroush@gmail.com</a>. Vi svarer typisk inden for et par dage og altid inden for 30 dage som GDPR kræver.</p>
+
+</div>
+</body>
+</html>

@@ -4,7 +4,7 @@
 //   - Supabase API-kald:                       network-first med fallback til cache
 //   - Andet:                                   network-first
 
-const CACHE_VERSION = 'v18';
+const CACHE_VERSION = 'v19';
 const APP_CACHE = `traeningslog-app-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `traeningslog-runtime-${CACHE_VERSION}`;
 
@@ -12,6 +12,7 @@ const APP_SHELL = [
   './',
   './index.html',
   './manifest.json',
+  './privacy.html',
   'https://unpkg.com/lucide@latest',
   'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js',
   'https://cdn-icons-png.flaticon.com/512/10545/10545153.png'
