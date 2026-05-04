@@ -1603,6 +1603,27 @@ function wireExperienceDropdown(){
   });
 }
 
+// Live-opdatering af Zone 2 puls når brugeren ændrer Alder/Hvilepuls
+function wireZoneLiveUpdate(){
+  const ageEl = document.getElementById('setAge');
+  const rhrEl = document.getElementById('setRhr');
+  const display = document.getElementById('zoneDisplay');
+  if(!ageEl || !rhrEl || !display) return;
+
+  const recalc = () => {
+    const age = +ageEl.value || 30;
+    const rhr = +rhrEl.value || 60;
+    const maxHr = 220 - age;
+    const reserve = maxHr - rhr;
+    const targetMin = Math.round((reserve * 0.60) + rhr);
+    const targetMax = Math.round((reserve * 0.70) + rhr);
+    display.textContent = `~${targetMin} - ${targetMax} bpm`;
+  };
+
+  ageEl.addEventListener('input', recalc);
+  rhrEl.addEventListener('input', recalc);
+}
+
 function wireFreqDropdown(){
   const sel = document.getElementById('setFreq');
   if(!sel) return;
@@ -1651,7 +1672,7 @@ async function renderSettings(){
         <div>
             <div style="font-weight:700;">Zone 2 Puls (Fedttab)</div>
             <div style="font-size:11px; opacity:0.8;">60-70% intensitet (Karvonen)</div>
-            <div style="font-size:20px; margin-top:2px;">~${targetMin} - ${targetMax} bpm</div>
+            <div style="font-size:20px; margin-top:2px;" id="zoneDisplay">~${targetMin} - ${targetMax} bpm</div>
         </div>
     </div>
     <div style="margin-bottom:14px; padding:14px; background:var(--card); border:1px solid var(--border); border-radius:13px;">
@@ -1714,6 +1735,7 @@ async function renderSettings(){
   if(window.lucide) lucide.createIcons();
   wireExperienceDropdown();
   wireFreqDropdown();
+  wireZoneLiveUpdate();
   setTimeout(async () => {
       let csv='Uge,Dato,Kategori,Øvelse,Sæt,Kg,Reps\n';let has=false;
       const maxW = getActualCurrentWeek() + 4;
