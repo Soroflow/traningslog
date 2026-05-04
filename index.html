@@ -888,8 +888,80 @@ async function preloadWeek(w){
 async function saveWorkout(w,id,data){
   wcSet(w,id,data);
   setSync('');
-  try{await sb('workout_log','POST',{user_id: session.user.id, week:w, day_id:id, data});setSync('ok');}
-  catch(e){setSync('err');}
+  try {
+    const result = await sbUpsert('workout_log', {
+      user_id: session.user.id,
+      week: w,
+      day_id: id,
+      data: data
+    }, 'user_id,week,day_id');
+    if(result.error){
+      console.error('saveWorkout fejlede:', result.error);
+      setSync('err');
+    } else {
+      setSync('ok');
+    }
+  } catch(e){
+    console.error('saveWorkout exception:', e);
+    setSync('err');
+  }
+}
+
+// Manuel re-synk af alle træningsdata fra localStorage til Supabase.
+// Bruges hvis sb-data er ude af synk pga. tidligere race-conditions.
+async function forceSyncAllWorkouts(){
+  vibe(40);
+  if(!confirm('Genupload alle træningsdata fra denne enhed til Supabase? Cloud-data overskrives med dine lokale værdier.')) return;
+
+  const btn = document.activeElement;
+  const oldText = btn ? btn.textContent : '';
+  if(btn){ btn.textContent = 'Synker...'; btn.disabled = true; }
+
+  let synced = 0, failed = 0;
+  const errors = [];
+
+  // Saml alle wlog_*-nøgler fra localStorage
+  const keys = [];
+  for(let i = 0; i < localStorage.length; i++){
+    const k = localStorage.key(i);
+    if(k && k.startsWith('wlog_')) keys.push(k);
+  }
+
+  for(const k of keys){
+    // Format: wlog_w<week>_<dayId>
+    const m = k.match(/^wlog_w(\d+)_(.+)$/);
+    if(!m) continue;
+    const week = +m[1];
+    const dayId = m[2];
+    let data;
+    try { data = JSON.parse(localStorage.getItem(k)); } catch(e){ continue; }
+    if(!data) continue;
+
+    try {
+      const result = await sbUpsert('workout_log', {
+        user_id: session.user.id,
+        week, day_id: dayId, data
+      }, 'user_id,week,day_id');
+      if(result.error){
+        failed++;
+        errors.push(`${dayId} u${week}: ${result.error.message || 'fejl'}`);
+      } else {
+        synced++;
+      }
+    } catch(e){
+      failed++;
+      errors.push(`${dayId} u${week}: ${e.message}`);
+    }
+  }
+
+  if(btn){ btn.textContent = oldText; btn.disabled = false; }
+
+  if(failed === 0){
+    alert(`Genupload færdig: ${synced} træningsdage synket til Supabase.`);
+  } else {
+    alert(`Genupload færdig med fejl:\n${synced} succes, ${failed} fejlede.\n\nFejl:\n${errors.slice(0,5).join('\n')}`);
+  }
+  setSync('ok');
 }
 // ── BODY CACHE ─────────────────────────────────────────────────
 const BC={};
@@ -1716,6 +1788,10 @@ async function renderSettings(){
     <div class="section-sub" style="margin-bottom:14px;">Data gemmes i Supabase cloud. Kopiér til Claude for analyse.</div>
     <div class="export-box" id="exportBox">Genererer CSV...</div>
     <button class="copy-btn" onclick="copyCSV()">Kopiér til udklipsholder</button>
+    <button class="clear-btn" style="background:var(--blue-bg); color:var(--blue-t); margin-bottom:8px;" onclick="forceSyncAllWorkouts()">Genupload træningsdata til Supabase</button>
+    <div style="font-size:11px; color:var(--muted); margin-bottom:14px; line-height:1.5;">
+      Bruger localStorage på din enhed til at re-synke alle træningsdata til skyen. Kør denne hvis du har data der ser anderledes ud på forskellige enheder.
+    </div>
     <button class="clear-btn" onclick="clearAll()">Slet lokal cache</button>
 
     <div style="margin-top:32px; padding:16px; background:var(--red-bg); border:1px solid var(--red-t); border-radius:13px;">
