@@ -25,6 +25,8 @@ button, input, select, .chk {
 }
 .nav-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
 .nav-title{font-size:17px;font-weight:700;}
+.nav-brand{display:flex;align-items:center;gap:10px;min-width:0;}
+.brand-icon{width:28px;height:28px;flex-shrink:0;}
 .nav-right{display:flex;gap:6px;align-items:center;}
 .icon-btn{background:var(--input-bg);border:none;border-radius:8px;padding:6px 10px;font-size:13px;color:var(--muted);cursor:pointer;font-family:inherit;}
 .icon-btn.wk{font-weight:700;color:var(--text);cursor:default;}
@@ -243,7 +245,23 @@ canvas{display:block;}
 </div>
 <div class="nav">
   <div class="nav-top">
-    <span class="nav-title" id="navTitle">Træningslog</span>
+    <div class="nav-brand">
+      <svg class="brand-icon" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="brandBg" x1="0" y1="0" x2="64" y2="64">
+            <stop stop-color="#1a1917"/>
+            <stop offset="1" stop-color="#085041"/>
+          </linearGradient>
+          <linearGradient id="brandAccent" x1="20" y1="44" x2="44" y2="24">
+            <stop stop-color="#3b6d11"/>
+            <stop offset="1" stop-color="#97c459"/>
+          </linearGradient>
+        </defs>
+        <rect x="4" y="4" width="56" height="56" rx="18" fill="url(#brandBg)"/>
+        <path d="M20 34L29 44L44 24" stroke="url(#brandAccent)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      </svg>
+      <span class="nav-title" id="navTitle">Træningslog</span>
+    </div>
     <div class="nav-right" id="navRight">
       <div class="sync-dot" id="syncDot"></div>
       <button class="icon-btn" onclick="changeWeek(-1); vibe();">◀</button>
@@ -1204,8 +1222,16 @@ function renderRestDay(){
       </p>
     </div>
   </div>
-  <div class="ex-card"><div class="ex-head"><div class="ex-name">Forslag: Zone 2 / Fedttabs Cardio</div>
-    <div class="ex-target">Hold pulsen mellem <b>${targetMin} - ${targetMax} bpm</b></div></div>
+  <div class="hiit-box" style="background:var(--blue-bg);color:var(--blue-t); display:flex; align-items:center; gap:12px;">
+    <i data-lucide="activity" style="width:24px;height:24px;flex-shrink:0;"></i>
+    <div>
+      <div style="font-weight:700;">Zone 2 Puls (Fedttab)</div>
+      <div style="font-size:11px; opacity:0.8;">60-70% intensitet (Karvonen)</div>
+      <div style="font-size:20px; margin-top:2px;">~${targetMin} - ${targetMax} bpm</div>
+    </div>
+  </div>
+  <div class="ex-card"><div class="ex-head"><div class="ex-name">Forslag: Cardio-aktiviteter</div>
+    <div class="ex-target">Vælg en — hold pulsen i Zone 2-intervallet ovenfor</div></div>
     <div class="sets-body" style="padding:12px 14px;">
       <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;"><span>Gåtur</span><span style="color:var(--muted);">30-45 min</span></div>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;"><span>12-3-30 (let)</span><span style="color:var(--muted);">30 min</span></div>
@@ -1222,6 +1248,7 @@ function renderRestDay(){
     </div>
   </div>`;
   document.getElementById('log-screen').innerHTML=h;
+  if(window.lucide) lucide.createIcons();
   renderTabs();
 }
 function renderLog(){
