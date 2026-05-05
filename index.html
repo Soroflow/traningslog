@@ -1711,6 +1711,44 @@ function wireHeightInput(){
   wireProfileField('setHeight', 'height', '', { number: true, dbColumn: 'height' });
 }
 
+// Fødselsdato → kilden til sandhed for alder. Når brugeren ændrer dob, opdaterer
+// vi automatisk settings.age og UI'et — så alderen aldrig kan drifte med årene.
+function wireDobInput(){
+  const dobEl = document.getElementById('setDob');
+  const ageEl = document.getElementById('setAge');
+  if(!dobEl) return;
+
+  dobEl.addEventListener('change', () => {
+    const dob = dobEl.value;
+    const p = JSON.parse(localStorage.getItem('user_profile') || '{}');
+    p.dob = dob || null;
+    localStorage.setItem('user_profile', JSON.stringify(p));
+
+    if(typeof sbPatch === 'function' && session && session.user){
+      sbPatch('user_programs', { dob: dob || null }, 'user_id=eq.' + session.user.id)
+        .catch(e => console.error('Dob-sync fejlede:', e));
+    }
+
+    if(dob){
+      const computedAge = calculateAge(dob);
+      const cur = getSettings();
+      cur.age = computedAge;
+      saveSettings(cur);
+      if(ageEl){
+        ageEl.value = computedAge;
+        ageEl.readOnly = true;
+      }
+      // Trig zone 2 genberegning siden alder er ændret
+      if(typeof wireZoneLiveUpdate === 'function'){
+        const evt = new Event('input');
+        ageEl && ageEl.dispatchEvent(evt);
+      }
+    } else if(ageEl){
+      ageEl.readOnly = false;
+    }
+  });
+}
+
 // Live-opdatering af kcal-feltet når brugeren ændrer protein/kulhydrat/fedt.
 // Kcal er pr. definition summen af makroerne × deres energiværdi (4/4/9),
 // så feltet kan ikke redigeres direkte — det opdateres automatisk her.
@@ -1761,6 +1799,15 @@ function wireFreqDropdown(){
 async function renderSettings(){
   const s = getSettings();
   const profile = loadProfile() || {};
+  // Hvis fødselsdato er sat, er alderen afledt — synk altid s.age med beregningen
+  // så det viste tal ikke kan blive forældet (fx efter en fødselsdag).
+  if(profile.dob){
+    const computedAge = calculateAge(profile.dob);
+    if(s.age !== computedAge){
+      s.age = computedAge;
+      saveSettings(s);
+    }
+  }
   // Cardio Calculation (Karvonen formel for max fedttab @ 60-70%)
   const maxHr = 220 - (s.age || 30);
   const reserve = maxHr - (s.rhr || 60);
@@ -1784,7 +1831,9 @@ async function renderSettings(){
         <div class="input-card-body">
             <div class="input-row"><span class="input-label">Kropsvægt</span><input type="number" id="setBw" value="${s.bw}"><span class="input-unit">kg</span></div>
             <div class="input-row"><span class="input-label">Højde</span><input type="number" id="setHeight" value="${profile.height || ''}" placeholder="180"><span class="input-unit">cm</span></div>
-            <div class="input-row"><span class="input-label">Alder</span><input type="number" id="setAge" value="${s.age}"><span class="input-unit">år</span></div>
+            <div class="input-row"><span class="input-label">Fødselsdato</span><input type="date" id="setDob" value="${profile.dob || ''}"><span class="input-unit"></span></div>
+            <div class="input-row"><span class="input-label">Alder</span><input type="number" id="setAge" ${profile.dob ? 'readonly' : ''} value="${s.age}"><span class="input-unit">år</span></div>
+            ${profile.dob ? '<div class="input-hint">Beregnes automatisk fra fødselsdato</div>' : '<div class="input-hint">Tip: angiv fødselsdato — så opdateres alderen automatisk</div>'}
             <div class="input-row"><span class="input-label">Hvilepuls</span><input type="number" id="setRhr" value="${s.rhr}"><span class="input-unit">bpm</span></div>
         </div>
     </div>
@@ -1880,6 +1929,7 @@ async function renderSettings(){
   wireGenderDropdown();
   wireGoalDropdown();
   wireHeightInput();
+  wireDobInput();
   wireZoneLiveUpdate();
   wireKcalLiveUpdate();
   setTimeout(async () => {
