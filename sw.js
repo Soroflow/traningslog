@@ -4,7 +4,7 @@
 //   - Supabase API-kald:                       network-first med fallback til cache
 //   - Andet:                                   network-first
 
-const CACHE_VERSION = 'v21';
+const CACHE_VERSION = 'v22';
 const APP_CACHE = `traeningslog-app-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `traeningslog-runtime-${CACHE_VERSION}`;
 
@@ -13,9 +13,12 @@ const APP_SHELL = [
   './index.html',
   './manifest.json',
   './privacy.html',
+  './icon-192.png',
+  './icon-512.png',
+  './icon-maskable-512.png',
+  './apple-touch-icon.png',
   'https://unpkg.com/lucide@latest',
-  'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js',
-  'https://cdn-icons-png.flaticon.com/512/10545/10545153.png'
+  'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js'
 ];
 
 self.addEventListener('install', event => {
@@ -43,8 +46,7 @@ function isSupabaseRequest(url){
 function isAppShellRequest(url){
   if(url.origin === self.location.origin) return true;
   return url.hostname === 'unpkg.com'
-      || url.hostname === 'cdnjs.cloudflare.com'
-      || url.hostname === 'cdn-icons-png.flaticon.com';
+      || url.hostname === 'cdnjs.cloudflare.com';
 }
 
 self.addEventListener('fetch', event => {
