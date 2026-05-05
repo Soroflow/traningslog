@@ -2974,8 +2974,11 @@ function computeMacros(profile){
   if(goal === 'lose') kcal = tdee - 500;
   else if(goal === 'gain') kcal = tdee + 250;
 
-  // Protein: 1.8g/kg ved opbygning/vedligehold, 2.2g/kg ved fedttab (bevarer muskelmasse)
-  const protPerKg = goal === 'lose' ? 2.2 : 1.8;
+  // Protein: 1.8g/kg ved opbygning/vedligehold, 2.0g/kg ved fedttab.
+  // 2.0 ligger i den øvre ende af forskningens "tilstrækkeligt for muskelbeskyttelse"-interval
+  // (1.6-2.0 g/kg) og er praktisk opnåeligt, mens det levner kalorier til kulhydrat → bedre
+  // træningspræstation på 5-dages PPL split.
+  const protPerKg = goal === 'lose' ? 2.0 : 1.8;
   const prot = Math.round(weight * protPerKg);
   // Fedt: 0.8g/kg minimum (hormoner)
   const fat = Math.max(Math.round(weight * 0.8), Math.round(kcal * 0.20 / 9));
