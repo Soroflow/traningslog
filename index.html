@@ -1662,20 +1662,53 @@ if (!error && rows && rows.length) {
     }, 50);
 }
 // ── INDSTILLINGER & EKSPORT ──────────────────────────────────
-function wireExperienceDropdown(){
-  const sel = document.getElementById('setExperience');
-  if(!sel) return;
+// Generisk helper: bind en dropdown/input til et felt i user_profile.
+// Persisterer den viste default-værdi til profilen hvis feltet mangler — så vi ikke
+// får "dropdown viser X men profil har null"-bugs der får computeMacros til at producere vrøvl.
+function wireProfileField(elementId, profileKey, defaultValue, opts = {}){
+  const el = document.getElementById(elementId);
+  if(!el) return;
   const profile = JSON.parse(localStorage.getItem('user_profile') || '{}');
-  sel.value = profile.experience || 'beginner';
-  sel.addEventListener('change', () => {
+  const isNumber = opts.number === true;
+  const dbColumn = opts.dbColumn; // valgfrit: synk til Supabase
+
+  const current = profile[profileKey];
+  const hasValue = current !== undefined && current !== null && current !== '';
+  const displayValue = hasValue ? current : defaultValue;
+  el.value = isNumber && displayValue !== '' ? String(displayValue) : (displayValue || '');
+
+  // Persistér default til profil hvis det manglede — fixer den ondsindede "UI viser 5, profil har null"-bug
+  if(!hasValue && defaultValue !== '' && defaultValue !== undefined && defaultValue !== null){
     const p = JSON.parse(localStorage.getItem('user_profile') || '{}');
-    p.experience = sel.value;
+    p[profileKey] = isNumber ? +defaultValue : defaultValue;
     localStorage.setItem('user_profile', JSON.stringify(p));
-    if(typeof sbPatch === 'function' && session && session.user){
-      sbPatch('user_programs', { experience: sel.value }, 'user_id=eq.' + session.user.id)
-        .catch(e => console.error('Experience-sync fejlede:', e));
+  }
+
+  const eventName = el.tagName === 'SELECT' ? 'change' : 'input';
+  el.addEventListener(eventName, () => {
+    const p = JSON.parse(localStorage.getItem('user_profile') || '{}');
+    const v = isNumber ? (+el.value || null) : el.value;
+    p[profileKey] = v;
+    localStorage.setItem('user_profile', JSON.stringify(p));
+    if(dbColumn && typeof sbPatch === 'function' && session && session.user){
+      sbPatch('user_programs', { [dbColumn]: v }, 'user_id=eq.' + session.user.id)
+        .catch(e => console.error(dbColumn + '-sync fejlede:', e));
     }
   });
+}
+
+function wireExperienceDropdown(){
+  wireProfileField('setExperience', 'experience', 'beginner', { dbColumn: 'experience' });
+}
+function wireGenderDropdown(){
+  wireProfileField('setGender', 'gender', 'mand', { dbColumn: 'gender' });
+}
+function wireGoalDropdown(){
+  wireProfileField('setGoal', 'goal', 'maintain', { dbColumn: 'goal' });
+}
+function wireHeightInput(){
+  // Højde har ingen sikker default — brugeren skal selv angive den. Empty = ingen persist.
+  wireProfileField('setHeight', 'height', '', { number: true, dbColumn: 'height' });
 }
 
 // Live-opdatering af kcal-feltet når brugeren ændrer protein/kulhydrat/fedt.
@@ -1722,23 +1755,12 @@ function wireZoneLiveUpdate(){
 }
 
 function wireFreqDropdown(){
-  const sel = document.getElementById('setFreq');
-  if(!sel) return;
-  const profile = JSON.parse(localStorage.getItem('user_profile') || '{}');
-  sel.value = String(profile.freq || 5);
-  sel.addEventListener('change', () => {
-    const p = JSON.parse(localStorage.getItem('user_profile') || '{}');
-    p.freq = +sel.value;
-    localStorage.setItem('user_profile', JSON.stringify(p));
-    if(typeof sbPatch === 'function' && session && session.user){
-      sbPatch('user_programs', { freq: +sel.value }, 'user_id=eq.' + session.user.id)
-        .catch(e => console.error('Freq-sync fejlede:', e));
-    }
-  });
+  wireProfileField('setFreq', 'freq', 5, { number: true, dbColumn: 'freq' });
 }
 
 async function renderSettings(){
   const s = getSettings();
+  const profile = loadProfile() || {};
   // Cardio Calculation (Karvonen formel for max fedttab @ 60-70%)
   const maxHr = 220 - (s.age || 30);
   const reserve = maxHr - (s.rhr || 60);
@@ -1761,6 +1783,7 @@ async function renderSettings(){
         <div class="input-card-head">Krop & Cardio</div>
         <div class="input-card-body">
             <div class="input-row"><span class="input-label">Kropsvægt</span><input type="number" id="setBw" value="${s.bw}"><span class="input-unit">kg</span></div>
+            <div class="input-row"><span class="input-label">Højde</span><input type="number" id="setHeight" value="${profile.height || ''}" placeholder="180"><span class="input-unit">cm</span></div>
             <div class="input-row"><span class="input-label">Alder</span><input type="number" id="setAge" value="${s.age}"><span class="input-unit">år</span></div>
             <div class="input-row"><span class="input-label">Hvilepuls</span><input type="number" id="setRhr" value="${s.rhr}"><span class="input-unit">bpm</span></div>
         </div>
@@ -1776,6 +1799,23 @@ async function renderSettings(){
     <div style="margin-bottom:14px; padding:14px; background:var(--card); border:1px solid var(--border); border-radius:13px;">
         <div style="font-weight:600; font-size:14px; margin-bottom:6px;">Profil & Program</div>
         <div style="font-size:12px; color:var(--muted); margin-bottom:12px;">Justér din erfaring og genberegn dit program eller makro.</div>
+        <div style="margin-bottom:12px;">
+            <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 5px;">Køn</label>
+            <select id="setGender" class="note" style="margin-top:0;">
+                <option value="mand">Mand</option>
+                <option value="kvinde">Kvinde</option>
+            </select>
+            <div style="font-size:11px;color:var(--hint);margin-top:4px;">Bruges i BMR-formlen (Mifflin-St Jeor). Påvirker kalorie-beregningen.</div>
+        </div>
+        <div style="margin-bottom:12px;">
+            <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 5px;">Mål</label>
+            <select id="setGoal" class="note" style="margin-top:0;">
+                <option value="lose">Fedttab (deficit -500 kcal)</option>
+                <option value="maintain">Vedligehold</option>
+                <option value="gain">Muskelopbygning (+250 kcal)</option>
+            </select>
+            <div style="font-size:11px;color:var(--hint);margin-top:4px;">Justerer kalorie-mål og protein-anbefaling ved næste genberegning.</div>
+        </div>
         <div style="margin-bottom:12px;">
             <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 5px;">Træningserfaring</label>
             <select id="setExperience" class="note" style="margin-top:0;">
@@ -1837,6 +1877,9 @@ async function renderSettings(){
   if(window.lucide) lucide.createIcons();
   wireExperienceDropdown();
   wireFreqDropdown();
+  wireGenderDropdown();
+  wireGoalDropdown();
+  wireHeightInput();
   wireZoneLiveUpdate();
   wireKcalLiveUpdate();
   setTimeout(async () => {
@@ -1882,25 +1925,64 @@ function loadProfile(){
     if(stored){ try { return JSON.parse(stored); } catch(e){} }
     return null;
 }
+// Validér alle felter i profilen som computeMacros har brug for. Returnerer en
+// liste af fejlmeddelelser — tom liste betyder profilen er gyldig.
+// Vigtigt: vi validerer her i stedet for inde i computeMacros, så fejlmeddelelsen
+// kan være specifik om hvilke felter der mangler/er forkerte.
+function validateProfileForMacros(profile, settings){
+    const errors = [];
+    const bw = +settings.bw;
+    const age = +settings.age;
+    if(!bw || bw < 30 || bw > 300) errors.push('Kropsvægt skal være mellem 30 og 300 kg');
+    if(!age || age < 10 || age > 120) errors.push('Alder skal være mellem 10 og 120 år');
+    const height = +profile.height;
+    if(!height || height < 100 || height > 250){
+        errors.push('Højde skal være mellem 100 og 250 cm (du har: ' + (profile.height ?? 'ikke angivet') + ')');
+    }
+    if(profile.gender !== 'mand' && profile.gender !== 'kvinde'){
+        errors.push('Køn skal vælges (mand eller kvinde)');
+    }
+    const freq = +profile.freq;
+    if(!freq || freq < 1 || freq > 7){
+        errors.push('Træningsdage pr. uge skal vælges');
+    }
+    if(!['lose','maintain','gain'].includes(profile.goal)){
+        errors.push('Mål skal vælges (fedttab, vedligehold eller muskelopbygning)');
+    }
+    return errors;
+}
+
 function recalcMacrosFromProfile(){
     vibe(40);
     const profile = loadProfile();
     if(!profile){
-        alert('Ingen profil-data fundet. Kør onboarding igen, eller udfyld manuelt.');
+        alert('Ingen profil-data fundet. Udfyld køn, højde og mål i Indstillinger.');
         return;
     }
-    // Brug nuværende vægt fra settings hvis den er nyere end profilens
     const cur = getSettings();
-    if(cur.bw && cur.bw !== profile.weight){
-        profile.weight = cur.bw;
+    // Brug nuværende vægt fra settings (kilde til sandhed for vægt)
+    if(cur.bw) profile.weight = cur.bw;
+    if(cur.age) profile.age = cur.age;
+
+    const errors = validateProfileForMacros(profile, cur);
+    if(errors.length){
+        alert('Kan ikke beregne makroer — udfyld følgende først:\n\n• ' + errors.join('\n• '));
+        return;
     }
+
     const macros = computeMacros(profile);
+    // Sikkerhedsnet: hvis BMR ligger uden for fysiologisk rimeligt interval
+    // har vi alligevel ramt et hjørne af garbage-in/garbage-out. Stop her.
+    if(macros.bmr < 800 || macros.bmr > 4000){
+        alert(`BMR-beregningen gav et urealistisk resultat (${macros.bmr} kcal). Tjek at højde, vægt og alder er korrekte.`);
+        return;
+    }
+
     cur.kcal = macros.kcal;
     cur.prot = macros.prot;
     cur.kh = macros.kh;
     cur.fat = macros.fat;
     saveSettings(cur);
-    // Opdater lokal profil med ny vægt
     localStorage.setItem('user_profile', JSON.stringify(profile));
     alert(`Makro opdateret:\n${macros.kcal} kcal · ${macros.prot}g protein · ${macros.kh}g kh · ${macros.fat}g fedt\n(BMR ${macros.bmr} · TDEE ${macros.tdee})`);
     renderSettings();
