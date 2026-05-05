@@ -107,6 +107,9 @@ canvas{display:block;}
 .input-label{font-size:13px;color:var(--muted);width:110px;flex-shrink:0;}
 .input-row input{flex:1;background:var(--input-bg);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:15px;font-weight:500;color:var(--text);font-family:inherit;-webkit-appearance:none;}
 .input-row input:focus{outline:2px solid var(--text);border-color:transparent;}
+.input-row input[readonly]{background:transparent;color:var(--muted);cursor:default;}
+.input-row input[readonly]:focus{outline:none;border-color:var(--border);}
+.input-hint{font-size:11px;color:var(--hint);margin:-4px 0 8px 110px;}
 .input-unit{font-size:13px;color:var(--muted);width:28px;text-align:right;flex-shrink:0;}
 .save-btn{width:100%;padding:13px;border-radius:12px;border:1.5px solid var(--border);background:var(--teal-bg);color:var(--teal-t);font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;margin-bottom:14px;}
 .save-btn:active{transform:scale(.98);}
@@ -1675,6 +1678,28 @@ function wireExperienceDropdown(){
   });
 }
 
+// Live-opdatering af kcal-feltet når brugeren ændrer protein/kulhydrat/fedt.
+// Kcal er pr. definition summen af makroerne × deres energiværdi (4/4/9),
+// så feltet kan ikke redigeres direkte — det opdateres automatisk her.
+function wireKcalLiveUpdate(){
+  const protEl = document.getElementById('setProt');
+  const khEl = document.getElementById('setKh');
+  const fatEl = document.getElementById('setFat');
+  const kcalEl = document.getElementById('setKcal');
+  if(!protEl || !khEl || !fatEl || !kcalEl) return;
+
+  const recalc = () => {
+    const prot = +protEl.value || 0;
+    const kh = +khEl.value || 0;
+    const fat = +fatEl.value || 0;
+    kcalEl.value = prot*4 + kh*4 + fat*9;
+  };
+
+  protEl.addEventListener('input', recalc);
+  khEl.addEventListener('input', recalc);
+  fatEl.addEventListener('input', recalc);
+}
+
 // Live-opdatering af Zone 2 puls når brugeren ændrer Alder/Hvilepuls
 function wireZoneLiveUpdate(){
   const ageEl = document.getElementById('setAge');
@@ -1725,7 +1750,8 @@ async function renderSettings(){
     <div class="input-card">
         <div class="input-card-head">Makro Mål</div>
         <div class="input-card-body">
-            <div class="input-row"><span class="input-label">Kalorier</span><input type="number" id="setKcal" value="${s.kcal}"><span class="input-unit">kcal</span></div>
+            <div class="input-row"><span class="input-label">Kalorier</span><input type="number" id="setKcal" readonly value="${(+s.prot||0)*4 + (+s.kh||0)*4 + (+s.fat||0)*9}"><span class="input-unit">kcal</span></div>
+            <div class="input-hint">Beregnes automatisk: protein × 4 + kulhydrat × 4 + fedt × 9</div>
             <div class="input-row"><span class="input-label">Protein</span><input type="number" id="setProt" value="${s.prot}"><span class="input-unit">g</span></div>
             <div class="input-row"><span class="input-label">Kulhydrat</span><input type="number" id="setKh" value="${s.kh}"><span class="input-unit">g</span></div>
             <div class="input-row"><span class="input-label">Fedt</span><input type="number" id="setFat" value="${s.fat}"><span class="input-unit">g</span></div>
@@ -1812,6 +1838,7 @@ async function renderSettings(){
   wireExperienceDropdown();
   wireFreqDropdown();
   wireZoneLiveUpdate();
+  wireKcalLiveUpdate();
   setTimeout(async () => {
       let csv='Uge,Dato,Kategori,Øvelse,Sæt,Kg,Reps\n';let has=false;
       const maxW = getActualCurrentWeek() + 4;
@@ -1921,11 +1948,15 @@ async function regenerateProgramFromProfile(){
 }
 function saveSettingsForm() {
     vibe(50);
+    const prot = +document.getElementById('setProt').value || 0;
+    const kh = +document.getElementById('setKh').value || 0;
+    const fat = +document.getElementById('setFat').value || 0;
     const s = {
-        kcal: +document.getElementById('setKcal').value,
-        prot: +document.getElementById('setProt').value,
-        kh: +document.getElementById('setKh').value,
-        fat: +document.getElementById('setFat').value,
+        // kcal er afledt af makroerne — kan ikke drifte fra dem
+        kcal: prot*4 + kh*4 + fat*9,
+        prot: prot,
+        kh: kh,
+        fat: fat,
         bw: +document.getElementById('setBw').value,
         age: +document.getElementById('setAge').value,
         rhr: +document.getElementById('setRhr').value,
