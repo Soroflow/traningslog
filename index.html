@@ -1246,6 +1246,13 @@ function renderLog(){
     <div class="day-name">${d.title}</div>
     <div class="day-sub">${d.label} · Cyklus ${cycleOf(curWeek)} · Uge ${weekInCycle(curWeek)}${weekInCycle(curWeek)===7?' — Deload':weekInCycle(curWeek)===8?' — PR-uge':''}</div>
   </div>`;
+  // Zone 2 puls — vises i cardio-tippet nedenfor så brugeren har mål-pulsen
+  // direkte tilgængelig hvor cardio'en faktisk skal udføres.
+  const _s = getSettings();
+  const _maxHr = 220 - (_s.age || 30);
+  const _reserve = _maxHr - (_s.rhr || 60);
+  const _zoneMin = Math.round((_reserve * 0.60) + (_s.rhr || 60));
+  const _zoneMax = Math.round((_reserve * 0.70) + (_s.rhr || 60));
   d.ex.forEach((ex,ei)=>{
     const rl=ex.rl||'reps';
     let ghostText = '';
@@ -1275,7 +1282,16 @@ function renderLog(){
     }
     h+=`<textarea class="note" rows="2" placeholder="Note..." onchange="setNote(${ei},this.value)">${data.notes[ei]||''}</textarea></div></div>`;
   });
-  if(d.hiit)h+=`<div class="hiit-box">+ 12-3-30 / HIIT efter træning</div>`;
+  if(d.hiit){
+    h+=`<div class="hiit-box" style="background:var(--blue-bg);color:var(--blue-t); display:flex; align-items:center; gap:10px;">
+      <i data-lucide="activity" style="width:20px;height:20px;flex-shrink:0;"></i>
+      <div style="flex:1;">
+        <div style="font-weight:700; font-size:13px;">+ Cardio efter træning</div>
+        <div style="font-size:11px; opacity:0.85; margin-top:2px;">12-3-30 / HIIT eller Zone 2</div>
+        <div style="font-size:14px; font-weight:600; margin-top:3px;">Zone 2 mål: ${_zoneMin}-${_zoneMax} bpm</div>
+      </div>
+    </div>`;
+  }
   h+=`<div class="fin-area">`;
   if(!fin){h+=`<div class="fin-date-row"><span class="fin-date-label">Træningsdato</span><input type="date" id="finDate" class="fin-date-input" value="${todayISO()}"></div><button class="fin-btn" onclick="toggleFin()">Marker som færdig</button>`;}
   else{h+=`<button class="fin-btn on" onclick="toggleFin()">Træning fuldført ✓</button><div class="fin-done-info">Logget: ${isoToDa(data.date)}</div>`;}
@@ -1813,80 +1829,90 @@ async function renderSettings(){
   const reserve = maxHr - (s.rhr || 60);
   const targetMin = Math.round((reserve * 0.60) + (s.rhr || 60));
   const targetMax = Math.round((reserve * 0.70) + (s.rhr || 60));
+  // Hjælper til ensartet sektionsoverskrift med ikon
+  const sectionHead = (icon, title) => `
+    <div class="input-card-head" style="display:flex; align-items:center; gap:8px;">
+      <i data-lucide="${icon}" style="width:16px;height:16px;"></i>
+      <span>${title}</span>
+    </div>`;
+  const sectionSub = (text) => `<div style="font-size:11px; color:var(--muted); margin-bottom:12px; line-height:1.4;">${text}</div>`;
+  const dropdown = (id, label, options, hint) => `
+    <div style="margin-bottom:12px;">
+      <label style="font-size:12px; color:var(--muted); display:block; margin-bottom:5px;">${label}</label>
+      <select id="${id}" class="note" style="margin-top:0;">${options}</select>
+      ${hint ? `<div style="font-size:11px; color:var(--hint); margin-top:4px;">${hint}</div>` : ''}
+    </div>`;
+
   let h = `
     <div class="section-title">Indstillinger</div>
-    <div class="section-sub">Dine personlige mål og data</div>
+    <div class="section-sub">Justér din profil — makroerne beregnes automatisk</div>
+
+    <!-- 1) PERSONLIGE DATA — sjældne ændringer, bruges i BMR-beregning -->
     <div class="input-card">
-        <div class="input-card-head">Makro Mål</div>
+        ${sectionHead('user', 'Personlige data')}
         <div class="input-card-body">
+            ${sectionSub('Sættes én gang. Bruges i BMR-formlen (Mifflin-St Jeor) til at beregne dit kalorie-mål.')}
+            ${dropdown('setGender', 'Køn',
+                '<option value="mand">Mand</option><option value="kvinde">Kvinde</option>')}
+            <div class="input-row"><span class="input-label">Fødselsdato</span><input type="date" id="setDob" value="${profile.dob || ''}"><span class="input-unit"></span></div>
+            <div class="input-row"><span class="input-label">Højde</span><input type="number" id="setHeight" value="${profile.height || ''}" placeholder="180"><span class="input-unit">cm</span></div>
+            ${dropdown('setExperience', 'Træningserfaring',
+                '<option value="never">Aldrig trænet før</option><option value="beginner">Under 6 måneder</option><option value="intermediate">6 måneder – 2 år</option><option value="advanced">2+ år konsekvent</option>',
+                'Påvirker startvægte ved generering af nyt program.')}
+        </div>
+    </div>
+
+    <!-- 2) KROP — opdateres jævnligt -->
+    <div class="input-card">
+        ${sectionHead('scale', 'Krop')}
+        <div class="input-card-body">
+            ${sectionSub('Opdatér når du måler dig selv. Vægten bruges også i protein- og fedtberegning.')}
+            <div class="input-row"><span class="input-label">Kropsvægt</span><input type="number" id="setBw" value="${s.bw}" step="0.1"><span class="input-unit">kg</span></div>
+            <div class="input-row"><span class="input-label">Alder</span><input type="number" id="setAge" ${profile.dob ? 'readonly' : ''} value="${s.age}"><span class="input-unit">år</span></div>
+            <div class="input-hint">${profile.dob ? 'Beregnes automatisk fra fødselsdato' : 'Tip: angiv fødselsdato ovenfor — så opdateres alderen automatisk'}</div>
+            <div class="input-row"><span class="input-label">Hvilepuls</span><input type="number" id="setRhr" value="${s.rhr}"><span class="input-unit">bpm</span></div>
+            <div class="input-hint">Mål den om morgenen i sengen for det mest præcise tal.</div>
+        </div>
+    </div>
+
+    <!-- Cardio Zone 2 — tæt på hvilepuls da den driver beregningen -->
+    <div class="hiit-box" style="background:var(--blue-bg);color:var(--blue-t); display:flex; align-items:center; gap:12px; margin-bottom:14px;">
+        <i data-lucide="activity" style="width:24px;height:24px;flex-shrink:0;"></i>
+        <div>
+            <div style="font-weight:700;">Zone 2 Puls (Fedttab)</div>
+            <div style="font-size:11px; opacity:0.8;">60-70% intensitet (Karvonen) — beregnes ud fra alder og hvilepuls</div>
+            <div style="font-size:20px; margin-top:2px;" id="zoneDisplay">~${targetMin} - ${targetMax} bpm</div>
+        </div>
+    </div>
+
+    <!-- 3) MÅL & TRÆNING — driver makro- og programgenerering -->
+    <div class="input-card">
+        ${sectionHead('target', 'Mål & træning')}
+        <div class="input-card-body">
+            ${sectionSub('Tryk "Genberegn makro" når du justerer noget her — så opdateres dine kalorie- og makro-mål nedenfor.')}
+            ${dropdown('setGoal', 'Mål',
+                '<option value="lose">Fedttab (deficit -500 kcal)</option><option value="maintain">Vedligehold</option><option value="gain">Muskelopbygning (+250 kcal)</option>')}
+            ${dropdown('setFreq', 'Træningsdage pr. uge',
+                '<option value="3">3 dage (Fullbody Man/Ons/Fre)</option><option value="4">4 dage (Upper/Lower split)</option><option value="5">5 dage (PPL + accessories)</option>',
+                'Ændrer programstruktur. Historisk træningsdata bevares.')}
+            <button class="copy-btn" style="margin-bottom:8px;" onclick="recalcMacrosFromProfile()">↻ Genberegn makro</button>
+            <button class="copy-btn" style="margin-bottom:0; background:var(--amber-bg); color:var(--amber-t);" onclick="regenerateProgramFromProfile()">↻ Regenerér træningsprogram</button>
+        </div>
+    </div>
+
+    <!-- 4) MAKRO MÅL — output, men kan justeres manuelt -->
+    <div class="input-card" style="border-color:var(--blue-t);">
+        ${sectionHead('flame', 'Makro mål')}
+        <div class="input-card-body">
+            ${sectionSub('Auto-beregnet ud fra ovenstående. Du kan også justere makroerne manuelt — kalorier opdateres automatisk.')}
             <div class="input-row"><span class="input-label">Kalorier</span><input type="number" id="setKcal" readonly value="${(+s.prot||0)*4 + (+s.kh||0)*4 + (+s.fat||0)*9}"><span class="input-unit">kcal</span></div>
-            <div class="input-hint">Beregnes automatisk: protein × 4 + kulhydrat × 4 + fedt × 9</div>
+            <div class="input-hint">protein × 4 + kulhydrat × 4 + fedt × 9</div>
             <div class="input-row"><span class="input-label">Protein</span><input type="number" id="setProt" value="${s.prot}"><span class="input-unit">g</span></div>
             <div class="input-row"><span class="input-label">Kulhydrat</span><input type="number" id="setKh" value="${s.kh}"><span class="input-unit">g</span></div>
             <div class="input-row"><span class="input-label">Fedt</span><input type="number" id="setFat" value="${s.fat}"><span class="input-unit">g</span></div>
         </div>
     </div>
-    <div class="input-card">
-        <div class="input-card-head">Krop & Cardio</div>
-        <div class="input-card-body">
-            <div class="input-row"><span class="input-label">Kropsvægt</span><input type="number" id="setBw" value="${s.bw}"><span class="input-unit">kg</span></div>
-            <div class="input-row"><span class="input-label">Højde</span><input type="number" id="setHeight" value="${profile.height || ''}" placeholder="180"><span class="input-unit">cm</span></div>
-            <div class="input-row"><span class="input-label">Fødselsdato</span><input type="date" id="setDob" value="${profile.dob || ''}"><span class="input-unit"></span></div>
-            <div class="input-row"><span class="input-label">Alder</span><input type="number" id="setAge" ${profile.dob ? 'readonly' : ''} value="${s.age}"><span class="input-unit">år</span></div>
-            ${profile.dob ? '<div class="input-hint">Beregnes automatisk fra fødselsdato</div>' : '<div class="input-hint">Tip: angiv fødselsdato — så opdateres alderen automatisk</div>'}
-            <div class="input-row"><span class="input-label">Hvilepuls</span><input type="number" id="setRhr" value="${s.rhr}"><span class="input-unit">bpm</span></div>
-        </div>
-    </div>
-    <div class="hiit-box" style="background:var(--blue-bg);color:var(--blue-t); display:flex; align-items:center; gap:12px; margin-bottom:14px;">
-        <i data-lucide="activity" style="width:24px;height:24px;flex-shrink:0;"></i>
-        <div>
-            <div style="font-weight:700;">Zone 2 Puls (Fedttab)</div>
-            <div style="font-size:11px; opacity:0.8;">60-70% intensitet (Karvonen)</div>
-            <div style="font-size:20px; margin-top:2px;" id="zoneDisplay">~${targetMin} - ${targetMax} bpm</div>
-        </div>
-    </div>
-    <div style="margin-bottom:14px; padding:14px; background:var(--card); border:1px solid var(--border); border-radius:13px;">
-        <div style="font-weight:600; font-size:14px; margin-bottom:6px;">Profil & Program</div>
-        <div style="font-size:12px; color:var(--muted); margin-bottom:12px;">Justér din erfaring og genberegn dit program eller makro.</div>
-        <div style="margin-bottom:12px;">
-            <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 5px;">Køn</label>
-            <select id="setGender" class="note" style="margin-top:0;">
-                <option value="mand">Mand</option>
-                <option value="kvinde">Kvinde</option>
-            </select>
-            <div style="font-size:11px;color:var(--hint);margin-top:4px;">Bruges i BMR-formlen (Mifflin-St Jeor). Påvirker kalorie-beregningen.</div>
-        </div>
-        <div style="margin-bottom:12px;">
-            <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 5px;">Mål</label>
-            <select id="setGoal" class="note" style="margin-top:0;">
-                <option value="lose">Fedttab (deficit -500 kcal)</option>
-                <option value="maintain">Vedligehold</option>
-                <option value="gain">Muskelopbygning (+250 kcal)</option>
-            </select>
-            <div style="font-size:11px;color:var(--hint);margin-top:4px;">Justerer kalorie-mål og protein-anbefaling ved næste genberegning.</div>
-        </div>
-        <div style="margin-bottom:12px;">
-            <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 5px;">Træningserfaring</label>
-            <select id="setExperience" class="note" style="margin-top:0;">
-                <option value="never">Aldrig trænet før</option>
-                <option value="beginner">Under 6 måneder</option>
-                <option value="intermediate">6 måneder – 2 år</option>
-                <option value="advanced">2+ år konsekvent</option>
-            </select>
-            <div style="font-size:11px;color:var(--hint);margin-top:4px;">Påvirker hvilke startvægte algoritmen foreslår ved næste regenerering.</div>
-        </div>
-        <div style="margin-bottom:12px;">
-            <label style="font-size: 12px; color: var(--muted); display: block; margin-bottom: 5px;">Træningsdage pr. uge</label>
-            <select id="setFreq" class="note" style="margin-top:0;">
-                <option value="3">3 dage (Fullbody Man/Ons/Fre)</option>
-                <option value="4">4 dage (Upper/Lower split)</option>
-                <option value="5">5 dage (PPL + accessories)</option>
-            </select>
-            <div style="font-size:11px;color:var(--hint);margin-top:4px;">Ændrer programstrukturen ved næste regenerering. Historisk træningsdata bevares.</div>
-        </div>
-        <button class="copy-btn" style="margin-bottom:8px;" onclick="recalcMacrosFromProfile()">Genberegn makro</button>
-        <button class="copy-btn" style="margin-bottom:0; background:var(--amber-bg); color:var(--amber-t);" onclick="regenerateProgramFromProfile()">Regenerér træningsprogram</button>
-    </div>
+
     <button class="save-btn" onclick="saveSettingsForm()">Gem Indstillinger</button>
     <div class="section-title" style="margin-top:32px;">Konto</div>
     <div class="section-sub">Logget ind som: <b>${session.user.email}</b></div>
